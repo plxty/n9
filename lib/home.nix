@@ -53,6 +53,7 @@ let
               lm_sensors
               bcc
               bpftrace
+              binwalk
             ]
             ++ (map (utils.attrByIfStringPath pkgs) packages);
 

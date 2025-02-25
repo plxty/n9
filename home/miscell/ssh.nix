@@ -6,6 +6,8 @@
 # @input authorizedKeys: SSH public keys for authorizing.
 # @input agentKeys: For passwordless SSH sudo, it's a little risky, but it is
 #                   is needed for colmena.
+#
+# Use `debug` keyword to attach a debugger.
 {
   ed25519 ? { },
   authorizedKeys ? null,
@@ -30,8 +32,7 @@ let
     else if builtins.length split == 2 then
       self.nixosConfigurations.${hostname}.config.home-manager.users.${username}.home.file.".ssh/id_${type}.pub".text
     else
-      assert lib.assertMsg false "invalid public format!";
-      ""
+      throw "invalid public format!"
   );
 in
 {

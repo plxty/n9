@@ -113,7 +113,15 @@ in
         };
       };
 
-      shellInitLast = ''
+      shellInit = ''
+        # https://linux.overshoot.tv/wiki/ls
+        set -gx LS_COLORS (string replace -a '05;' "" "$LS_COLORS")
+
+        # FIXME: (no) local:
+        fish_add_path "$HOME/.local/bin"
+      '';
+
+      interactiveShellInit = ''
         # what `tide configure` shows:
         tide configure \
           --auto \
@@ -131,11 +139,8 @@ in
         bind --mode default ';' '_fzf_switch_common ";"' # e.g. f;, h;, ...
         bind --mode default ':' '_fzf_switch_common ":"' # accept previous token as argument
 
-        # https://linux.overshoot.tv/wiki/ls
-        set -gx LS_COLORS (string replace -a '05;' "" "$LS_COLORS")
-
-        # FIXME: (no) local:
-        fish_add_path "$HOME/.local/bin"
+        # https://github.com/haslersn/any-nix-shell
+        ${pkgs.any-nix-shell}/bin/any-nix-shell fish --info-right | source
       '';
 
       shellAbbrs = {

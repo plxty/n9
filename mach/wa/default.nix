@@ -12,7 +12,6 @@ in
     ];
 
     deployment = {
-      buildOnTarget = true;
       targetHost = "wa.y.xas.is";
       targetUser = "byte";
     };
