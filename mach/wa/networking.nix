@@ -8,7 +8,7 @@
 
 let
   ports = {
-    # physical
+    # physical, from left to right
     rj45-0 = "enp1s0";
     rj45-1 = "enp2s0";
     rj45-2 = "enp4s0";
@@ -16,7 +16,7 @@ let
     sfp-1 = "enp5s0f0np0";
 
     # virtual
-    vlan = "enp5s0f1.101";
+    vlan = "enp5s0f1.1210";
     wan = "pppoe-wan";
     lan = "br-lan";
   };
@@ -35,12 +35,10 @@ let
 
   mkBridgeSlave =
     port: master:
-    lib.recursiveUpdate (
-      mkNetwork port {
-        networkConfig.Bridge = master;
-        linkConfig.RequiredForOnline = "enslaved";
-      }
-    );
+    mkNetwork port {
+      networkConfig.Bridge = master;
+      linkConfig.RequiredForOnline = "enslaved";
+    };
 
   # Y-AXIS
   domain = "y.xas.is";
@@ -55,7 +53,7 @@ in
         Kind = "vlan";
         Name = ports.vlan;
       };
-      vlanConfig.Id = 101;
+      vlanConfig.Id = 1201;
     };
 
     "20-lan" = {
@@ -67,6 +65,8 @@ in
   };
 
   # PPPoE (netdev), networkd managed as well:
+  networking.useDHCP = false;
+  networking.dhcpcd.enable = false;
   boot.kernelModules = [ "pppoe" ];
 
   services.pppd = {
@@ -93,7 +93,7 @@ in
   systemd.network.networks = {
     "10-sfp-0" = mkNetwork ports.sfp-0 {
       vlan = [ ports.vlan ];
-      networkConfig.Address = "192.168.1.10/32";
+      networkConfig.Address = "192.168.0.2/24"; # XE-99S: 192.168.0.1
     };
     "11-vlan" = mkNetwork ports.vlan { };
 
@@ -106,7 +106,7 @@ in
         LinkLocalAddressing = "ipv6";
       };
       dhcpV6Config = {
-        PrefixDelegationHint = "::/60";
+        PrefixDelegationHint = "::/64";
         WithoutRA = "solicit";
         UseDNS = "no";
         UseHostname = "no";
@@ -114,9 +114,9 @@ in
       linkConfig.RequiredForOnline = "yes"; # TODO: Is it really working?
     };
 
-    "30-rj45-0" = mkBridgeSlave ports.rj45-0 ports.lan { };
-    "31-rj45-1" = mkBridgeSlave ports.rj45-1 ports.lan { };
-    "32-rj45-2" = mkBridgeSlave ports.rj45-2 ports.lan { };
+    "30-rj45-0" = mkBridgeSlave ports.rj45-0 ports.lan;
+    "31-rj45-1" = mkBridgeSlave ports.rj45-1 ports.lan;
+    "32-rj45-2" = mkBridgeSlave ports.rj45-2 ports.lan;
     "33-lan" = mkNetwork ports.lan {
       networkConfig = {
         Address = "10.0.0.1/8";
@@ -133,20 +133,9 @@ in
     };
   };
 
-  # The `networking.firewall.filterForward = true` is conflicted, and has no
-  # such customization options. TODO: How to make one?
-  # https://github.com/LostAttractor/Router/blob/master/configuration/network/nftables.nix
-  networking.nftables.tables."mss-clamping" = {
-    family = "inet";
-    content = ''
-      chain forward {
-        type filter hook forward priority filter; policy accept;
-        tcp flags syn tcp option maxseg size set rt mtu
-      }
-    '';
-  };
-
   # Relavents:
+  services.resolved.enable = false;
+
   services.networkd-dispatcher = {
     enable = true;
     rules."restart-dnsmasq" = {
@@ -162,9 +151,7 @@ in
   };
 
   # DHCP and DNS server (kea?):
-  networking.useDHCP = false;
-  networking.dhcpcd.enable = false;
-  services.resolved.enable = false;
+  systemd.tmpfiles.rules = [ "d /srv/tftp 0777 dnsmasq dnsmasq -" ];
 
   services.dnsmasq = {
     enable = true;
@@ -202,10 +189,12 @@ in
       inherit domain;
       local = "/${domain}/"; # only resolve in local, don't go out
       address = [ "/wa.${domain}/10.0.0.1" ];
+
+      # tftp, TODO: https://nixos.wiki/wiki/Netboot
+      enable-tftp = true;
+      tftp-root = "/srv/tftp";
     };
   };
-
-  # Unsafe network:
 
   # NAT + Firewall with nftables.
   # @see nixpkgs/nixos/modules/services/networking/nat-nftables.nix)
@@ -223,4 +212,17 @@ in
     53 # DNS
     67 # DHCP
   ];
+
+  # The `networking.firewall.filterForward = true` is conflicted, and has no
+  # such customization options. TODO: How to make one?
+  # https://github.com/LostAttractor/Router/blob/master/configuration/network/nftables.nix
+  networking.nftables.tables."mss-clamping" = {
+    family = "inet";
+    content = ''
+      chain forward {
+        type filter hook forward priority filter; policy accept;
+        tcp flags syn tcp option maxseg size set rt mtu
+      }
+    '';
+  };
 }

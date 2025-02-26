@@ -1,118 +1,138 @@
-{ disko, ... }: # <- Flake inputs
-
-# Make a disk with disko, using this module should ensure the mount options
-# isn't exist in the hardware-configuration.nix.
-# @input disk.type: The main disk type, BTRFS or ZFS.
-# @input disk.device: The main disk in /dev/XXX.
 {
-  type ? "btrfs",
-  device,
-}: # <- Module arguments
-
-{ lib, ... }: # <- Nix `imports = []`
+  config,
+  lib,
+  n9,
+  ...
+}:
 
 let
-  efiMount = "/efi";
+  mkDisk =
+    dev:
+    lib.recursiveUpdate {
+      devices.disk.first = {
+        type = "disk";
+        device = "/dev/${dev}";
 
-  base = {
-    imports = [ disko.nixosModules.disko ];
+        content = {
+          type = "gpt";
 
-    # Think it's better here, with the disk and partitions?
-    boot.loader.efi.efiSysMountPoint = efiMount;
+          partitions.ESP = {
+            name = "ESP";
+            priority = 1;
+            start = "1M";
+            size = "1G";
+            type = "EF00";
+            content = {
+              type = "filesystem";
+              format = "vfat";
+              mountpoint = "/efi";
+              mountOptions = [ "umask=0077" ];
+            };
+          };
 
-    disko.devices.disk.first = {
-      type = "disk";
-      inherit device;
+          partitions.swap = {
+            name = "swap";
+            priority = 2;
+            size = "16G";
+            content.type = "swap";
+          };
 
-      content = {
-        type = "gpt";
-
-        partitions.ESP = {
-          name = "ESP";
-          priority = 1;
-          start = "1M";
-          size = "1G";
-          type = "EF00";
-          content = {
-            type = "filesystem";
-            format = "vfat";
-            mountpoint = efiMount;
-            mountOptions = [ "umask=0077" ];
+          partitions.root = {
+            name = "root";
+            priority = 3;
+            size = "100%";
           };
         };
+      };
+    };
 
-        partitions.swap = {
-          name = "swap";
-          priority = 2;
-          size = "16G";
-          content.type = "swap";
-        };
+  mkBtrfs = {
+    devices.disk.first.content.partitions.root.content = {
+      type = "btrfs";
+      extraArgs = [ "-f" ];
 
-        partitions.root = {
-          name = "root";
-          priority = 3;
-          size = "100%";
-        };
+      subvolumes."/@root" = {
+        mountpoint = "/";
+        mountOptions = [ "compress=zstd" ];
+      };
+
+      subvolumes."/@home" = {
+        mountpoint = "/home";
+        mountOptions = [ "compress=zstd" ];
+      };
+
+      subvolumes."/@nix" = {
+        mountpoint = "/nix";
+        mountOptions = [
+          "compress=zstd"
+          "noatime"
+        ];
       };
     };
   };
 
-  mixin =
-    if type == "btrfs" then
-      {
-        disko.devices.disk.first.content.partitions.root.content = {
-          type = "btrfs";
-          extraArgs = [ "-f" ];
+  mkZfs = {
+    devices.disk.first.content.partitions.root.content = {
+      type = "zfs";
+      pool = "mix";
+    };
 
-          subvolumes."/@root" = {
-            mountpoint = "/";
-            mountOptions = [ "compress=zstd" ];
-          };
+    devices.zpool.mix = {
+      type = "zpool";
+      options.ashift = "13";
+      rootFsOptions.compression = "zstd";
 
-          subvolumes."/@home" = {
-            mountpoint = "/home";
-            mountOptions = [ "compress=zstd" ];
-          };
+      datasets.root = {
+        type = "zfs_fs";
+        mountpoint = "/";
+      };
 
-          subvolumes."/@nix" = {
-            mountpoint = "/nix";
-            mountOptions = [
-              "compress=zstd"
-              "noatime"
-            ];
-          };
-        };
-      }
-    else if type == "zfs" then
-      {
-        disko.devices.disk.first.content.partitions.root.content = {
-          type = "zfs";
-          pool = "mix";
-        };
+      datasets.home = {
+        type = "zfs_fs";
+        mountpoint = "/home";
+        options.dedup = "on";
+      };
 
-        disko.devices.zpool.mix = {
-          type = "zpool";
-          options.ashift = "13";
-          rootFsOptions.compression = "zstd";
-
-          datasets.root = {
-            type = "zfs_fs";
-            mountpoint = "/";
-          };
-
-          datasets.home = {
-            type = "zfs_fs";
-            mountpoint = "/home";
-            options.dedup = "on";
-          };
-
-          datasets.nix = {
-            type = "zfs_fs";
-            mountpoint = "/nix";
-          };
-        };
-      }
-    else
-      builtins.abort "Unsupported type in disk?";
+      datasets.nix = {
+        type = "zfs_fs";
+        mountpoint = "/nix";
+      };
+    };
+  };
 in
-lib.recursiveUpdate base mixin
+{
+  imports = [ n9.inputs.disko.nixosModules.disko ];
+
+  options.hardware.disk = lib.mkOption {
+    type = lib.types.attrsOf (
+      # The attrTag is forced to be filled for every attributes, while in the
+      # submodule you can eliminate those attributes that have default value.
+      lib.types.submodule {
+        options.enable = lib.mkOption {
+          type = lib.types.bool;
+          default = true;
+        };
+
+        options.type = lib.mkOption {
+          type = lib.types.enum [
+            "btrfs"
+            "zfs"
+          ];
+          default = "btrfs";
+        };
+      }
+    );
+  };
+
+  config = {
+    # Think it's better here, with the disk and partitions?
+    boot.loader.efi.efiSysMountPoint = "/efi";
+
+    # TODO: Multiple disk?
+    disko = lib.mkMerge (
+      lib.mapAttrsToList (
+        dev: v: lib.mkIf v.enable (mkDisk dev (if v.type == "zfs" then mkZfs else mkBtrfs))
+      ) config.hardware.disk
+    );
+  };
+}

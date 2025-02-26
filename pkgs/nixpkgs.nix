@@ -1,12 +1,10 @@
-{ self, ... }: # <- Flake inputs
-
 # TODO: Change name to common? For both nixos and home manager.
 # No argument. <- Module arguments
 
-{ pkgs, ... }: # <- NixOS or HomeManager `imports = []`
+{ n9, pkgs, ... }: # <- NixOS or HomeManager `imports = []`
 
 let
-  inherit (self.lib) utils;
+  inherit (n9.lib) utils;
 in
 {
   nixpkgs.overlays = [

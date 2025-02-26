@@ -26,6 +26,7 @@ in
       "mstflint"
       "ethtool"
       "nftables"
+      "inetutils"
     ];
 
     modules = with n9.lib.home-modules; [

@@ -1,21 +1,7 @@
 { self, nixpkgs, ... }: # <- Flake inputs
 
 # Making a Home Manager things.
-#
-# @input that: Flake `self` of the modules.
-# @input username: The username of it.
-# @input passwd: The absolute path to passwd file, in colmena.
-# @input uid,home,groups: Information about the user.
-#                         Group's name and gid is same as the username and uid.
-# @input packages: Shortcut of home.packages, within the imports context.
-#                  Due to this restriction, this should be array of strings.
-#                  For other packages, you might need to write a module.
-# @input modules: Imports from.
-# @input secrets: Key file you want to upload (using colmena upload-keys).
-#
-# @output: AttrSet of {modules,deployment}.
-# Using if/else here because we want to maintain a consistency of dev's flake.
-that: username: passwd: # <- Module arguments
+hostName: # <- Module arguments
 
 {
   uid ? 1000,
