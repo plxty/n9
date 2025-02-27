@@ -1,10 +1,10 @@
 { config, lib, ... }:
 
 let
-  cfg = config.miscell.sshd;
+  cfg = config.n9.services.sshd;
 in
 {
-  options.miscell.sshd = {
+  options.n9.services.sshd = {
     enable = lib.mkEnableOption "sshd";
 
     port = lib.mkOption {

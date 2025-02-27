@@ -16,41 +16,38 @@
       url = "github:zhaofengli/colmena";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    nixos-anywhere = {
-      url = "github:nix-community/nixos-anywhere";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
   };
 
   outputs =
+    { nixpkgs, ... }@args:
     {
-      self,
-      nixpkgs,
-      colmena,
-      ...
-    }@args:
-    let
-      # @see nix/flake.nix
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
-    in
-    {
-      # NixOS, Nix (For package manager only, use lib.mkNixPackager?):
-      lib.nixos = import ./lib/nixos.nix args;
-      lib.nixos-modules = import ./nixos args;
+      lib = rec {
+        # NixOS, Nix (For package manager only, use lib.mkNixPackager?):
+        nixosSystem = import ./nixos.nix args;
 
-      # User/home level modules, with home-manager:
-      lib.home = import ./lib/home.nix args;
-      lib.home-modules = import ./home args;
+        # Helpers of mine:
+        patches =
+          pkg: attrs:
+          pkg.overrideAttrs (prev: {
+            patches = (prev.patches or [ ]) ++ attrs;
+          });
+        patch = pkg: attr: patches pkg [ attr ];
 
-      # Simple utils, mainly for making the code "shows" better.
-      # In modules, you can refer it using `self.lib.utils`.
-      lib.utils = import ./lib/utils.nix args;
+        # https://gist.github.com/udf/4d9301bdc02ab38439fd64fbda06ea43
+        # @see nixpkgs/lib/modules.nix, hasn't figure out the root cause...
+        mkMergeTopLevel =
+          with nixpkgs.lib;
+          names: attrs: getAttrs names (mapAttrs (k: v: mkMerge v) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
 
-      # Entry:
-      devShell = nixpkgs.lib.genAttrs systems (import ./lib/shell.nix args);
+        # For user modules:
+        forAllUsers =
+          with nixpkgs.lib;
+          config: remains: fn:
+          let
+            path = splitString "." remains;
+          in
+          mapAttrsToList (userName: v: fn userName (attrByPath path null v)) config.n9.users;
+      };
     };
 
   nixConfig = {

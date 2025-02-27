@@ -6,10 +6,13 @@
 }:
 
 let
+  # Following @see nixpkgs/nixos/modules/module-list.nix:
+  cfg = config.n9.hardware.disk;
+
   mkDisk =
     dev:
     lib.recursiveUpdate {
-      devices.disk.first = {
+      disko.devices.disk.first = {
         type = "disk";
         device = "/dev/${dev}";
 
@@ -47,7 +50,7 @@ let
     };
 
   mkBtrfs = {
-    devices.disk.first.content.partitions.root.content = {
+    disko.devices.disk.first.content.partitions.root.content = {
       type = "btrfs";
       extraArgs = [ "-f" ];
 
@@ -72,12 +75,12 @@ let
   };
 
   mkZfs = {
-    devices.disk.first.content.partitions.root.content = {
+    disko.devices.disk.first.content.partitions.root.content = {
       type = "zfs";
       pool = "mix";
     };
 
-    devices.zpool.mix = {
+    disko.devices.zpool.mix = {
       type = "zpool";
       options.ashift = "13";
       rootFsOptions.compression = "zstd";
@@ -103,17 +106,12 @@ in
 {
   imports = [ n9.inputs.disko.nixosModules.disko ];
 
-  options.hardware.disk = lib.mkOption {
+  options.n9.hardware.disk = lib.mkOption {
     type = lib.types.attrsOf (
       # The attrTag is forced to be filled for every attributes, while in the
       # submodule you can eliminate those attributes that have default value.
-      lib.types.submodule {
-        options.enable = lib.mkOption {
-          type = lib.types.bool;
-          default = true;
-        };
-
-        options.type = lib.mkOption {
+      lib.types.attrTag {
+        type = lib.mkOption {
           type = lib.types.enum [
             "btrfs"
             "zfs"
@@ -124,15 +122,15 @@ in
     );
   };
 
-  config = {
-    # Think it's better here, with the disk and partitions?
-    boot.loader.efi.efiSysMountPoint = "/efi";
-
-    # TODO: Multiple disk?
-    disko = lib.mkMerge (
-      lib.mapAttrsToList (
-        dev: v: lib.mkIf v.enable (mkDisk dev (if v.type == "zfs" then mkZfs else mkBtrfs))
-      ) config.hardware.disk
-    );
-  };
+  config = n9.lib.mkMergeTopLevel [ "boot" "disko" ] (
+    (lib.optional (cfg != { }) {
+      boot.loader.efi.efiSysMountPoint = "/efi";
+    })
+    ++ lib.mapAttrsToList (
+      # TODO: Multiple disk?
+      # We can't use mkIf here... Must ensure the `disko` is existed, otherwise
+      # the inifinte recursion will be back!
+      dev: v: mkDisk dev (if v.type == "zfs" then mkZfs else mkBtrfs)
+    ) cfg
+  );
 }
