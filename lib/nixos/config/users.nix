@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   pkgs, # MUST have, maybe the module system is using `functionArgs`?

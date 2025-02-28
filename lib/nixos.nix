@@ -1,7 +1,6 @@
 {
   self,
   nixpkgs,
-  colmena,
   ...
 }@inputs: # <- Flake inputs
 
@@ -32,6 +31,7 @@ nixpkgs.lib.nixosSystem {
     ./nixos/config/users.nix
     ./nixos/config/secrets.nix
     ./nixos/config/passwd.nix
+    ./nixos/config/pop-shell.nix
   ];
 
   # Essential:

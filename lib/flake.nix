@@ -36,14 +36,20 @@
         # https://gist.github.com/udf/4d9301bdc02ab38439fd64fbda06ea43
         # @see nixpkgs/lib/modules.nix, hasn't figure out the root cause...
         mkMergeTopLevel =
+          names: attrs:
           with nixpkgs.lib;
-          names: attrs: getAttrs names (mapAttrs (k: v: mkMerge v) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
+          let
+            # getAttrs' = names: attrs: genAttrs names (name: attrs.${name} or null);
+            # names = flatten (map attrNames attrs.contents);
+            toplevel = (mapAttrs (_: mkMerge) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
+          in
+          getAttrs names toplevel;
 
         # For user modules, it fetch both system wide and user wide:
         # When system wide, the argument of `fn` will be null.
         forAllUsers =
-          with nixpkgs.lib;
           config: remains: system: fn:
+          with nixpkgs.lib;
           let
             path = splitString "." remains;
             osConfig = {

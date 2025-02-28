@@ -13,7 +13,7 @@
       # @see home-manager/modules/lib/file-type.nix
       # @see https://colmena.cli.rs/unstable/reference/deployment.html
       lib.types.submodule (
-        { name, config, ... }:
+        { name, ... }:
         {
           options.source = lib.mkOption {
             type = lib.types.str;

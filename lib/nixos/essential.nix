@@ -31,7 +31,7 @@
       openssh = n9.lib.patch super.openssh ../patches/openssh-plainpass.patch;
       ibus-engines = super.ibus-engines // {
         rime = (n9.lib.patch super.ibus-engines.rime ../patches/ibus-rime-temp-ascii.patch).override {
-          rimeDataPkgs = [ (pkgs.callPackage ./rime-ice.nix { }) ];
+          rimeDataPkgs = [ (pkgs.callPackage ../pkgs/rime-ice.nix { }) ];
         };
       };
       librime = n9.lib.patch super.librime ../patches/librime-temp-ascii.patch;
