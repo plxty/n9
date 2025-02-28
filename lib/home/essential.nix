@@ -26,4 +26,6 @@
     addKeysToAgent = "9h";
     forwardAgent = true;
   };
+
+  home.stateVersion = "25.05";
 }

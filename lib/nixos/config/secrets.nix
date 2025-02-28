@@ -3,12 +3,8 @@
   lib,
   n9,
   ...
-}@args:
+}:
 
-let
-  # Provided by colmena:
-  cfg = config.n9.security.secrets;
-in
 {
   imports = [ n9.inputs.colmena.nixosModules.deploymentOptions ];
 
@@ -50,16 +46,7 @@ in
             default = "pre-activation";
           };
 
-          config = {
-            assertions = [
-              {
-                assertion = lib.hasPrefix "/" config.source;
-                message = "source must be absolute";
-              }
-            ];
-
-            target = lib.mkDefault name;
-          };
+          config.target = lib.mkDefault name;
         }
       )
     );
@@ -68,46 +55,36 @@ in
   };
 
   config.deployment.keys = lib.mkMerge (
-    lib.mapAttrsToList (
-      _: v:
-      let
-        name = builtins.baseNameOf v.target;
-        destDir = builtins.dirOf v.target;
-      in
-      {
-        ${name} = {
-          keyFile = v.source;
-          inherit (v)
-            user
-            group
-            permission
-            uploadAt
-            ;
-          inherit destDir;
-        };
-      }
-    ) cfg
-    ++ lib.flatten (
-      n9.lib.forAllUsers config "security.secrets" (
-        userName: v:
+    lib.flatten (
+      n9.lib.forAllUsers config "n9.security.secrets" true (
+        userName: keys:
         lib.mapAttrsToList (
           _: v:
           let
-            target = "${config.users.users.${userName}.home}/${v.target}";
+            # Force override option if user, TODO: better idea?
+            isUser = userName != null;
+            target = if isUser then "${config.users.users.${userName}.home}/${v.target}" else v.target;
+            user = if isUser then userName else v.user;
+            group = if isUser then userName else v.group;
+            uploadAt = if isUser then "post-activation" else v.uploadAt;
+
+            # To colmena:
             name = builtins.baseNameOf target;
             destDir = builtins.dirOf target;
           in
           {
             ${name} = {
               keyFile = v.source;
-              user = userName;
-              group = userName;
-              inherit (v) permission;
-              uploadAt = "post-activation";
-              inherit destDir;
+              inherit
+                user
+                group
+                uploadAt
+                destDir
+                ;
+              inherit (v) permissions;
             };
           }
-        ) v
+        ) keys
       )
     )
   );

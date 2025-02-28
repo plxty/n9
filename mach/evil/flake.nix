@@ -20,7 +20,7 @@
               }
             )
             {
-              #     login.passwd.file = "${secret}/passwd";
+              n9.security.passwd.file = "/home/byte/.n9/asterisk/evil/ssh";
               #     desktop.pop-shell.enable = true;
               #     v12n.boxes.enable = true;
 

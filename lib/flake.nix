@@ -39,14 +39,23 @@
           with nixpkgs.lib;
           names: attrs: getAttrs names (mapAttrs (k: v: mkMerge v) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
 
-        # For user modules:
+        # For user modules, it fetch both system wide and user wide:
+        # When system wide, the argument of `fn` will be null.
         forAllUsers =
           with nixpkgs.lib;
-          config: remains: fn:
+          config: remains: system: fn:
           let
             path = splitString "." remains;
+            osConfig = {
+              userName = null;
+              config = getAttrFromPath path config;
+            };
+            userConfigs = mapAttrsToList (userName: v: {
+              inherit userName;
+              config = attrByPath ([ "modules" ] ++ path) null v;
+            }) config.n9.users;
           in
-          mapAttrsToList (userName: v: fn userName (attrByPath path null v)) config.n9.users;
+          map (cfg: fn cfg.userName cfg.config) ((if system then [ osConfig ] else [ ]) ++ userConfigs);
       };
     };
 

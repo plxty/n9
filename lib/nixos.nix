@@ -31,7 +31,7 @@ nixpkgs.lib.nixosSystem {
     ./nixos/config/sshd.nix
     ./nixos/config/users.nix
     ./nixos/config/secrets.nix
-    # ./nixos/config/passwd.nix
+    ./nixos/config/passwd.nix
   ];
 
   # Essential:
