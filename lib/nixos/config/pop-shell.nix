@@ -7,9 +7,24 @@
 }:
 
 let
-  cfg = n9.lib.forAllUsers config "n9.environment.pop-shell" false;
+  mkMergeUsers = n9.lib.mkMergeUsers config "n9.environment.pop-shell";
 
-  enable = lib.any lib.id (cfg (_: v: v.enable or false));
+  home-manager.users = mkMergeUsers (
+    userName: v: {
+      ${userName} = lib.optionalAttrs v.enable {
+        home.packages = with pkgs; [ pop-launcher ];
+
+        # TODO: dconf
+        programs.gnome-shell = {
+          enable = true;
+          extensions = [
+            { package = pkgs.gnomeExtensions.pop-shell; }
+            { package = pkgs.gnomeExtensions.customize-ibus; }
+          ];
+        };
+      };
+    }
+  );
 in
 {
   options.n9.environment.pop-shell = {
@@ -17,8 +32,7 @@ in
   };
 
   config = lib.mkMerge [
-    (lib.mkIf enable {
-      # TODO: define only once?
+    (lib.mkIf (home-manager.users != { }) {
       services = {
         xserver = {
           enable = true;
@@ -74,26 +88,6 @@ in
       };
     })
 
-    {
-      home-manager.users = lib.mergeAttrsList (
-        cfg (
-          userName: v:
-          lib.optionalAttrs (v.enable or false) {
-            ${userName} = {
-              home.packages = with pkgs; [ pop-launcher ];
-
-              # TODO: dconf
-              programs.gnome-shell = {
-                enable = true;
-                extensions = [
-                  { package = pkgs.gnomeExtensions.pop-shell; }
-                  { package = pkgs.gnomeExtensions.customize-ibus; }
-                ];
-              };
-            };
-          }
-        )
-      );
-    }
+    { inherit home-manager; }
   ];
 }

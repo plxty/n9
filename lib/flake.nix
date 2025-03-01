@@ -34,34 +34,55 @@
         patch = pkg: attr: patches pkg [ attr ];
 
         # https://gist.github.com/udf/4d9301bdc02ab38439fd64fbda06ea43
-        # @see nixpkgs/lib/modules.nix, hasn't figure out the root cause...
+        # Must make the config "static", i.e. the fields must be known by nix,
+        # for example `config = genAttrs` will cause inifinte recursion, while
+        # `config = { services = ... }` will work.
+        # This might because the module's `options` is "part of" the `config`
+        # argument, therefore accessing config is like holding a big lock with
+        # options, which we're still defininig.
+        #
+        # The mkMergeTopLevel requires a "static" configuration as well, that
+        # is the inner configurations MUST contains the given toplevel attrs.
+        # There's currently no way to make it dynamic here.
         mkMergeTopLevel =
           names: attrs:
           with nixpkgs.lib;
-          let
-            # getAttrs' = names: attrs: genAttrs names (name: attrs.${name} or null);
-            # names = flatten (map attrNames attrs.contents);
-            toplevel = (mapAttrs (_: mkMerge) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
-          in
-          getAttrs names toplevel;
+          getAttrs names (mapAttrs (k: mkMerge) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
 
-        # For user modules, it fetch both system wide and user wide:
-        # When system wide, the argument of `fn` will be null.
-        forAllUsers =
-          config: remains: system: fn:
+        # Make foldFn [(mapFn user.name user.cfg), (mapFn user.name user.cfg)]:
+        # TODO: Optimise for better usage...
+        mkUsers =
+          config: pathStr: mapFn:
           with nixpkgs.lib;
-          let
-            path = splitString "." remains;
-            osConfig = {
-              userName = null;
-              config = getAttrFromPath path config;
-            };
-            userConfigs = mapAttrsToList (userName: v: {
-              inherit userName;
-              config = attrByPath ([ "modules" ] ++ path) null v;
-            }) config.n9.users;
-          in
-          map (cfg: fn cfg.userName cfg.config) ((if system then [ osConfig ] else [ ]) ++ userConfigs);
+          mapAttrsToList (
+            userName: v:
+            let
+              path = splitString "." pathStr;
+              inner = getAttrFromPath ([ "modules" ] ++ path) v;
+              print = mapAttrsToList (
+                k: v:
+                "${k}="
+                + (
+                  if typeOf v == "string" then
+                    v
+                  else if typeOf v == "bool" then
+                    boolToString v
+                  else
+                    "<uneval>"
+                )
+              ) inner;
+              msg = "evaluating: n9.users.${userName}.${pathStr} <- ${concatStringsSep "," print}";
+            in
+            trace msg mapFn userName inner
+          ) config.n9.users;
+
+        # Like mkMerge:
+        mkMergeUsers =
+          config: pathStr: mapFn:
+          nixpkgs.lib.mergeAttrsList (mkUsers config pathStr mapFn);
+
+        # Why there's no flatmap?
+        flatMapAttrsToList = fn: attrs: nixpkgs.lib.flatten (nixpkgs.lib.mapAttrsToList fn attrs);
       };
     };
 

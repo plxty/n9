@@ -1,4 +1,5 @@
 {
+  options,
   config,
   lib,
   pkgs, # MUST have, maybe the module system is using `functionArgs`?
@@ -40,8 +41,10 @@ in
                       options.programs = mkAttrsOption;
                       options.services = mkAttrsOption;
 
-                      # N9, expose to n9.users:
-                      options.n9 = mkAttrsOption;
+                      # N9, expose to n9.users, because we won't export it to
+                      # the toplevel, therefore the check MUST be done within
+                      # the home modules, so there the options.
+                      options.n9 = lib.removeAttrs options.n9 [ "users" ];
                     }
                     ../../home/essential.nix
                   ] ++ raw;
@@ -67,7 +70,7 @@ in
                 # Expose to top-level with mkMergeTopLevel:
                 home-manager.users.${name} = lib.removeAttrs cfg [ "n9" ];
 
-                # Expose to other moduels only, access via forAllUsers:
+                # Expose to other moduels only, access via mkUsers:
                 inherit (cfg) n9;
               };
           };
@@ -76,8 +79,9 @@ in
     );
   };
 
-  # For config that won't expose to other places, it can leaves here.
-  # e.g. the n9.users.xxx is accssible by all times, and can leave it alone.
+  # For config that MUST expose to other places, it can be placed here.
+  # e.g. the n9.users.xxx is accssible by all times, therefore no need to
+  # place it to the toplevel.
   # And you MUST avoid expose the n9.users, because options.n9.users is the
   # thing of config.n9.users, leading to infinite recursion.
   config = n9.lib.mkMergeTopLevel [ "home-manager" "users" ] (

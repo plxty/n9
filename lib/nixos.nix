@@ -32,6 +32,7 @@ nixpkgs.lib.nixosSystem {
     ./nixos/config/secrets.nix
     ./nixos/config/passwd.nix
     ./nixos/config/pop-shell.nix
+    ./nixos/config/boxes.nix
   ];
 
   # Essential:

@@ -24,32 +24,21 @@
               n9.environment.pop-shell.enable = true;
               n9.virtualisation.boxes.enable = true;
 
-              programs.git = {
-                enable = true;
-                userName = "Zigit Zo";
-                userEmail = "repl@z.xas.is";
-                signing.format = "ssh";
-                extraConfig = {
-                  user.useConfigOnly = true;
-                  init.defaultBranch = "main";
-                };
-
-                includes = [
-                  {
-                    path = "~/.config/git/work"; # TODO: config.xdg.configHome?
-                    condition = "hasconfig:remote.*.url:*://*-inc.com*/**";
-                  }
-                ];
-              };
+              n9.security.secrets.".config/git/work".source = "/home/byte/.n9/asterisk/evil/git";
+              programs.git.includes = [
+                {
+                  path = "~/.config/git/work"; # TODO: config.xdg.configHome?
+                  condition = "hasconfig:remote.*.url:*://*-inc.com*/**";
+                }
+              ];
 
               #     miscell.ssh = {
               #       ed25519.private = "${secret}/id_ed25519";
               #       ed25519.public = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICw9akIf3We4wbAwVfaqr8ANZYHLbtQ5sQGz1W5ZUE8Y byte@evil";
               #     };
 
-              programs.ssh.includes = [ "config.d/*" ];
               n9.security.secrets.".ssh/config.d/hosts".source = "/home/byte/.n9/asterisk/evil/ssh";
-              n9.security.secrets.".config/git/work".source = "/home/byte/.n9/asterisk/evil/git";
+              programs.ssh.includes = [ "config.d/*" ];
             }
           ];
         }

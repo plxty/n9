@@ -1,6 +1,11 @@
 { pkgs, ... }:
 
 {
+  imports = [
+    ./fish.nix
+    ./helix.nix
+  ];
+
   home.packages = with pkgs; [
     ripgrep
     fd
@@ -25,6 +30,17 @@
     enable = true;
     addKeysToAgent = "9h";
     forwardAgent = true;
+  };
+
+  programs.git = {
+    enable = true;
+    userName = "Zigit Zo";
+    userEmail = "repl@z.xas.is";
+    signing.format = "ssh";
+    extraConfig = {
+      user.useConfigOnly = true;
+      init.defaultBranch = "main";
+    };
   };
 
   home.stateVersion = "25.05";

@@ -5,6 +5,10 @@
   ...
 }:
 
+let
+  cfg = config.n9.security.secrets;
+  mkUsers = n9.lib.mkUsers config "n9.security.secrets";
+in
 {
   imports = [ n9.inputs.colmena.nixosModules.deploymentOptions ];
 
@@ -21,6 +25,7 @@
 
           options.target = lib.mkOption {
             type = lib.types.str;
+            default = name;
           };
 
           options.user = lib.mkOption {
@@ -45,8 +50,6 @@
             ];
             default = "pre-activation";
           };
-
-          config.target = lib.mkDefault name;
         }
       )
     );
@@ -55,37 +58,36 @@
   };
 
   config.deployment.keys = lib.mkMerge (
-    lib.flatten (
-      n9.lib.forAllUsers config "n9.security.secrets" true (
-        userName: keys:
-        lib.mapAttrsToList (
-          _: v:
-          let
-            # Force override option if user, TODO: better idea?
-            isUser = userName != null;
-            target = if isUser then "${config.users.users.${userName}.home}/${v.target}" else v.target;
-            user = if isUser then userName else v.user;
-            group = if isUser then userName else v.group;
-            uploadAt = if isUser then "post-activation" else v.uploadAt;
-
-            # To colmena:
-            name = builtins.baseNameOf target;
+    lib.mapAttrsToList (_: v: {
+      ${builtins.baseNameOf v.target} = {
+        inherit (v)
+          user
+          group
+          permissions
+          uploadAt
+          ;
+        keyFile = v.source;
+        destDir = builtins.dirOf v.target;
+      };
+    }) cfg
+    ++ mkUsers (
+      userName: keys:
+      n9.lib.flatMapAttrsToList (
+        _: v:
+        let
+          target = "${config.users.users.${userName}.home}/${v.target}";
+        in
+        {
+          ${builtins.baseNameOf target} = {
+            inherit (v) permissions;
+            user = userName;
+            group = userName;
+            uploadAt = "post-activation";
+            keyFile = v.source;
             destDir = builtins.dirOf target;
-          in
-          {
-            ${name} = {
-              keyFile = v.source;
-              inherit
-                user
-                group
-                uploadAt
-                destDir
-                ;
-              inherit (v) permissions;
-            };
-          }
-        ) keys
-      )
+          };
+        }
+      ) keys
     )
   );
 }
