@@ -145,6 +145,7 @@
       devShell = nixpkgs.lib.genAttrs systems mkDevShell;
     };
 
+  # TODO: Make them inherit by default?
   nixConfig = {
     substituters = [
       "https://mirror.sjtu.edu.cn/nix-channels/store"

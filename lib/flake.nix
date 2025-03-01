@@ -33,22 +33,6 @@
           });
         patch = pkg: attr: patches pkg [ attr ];
 
-        # https://gist.github.com/udf/4d9301bdc02ab38439fd64fbda06ea43
-        # Must make the config "static", i.e. the fields must be known by nix,
-        # for example `config = genAttrs` will cause inifinte recursion, while
-        # `config = { services = ... }` will work.
-        # This might because the module's `options` is "part of" the `config`
-        # argument, therefore accessing config is like holding a big lock with
-        # options, which we're still defininig.
-        #
-        # The mkMergeTopLevel requires a "static" configuration as well, that
-        # is the inner configurations MUST contains the given toplevel attrs.
-        # There's currently no way to make it dynamic here.
-        mkMergeTopLevel =
-          names: attrs:
-          with nixpkgs.lib;
-          getAttrs names (mapAttrs (k: mkMerge) (foldAttrs (n: a: [ n ] ++ a) [ ] attrs));
-
         # Make foldFn [(mapFn user.name user.cfg), (mapFn user.name user.cfg)]:
         # TODO: Optimise for better usage...
         mkUsers =
@@ -81,16 +65,13 @@
           config: pathStr: mapFn:
           nixpkgs.lib.mergeAttrsList (mkUsers config pathStr mapFn);
 
+        # If any of the options in users are true:
+        mkIfUsers =
+          config: pathStr: testFn:
+          nixpkgs.lib.any nixpkgs.lib.id (mkUsers config pathStr testFn);
+
         # Why there's no flatmap?
         flatMapAttrsToList = fn: attrs: nixpkgs.lib.flatten (nixpkgs.lib.mapAttrsToList fn attrs);
       };
     };
-
-  nixConfig = {
-    substituters = [
-      "https://mirror.sjtu.edu.cn/nix-channels/store"
-      "https://mirrors.ustc.edu.cn/nix-channels/store"
-      "https://mirrors.sustech.edu.cn/nix-channels/store"
-    ];
-  };
 }

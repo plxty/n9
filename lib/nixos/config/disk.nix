@@ -8,100 +8,6 @@
 let
   # Following @see nixpkgs/nixos/modules/module-list.nix:
   cfg = config.n9.hardware.disk;
-
-  mkDisk =
-    dev:
-    lib.recursiveUpdate {
-      disko.devices.disk.first = {
-        type = "disk";
-        device = "/dev/${dev}";
-
-        content = {
-          type = "gpt";
-
-          partitions.ESP = {
-            name = "ESP";
-            priority = 1;
-            start = "1M";
-            size = "1G";
-            type = "EF00";
-            content = {
-              type = "filesystem";
-              format = "vfat";
-              mountpoint = "/efi";
-              mountOptions = [ "umask=0077" ];
-            };
-          };
-
-          partitions.swap = {
-            name = "swap";
-            priority = 2;
-            size = "16G";
-            content.type = "swap";
-          };
-
-          partitions.root = {
-            name = "root";
-            priority = 3;
-            size = "100%";
-          };
-        };
-      };
-    };
-
-  mkBtrfs = {
-    disko.devices.disk.first.content.partitions.root.content = {
-      type = "btrfs";
-      extraArgs = [ "-f" ];
-
-      subvolumes."/@root" = {
-        mountpoint = "/";
-        mountOptions = [ "compress=zstd" ];
-      };
-
-      subvolumes."/@home" = {
-        mountpoint = "/home";
-        mountOptions = [ "compress=zstd" ];
-      };
-
-      subvolumes."/@nix" = {
-        mountpoint = "/nix";
-        mountOptions = [
-          "compress=zstd"
-          "noatime"
-        ];
-      };
-    };
-  };
-
-  mkZfs = {
-    disko.devices.disk.first.content.partitions.root.content = {
-      type = "zfs";
-      pool = "mix";
-    };
-
-    disko.devices.zpool.mix = {
-      type = "zpool";
-      options.ashift = "13";
-      rootFsOptions.compression = "zstd";
-
-      datasets.root = {
-        type = "zfs_fs";
-        mountpoint = "/";
-      };
-
-      datasets.home = {
-        type = "zfs_fs";
-        mountpoint = "/home";
-        options.dedup = "on";
-      };
-
-      datasets.nix = {
-        type = "zfs_fs";
-        mountpoint = "/nix";
-      };
-    };
-  };
 in
 {
   imports = [ n9.inputs.disko.nixosModules.disko ];
@@ -122,15 +28,102 @@ in
     );
   };
 
-  config = n9.lib.mkMergeTopLevel [ "boot" "disko" ] (
-    (lib.optional (cfg != { }) {
+  config = lib.mkMerge [
+    (lib.mkIf (cfg != { }) {
       boot.loader.efi.efiSysMountPoint = "/efi";
     })
-    ++ lib.mapAttrsToList (
+
+    {
       # TODO: Multiple disk?
-      # We can't use mkIf here... Must ensure the `disko` is existed, otherwise
-      # the inifinte recursion will be back!
-      dev: v: mkDisk dev (if v.type == "zfs" then mkZfs else mkBtrfs)
-    ) cfg
-  );
+      disko.devices.disk = lib.mergeAttrsList (
+        lib.mapAttrsToList (
+          dev: v:
+          {
+            first.type = "disk";
+            first.device = "/dev/${dev}";
+            first.content.type = "gpt";
+
+            first.content.partitions.ESP = {
+              name = "ESP";
+              priority = 1;
+              start = "1M";
+              size = "1G";
+              type = "EF00";
+              content = {
+                type = "filesystem";
+                format = "vfat";
+                mountpoint = "/efi";
+                mountOptions = [ "umask=0077" ];
+              };
+            };
+
+            first.content.partitions.swap = {
+              name = "swap";
+              priority = 2;
+              size = "16G";
+              content.type = "swap";
+            };
+
+            first.content.partitions.root = {
+              name = "root";
+              priority = 3;
+              size = "100%";
+              content =
+                if v.type == "btrfs" then
+                  {
+                    type = "btrfs";
+                    extraArgs = [ "-f" ];
+
+                    subvolumes."/@root" = {
+                      mountpoint = "/";
+                      mountOptions = [ "compress=zstd" ];
+                    };
+
+                    subvolumes."/@home" = {
+                      mountpoint = "/home";
+                      mountOptions = [ "compress=zstd" ];
+                    };
+
+                    subvolumes."/@nix" = {
+                      mountpoint = "/nix";
+                      mountOptions = [
+                        "compress=zstd"
+                        "noatime"
+                      ];
+                    };
+                  }
+                else
+                  {
+                    type = "zfs";
+                    pool = "mix";
+                  };
+            };
+          }
+          // lib.optionalAttrs (v.type == "zfs") {
+            zpool.mix = {
+              type = "zpool";
+              options.ashift = "13";
+              rootFsOptions.compression = "zstd";
+
+              datasets.root = {
+                type = "zfs_fs";
+                mountpoint = "/";
+              };
+
+              datasets.home = {
+                type = "zfs_fs";
+                mountpoint = "/home";
+                options.dedup = "on";
+              };
+
+              datasets.nix = {
+                type = "zfs_fs";
+                mountpoint = "/nix";
+              };
+            };
+          }
+        ) cfg
+      );
+    }
+  ];
 }

@@ -20,8 +20,18 @@
         )
         {
           n9.hardware.disk.sda.type = "btrfs";
-          n9.users.byte.modules = [ ];
+          n9.users.byte.modules = [
+            { n9.security.passwd.file = "/home/byte/.n9/asterisk/harm/passwd"; }
+          ];
         }
       ];
     };
+
+  nixConfig = {
+    substituters = [
+      "https://mirror.sjtu.edu.cn/nix-channels/store"
+      "https://mirrors.ustc.edu.cn/nix-channels/store"
+      "https://mirrors.sustech.edu.cn/nix-channels/store"
+    ];
+  };
 }
