@@ -11,6 +11,7 @@
     nixos-anywhere = {
       url = "github:nix-community/nixos-anywhere";
       inputs.nixpkgs.follows = "nixpkgs";
+      inputs.disko.follows = "disko";
     };
     disko = {
       url = "github:nix-community/disko";
@@ -58,9 +59,9 @@
 
   nixConfig = {
     substituters = [
-      "https://mirror.sjtu.edu.cn/nix-channels/store"
       "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://mirrors.sustech.edu.cn/nix-channels/store"
+      "https://mirror.sjtu.edu.cn/nix-channels/store"
     ];
   };
 }

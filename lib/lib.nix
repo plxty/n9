@@ -15,6 +15,30 @@ rec {
     });
   patch = pkg: attr: patches pkg [ attr ];
 
+  # Like recursiveUpdate, but also handle the lists concation:
+  # When using mergeAttrs, recursiveUpdate or other merging functions, you'd
+  # better think twice of what you want, and what is the inner types you're
+  # dealing with.
+  # https://stackoverflow.com/a/54505212
+  recursiveMerge =
+    attrList:
+    let
+      f =
+        attrPath:
+        lib.zipAttrsWith (
+          n: values:
+          if lib.tail values == [ ] then
+            lib.head values
+          else if lib.all lib.isList values then
+            lib.unique (lib.concatLists values)
+          else if lib.all lib.isAttrs values then
+            f (attrPath ++ [ n ]) values
+          else
+            lib.last values
+        );
+    in
+    f [ ] attrList;
+
   # Make foldFn [(mapFn user.name user.cfg), (mapFn user.name user.cfg)]:
   # @see lib/nixos/config/users.nix
   # TODO: Optimise for better usage...

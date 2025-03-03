@@ -16,7 +16,7 @@ self.lib.nixosSystem "evil" "x86_64-linux" [
         }
       )
       {
-        n9.security.passwd.file = "evil/ssh";
+        n9.security.passwd.file = "evil/passwd";
         n9.environment.pop-shell.enable = true;
         n9.virtualisation.boxes.enable = true;
 

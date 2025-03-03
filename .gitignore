@@ -5,6 +5,3 @@ asterisk/
 .direnv/
 .gcroots/
 result/
-
-# Configurations don't need that:
-flake.lock

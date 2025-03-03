@@ -3,6 +3,7 @@
   config,
   lib,
   pkgs, # MUST have, maybe the module system is using `functionArgs`?
+  self,
   home-manager,
   ...
 }@args:
@@ -43,34 +44,44 @@ in
             apply =
               raw:
               let
+                # @see attrs = mkOptionType { ... }
+                # It uses `//` operator, resulting wrong attrs, therefore we
+                # need a new kind of type (and therefore you SHOULD avoid
+                # lib.types.attrs as possible).
+                # The attrsOf type is safe using `//`, as keys should be unique.
+                # And for something like `home.packages`, the lib.recursiveUpdate
+                # won't work either becuase it only merged attrs, for array it
+                # doens't help.
                 mkAttrsOption = lib.mkOption {
-                  type = lib.types.attrs;
+                  type = lib.types.attrs // {
+                    merge = _: defs: self.lib.recursiveMerge (lib.map (def: def.value) defs);
+                  };
                   default = { };
                 };
 
-                eval = lib.evalModules {
-                  modules = [
-                    {
-                      # Fake type here, types will be valided when exposed to
-                      # top-level, by home-manager itself.
-                      options.home = mkAttrsOption;
-                      options.programs = mkAttrsOption;
-                      options.services = mkAttrsOption;
-
-                      # N9, expose to n9.users, because we won't export it to
-                      # the toplevel, therefore the check MUST be done within
-                      # the home modules, so there the options.
-                      options.n9 = lib.removeAttrs options.n9 [ "users" ];
-                    }
-                    ../../home/essential.nix
-                  ] ++ raw;
-                  class = "n9";
-                  specialArgs = args // {
-                    userName = name;
-                  };
-                };
               in
-              eval.config;
+              # hmOptions = options.home-manager.users.type.nestedTypes.elemType.getSubOptions "<useless>";
+              (lib.evalModules {
+                modules = [
+                  {
+                    # Fake type here, types will be valided when exposed to
+                    # top-level, by home-manager itself.
+                    options.home = mkAttrsOption;
+                    options.programs = mkAttrsOption;
+                    options.services = mkAttrsOption;
+
+                    # N9, expose to n9.users, because we won't export it to
+                    # the toplevel, therefore the check MUST be done within
+                    # the home modules, so there the options.
+                    options.n9 = lib.removeAttrs options.n9 [ "users" ];
+                  }
+                  ../../home/essential.nix
+                ] ++ raw;
+                class = "n9";
+                specialArgs = args // {
+                  userName = name;
+                };
+              }).config;
           };
         }
       )
@@ -92,7 +103,6 @@ in
       users.users.root.hashedPassword = "!";
     })
     ++ lib.mapAttrsToList (userName: v: {
-
       users.groups.${userName}.gid = null;
       users.users.${userName} = {
         isNormalUser = true;

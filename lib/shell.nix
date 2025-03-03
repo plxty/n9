@@ -14,14 +14,12 @@ let
   # Patched of colmena:
   colmenaPackage = self.lib.patches colmena.packages.${system}.colmena [
     ./patches/colmena-nix-store-sign.patch
-    ./patches/colmena-keep-result-dir.patch
   ];
 
   # The package of burn:
   burn = ''
     set -uex
 
-    B_SOURCE="$PWD"
     B_THIS="$(hostname)"
     B_THAT="''${1:-}"
 
@@ -30,10 +28,8 @@ let
       exit 1
     fi
 
-    rm -rf /tmp/n9
-    rsync -a --exclude .git --exclude asterisk "$B_SOURCE/" /tmp/n9
-    cd /tmp/n9
-    find mach -name default.nix -exec sed -i "s!@ASTERISK@!$B_SOURCE/asterisk!g" {} \;
+    sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
+      lib/nixos/config/secrets.nix
   '';
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''
@@ -42,12 +38,16 @@ let
     B_COLMENA=(colmena --show-trace --experimental-flake-eval)
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
       B_HWCONF="mach/$B_THIS/hardware-configuration.nix"
-      sudo nixos-generate-config --show-hardware-config --no-filesystems > "$B_HWCONF"
+      sudo nixos-generate-config --show-hardware-config --no-filesystems \
+        > "$B_HWCONF"
       "''${B_COLMENA[@]}" apply-local --sudo --verbose
-      cp -f "$B_HWCONF" "$B_SOURCE/$B_HWCONF"
+
+      # Try updateing the database for command-not-found as well:
+      sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos
+      sudo nix-channel --update nixos
     else
-      "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result "$B_SOURCE" \
-        --sign "$B_SOURCE/asterisk/$B_THIS/nix-key"
+      "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
+        --sign "asterisk/$B_THIS/nix-key"
     fi
   '';
 
@@ -63,7 +63,8 @@ let
     B_NIX=(nix --extra-experimental-features "nix-command flakes" --accept-flake-config)
     B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
     B_KEYS="$("''${B_NIX[@]}" eval --json "$B_DEPLOY.keys" \
-      | jq -r 'to_entries[] | select(.value.user == "root" and .value.uploadAt == "pre-activation")
+      | jq -r 'to_entries[]
+        | select(.value.user == "root" and .value.uploadAt == "pre-activation")
         | [.value.keyFile, .value.path] | @tsv')"
 
     read -r B_HOST B_PORT < \
@@ -73,8 +74,9 @@ let
       B_PORT=22
     fi
 
-    B_INSTALL=(nixos-anywhere --generate-hardware-config nixos-generate-config "$B_HWCONF"
-      --flake ".#$B_THAT" --target-host "$B_HOST" -p "$B_PORT")
+    B_INSTALL=(nixos-anywhere --target-host "$B_HOST" -p "$B_PORT"
+      --generate-hardware-config nixos-generate-config "$B_HWCONF"
+      --flake ".#$B_THAT")
 
     # Format disk:
     "''${B_INSTALL[@]}" --phases kexec,disko
@@ -96,7 +98,6 @@ let
 
     # Real switch:
     "''${B_INSTALL[@]}" --phases install,reboot
-    cp -f "$B_HWCONF" "$B_SOURCE/$B_HWCONF"
   '';
 in
 pkgs.mkShell {
@@ -106,13 +107,14 @@ pkgs.mkShell {
   inputsFrom = [ ];
 
   packages = with pkgs; [
-    rsync
-    findutils
     gnused
     jq
 
-    nixos-anywhere.packages.${system}.nixos-anywhere # expose for testing
+    # RDepends:
+    nixos-anywhere.packages.${system}.nixos-anywhere
     colmenaPackage
+
+    # Real stuff:
     burnSwitch
     burnInstall
   ];
