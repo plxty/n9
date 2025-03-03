@@ -1,4 +1,9 @@
-{ n9, pkgs, ... }:
+{
+  pkgs,
+  self,
+  hostName,
+  ...
+}:
 
 {
   nix.settings = {
@@ -26,16 +31,16 @@
   };
 
   nixpkgs.overlays = [
-    (self: super: {
-      helix = n9.lib.patch super.helix ../patches/helix-taste.patch;
-      openssh = n9.lib.patch super.openssh ../patches/openssh-plainpass.patch;
+    (_: super: {
+      helix = self.lib.patch super.helix ../patches/helix-taste.patch;
+      openssh = self.lib.patch super.openssh ../patches/openssh-plainpass.patch;
       ibus-engines = super.ibus-engines // {
-        rime = (n9.lib.patch super.ibus-engines.rime ../patches/ibus-rime-temp-ascii.patch).override {
+        rime = (self.lib.patch super.ibus-engines.rime ../patches/ibus-rime-temp-ascii.patch).override {
           rimeDataPkgs = [ (pkgs.callPackage ../pkgs/rime-ice.nix { }) ];
         };
       };
-      librime = n9.lib.patch super.librime ../patches/librime-temp-ascii.patch;
-      ppp = n9.lib.patch super.ppp ../patches/ppp-run-resolv.patch;
+      librime = self.lib.patch super.librime ../patches/librime-temp-ascii.patch;
+      ppp = self.lib.patch super.ppp ../patches/ppp-run-resolv.patch;
 
       brave = super.brave.override (prev: {
         commandLineArgs = builtins.concatStringsSep " " [
@@ -56,8 +61,8 @@
 
   # For default networking, using NixOS's default (dhcpcd).
   networking = {
-    inherit (n9) hostName;
-    hostId = builtins.substring 63 8 (builtins.hashString "sha512" n9.hostName);
+    inherit hostName;
+    hostId = builtins.substring 63 8 (builtins.hashString "sha512" hostName);
   };
 
   environment = {

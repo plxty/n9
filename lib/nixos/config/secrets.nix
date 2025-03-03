@@ -1,17 +1,16 @@
 {
   config,
   lib,
-  n9,
+  self,
+  colmena,
   ...
 }:
 
 let
   cfg = config.n9.security.secrets;
-  mkUsers = n9.lib.mkUsers config "n9.security.secrets";
+  mkFlattenUsers = self.lib.mkFlattenUsers config "n9.security.secrets";
 in
 {
-  imports = [ n9.inputs.colmena.nixosModules.deploymentOptions ];
-
   options.n9.security.secrets = lib.mkOption {
     type = lib.types.attrsOf (
       # @see home-manager/modules/lib/file-type.nix
@@ -21,6 +20,14 @@ in
         {
           options.source = lib.mkOption {
             type = lib.types.str;
+            apply =
+              k:
+              let
+                basedir = "/home/byte/.n9/asterisk";
+                abspath = "${basedir}/${k}";
+              in
+              assert lib.assertMsg (lib.hasPrefix "/" abspath) "wrong secret directory!";
+              abspath;
           };
 
           options.target = lib.mkOption {
@@ -70,9 +77,9 @@ in
         destDir = builtins.dirOf v.target;
       };
     }) cfg
-    ++ mkUsers (
+    ++ mkFlattenUsers (
       userName: keys:
-      n9.lib.flatMapAttrsToList (
+      lib.mapAttrsToList (
         _: v:
         let
           target = "${config.users.users.${userName}.home}/${v.target}";

@@ -3,7 +3,7 @@
   config,
   lib,
   pkgs, # MUST have, maybe the module system is using `functionArgs`?
-  n9,
+  home-manager,
   ...
 }@args:
 let
@@ -28,7 +28,7 @@ in
 {
   # @see https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/module-system
   imports = [
-    n9.inputs.home-manager.nixosModules.home-manager
+    home-manager.nixosModules.home-manager
   ];
 
   options.n9.users = lib.mkOption {
@@ -66,29 +66,11 @@ in
                   ] ++ raw;
                   class = "n9";
                   specialArgs = args // {
-                    n9 = n9 // {
-                      userName = name;
-                    };
+                    userName = name;
                   };
                 };
-
-                cfg = eval.config;
               in
-              {
-                users.groups.${name}.gid = null;
-                users.users.${name} = {
-                  isNormalUser = true;
-                  uid = null;
-                  group = name;
-                  extraGroups = [ "wheel" ];
-                };
-
-                # Expose to top-level with mkMergeTopLevel:
-                home-manager.users.${name} = lib.removeAttrs cfg [ "n9" ];
-
-                # Expose to other moduels only, access via mkUsers:
-                inherit (cfg) n9;
-              };
+              eval.config;
           };
         }
       )
@@ -109,6 +91,18 @@ in
       # disable root for security:
       users.users.root.hashedPassword = "!";
     })
-    ++ lib.mapAttrsToList (_: v: v.modules) cfg
+    ++ lib.mapAttrsToList (userName: v: {
+
+      users.groups.${userName}.gid = null;
+      users.users.${userName} = {
+        isNormalUser = true;
+        uid = null;
+        group = userName;
+        extraGroups = [ "wheel" ];
+      };
+
+      # Expose to top-level with mkMergeTopLevel:
+      home-manager.users.${userName} = lib.removeAttrs v.modules [ "n9" ];
+    }) cfg
   );
 }

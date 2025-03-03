@@ -2,7 +2,7 @@
   config,
   lib,
   pkgs,
-  n9,
+  self,
   ...
 }:
 
@@ -17,7 +17,7 @@ in
   # The config MUST be known at evaluate time, thus it can't be generate via
   # functions or other ways, still, infinite recursion.
   config = lib.mkMerge [
-    (lib.mkIf (mkUsers n9.lib.mkIfUsers (_: v: v.enable)) {
+    (lib.mkIf (mkUsers self.lib.mkIfUsers (_: v: v.enable)) {
       # https://nixos.wiki/wiki/Libvirt
       virtualisation.libvirtd =
         let
@@ -43,14 +43,14 @@ in
     })
 
     {
-      users.users = mkUsers n9.lib.mkMergeUsers (
+      users.users = mkUsers self.lib.mkMergeUsers (
         userName: v:
         lib.optionalAttrs (v.enable) {
           ${userName}.extraGroups = [ "libvirtd" ];
         }
       );
 
-      home-manager.users = mkUsers n9.lib.mkMergeUsers (
+      home-manager.users = mkUsers self.lib.mkMergeUsers (
         userName: v:
         lib.optionalAttrs (v.enable) {
           ${userName} = {

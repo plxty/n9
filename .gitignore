@@ -1,4 +1,10 @@
-.gcroots/
-.direnv/
+# Project specified:
 asterisk/
+
+# Flake (and other stuff) will generates:
+.direnv/
+.gcroots/
 result/
+
+# Configurations don't need that:
+flake.lock

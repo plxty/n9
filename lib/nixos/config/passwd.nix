@@ -1,12 +1,12 @@
 {
   config,
   lib,
-  n9,
+  self,
   ...
 }:
 
 let
-  mkMergeUsers = n9.lib.mkMergeUsers config "n9.security.passwd";
+  mkMergeUsers = self.lib.mkMergeUsers config "n9.security.passwd";
 in
 {
   options.n9.security.passwd = {

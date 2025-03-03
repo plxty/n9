@@ -9,13 +9,12 @@
 system:
 
 let
-  inherit (self.lib) utils;
   pkgs = nixpkgs.legacyPackages.${system};
 
   # Patched of colmena:
-  colmenaPackage = utils.patches colmena.packages.${system}.colmena [
-    ../patches/colmena-nix-store-sign.patch
-    ../patches/colmena-keep-result-dir.patch
+  colmenaPackage = self.lib.patches colmena.packages.${system}.colmena [
+    ./patches/colmena-nix-store-sign.patch
+    ./patches/colmena-keep-result-dir.patch
   ];
 
   # The package of burn:

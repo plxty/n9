@@ -2,7 +2,7 @@
   config,
   lib,
   pkgs,
-  n9,
+  self,
   ...
 }:
 
@@ -15,7 +15,7 @@ in
   };
 
   config = lib.mkMerge [
-    (lib.mkIf (mkUsers n9.lib.mkIfUsers (_: v: v.enable)) {
+    (lib.mkIf (mkUsers self.lib.mkIfUsers (_: v: v.enable)) {
       services = {
         xserver = {
           enable = true;
@@ -72,7 +72,7 @@ in
     })
 
     {
-      home-manager.users = mkUsers n9.lib.mkMergeUsers (
+      home-manager.users = mkUsers self.lib.mkMergeUsers (
         userName: v: {
           ${userName} = lib.optionalAttrs v.enable {
             home.packages = with pkgs; [ pop-launcher ];
