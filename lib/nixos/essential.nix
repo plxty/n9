@@ -11,14 +11,7 @@
       "nix-command"
       "flakes"
     ];
-    # TODO: Try merging with flake.nix::nixConfig? If mismatched,
-    # substituers in flake.nix but not in nix.settings will be
-    # considered as untrusted, making warnings.
-    substituters = [
-      "https://mirrors.ustc.edu.cn/nix-channels/store"
-      "https://mirrors.sustech.edu.cn/nix-channels/store"
-      "https://mirror.sjtu.edu.cn/nix-channels/store"
-    ];
+    inherit ((import ../../flake.nix).nixConfig) substituters;
   };
 
   # https://nixos.wiki/wiki/Storage_optimization

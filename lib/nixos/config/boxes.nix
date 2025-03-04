@@ -7,7 +7,7 @@
 }:
 
 let
-  mkUsers = fn: fn config "n9.virtualisation.boxes";
+  usercfg = self.lib.users "boxes" (v: v.n9.virtualisation.boxes) config;
 in
 {
   options.n9.virtualisation.boxes = {
@@ -17,7 +17,7 @@ in
   # The config MUST be known at evaluate time, thus it can't be generate via
   # functions or other ways, still, infinite recursion.
   config = lib.mkMerge [
-    (lib.mkIf (mkUsers self.lib.mkIfUsers (_: v: v.enable)) {
+    (self.lib.mkIfUsers (v: v.enable) usercfg {
       # https://nixos.wiki/wiki/Libvirt
       virtualisation.libvirtd =
         let
@@ -43,24 +43,22 @@ in
     })
 
     {
-      users.users = mkUsers self.lib.mkMergeUsers (
-        userName: v:
-        lib.optionalAttrs (v.enable) {
-          ${userName}.extraGroups = [ "libvirtd" ];
+      users.users = lib.mapAttrs (
+        n: v:
+        lib.mkIf v.enable {
+          extraGroups = [ "libvirtd" ];
         }
-      );
+      ) usercfg;
 
-      home-manager.users = mkUsers self.lib.mkMergeUsers (
-        userName: v:
-        lib.optionalAttrs (v.enable) {
-          ${userName} = {
-            home.packages = [ pkgs.gnome-boxes ];
-            home.file.".config/libvirt/qemu.conf".text = ''
-              nvram = [ "/run/libvirt/nix-ovmf/AAVMF_CODE.fd:/run/libvirt/nix-ovmf/AAVMF_VARS.fd", "/run/libvirt/nix-ovmf/OVMF_CODE.fd:/run/libvirt/nix-ovmf/OVMF_VARS.fd" ]
-            '';
-          };
+      home-manager.users = lib.mapAttrs (
+        n: v:
+        lib.mkIf v.enable {
+          home.packages = [ pkgs.gnome-boxes ];
+          home.file.".config/libvirt/qemu.conf".text = ''
+            nvram = [ "/run/libvirt/nix-ovmf/AAVMF_CODE.fd:/run/libvirt/nix-ovmf/AAVMF_VARS.fd", "/run/libvirt/nix-ovmf/OVMF_CODE.fd:/run/libvirt/nix-ovmf/OVMF_VARS.fd" ]
+          '';
         }
-      );
+      ) usercfg;
     }
   ];
 }

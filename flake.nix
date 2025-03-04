@@ -28,6 +28,7 @@
     let
       inherit (nixpkgs) lib;
 
+      # TODO: builtins.filterSource like?
       listDirectories =
         dir:
         let
@@ -36,25 +37,28 @@
         in
         lib.map ({ name, ... }: name) directories;
 
+      mkSystems = import ./lib/nixos.nix inputs;
+
       colmenaHive = colmena.lib.makeHive (
-        lib.fold lib.recursiveUpdate {
+        (lib.fold lib.recursiveUpdate {
           # @see lib/nixos.nix
           meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; # will be overridden
           meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
-        } (lib.map (mach: import ./mach/${mach} inputs) [ "evil" ])
+        } (lib.flatten (lib.map (mach: mkSystems ./mach/${mach}) [ "evil" ])))
       );
-
-      # @see nix/flake.nix
-      systems = [
-        "x86_64-linux"
-        "aarch64-linux"
-      ];
     in
     {
       lib = import ./lib/lib.nix inputs;
+
       inherit colmenaHive;
+
       nixosConfigurations = colmenaHive.nodes; # compatible
-      devShell = nixpkgs.lib.genAttrs systems (import ./lib/shell.nix inputs);
+
+      # @see nix/flake.nix
+      devShell = nixpkgs.lib.genAttrs [
+        "x86_64-linux"
+        "aarch64-linux"
+      ] (import ./lib/shell.nix inputs);
     };
 
   nixConfig = {

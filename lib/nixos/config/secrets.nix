@@ -8,7 +8,7 @@
 
 let
   cfg = config.n9.security.secrets;
-  mkFlattenUsers = self.lib.mkFlattenUsers config "n9.security.secrets";
+  usercfg = self.lib.users "secrets" (v: v.n9.security.secrets) config;
 in
 {
   options.n9.security.secrets = lib.mkOption {
@@ -77,24 +77,24 @@ in
         destDir = builtins.dirOf v.target;
       };
     }) cfg
-    ++ mkFlattenUsers (
-      userName: keys:
-      lib.mapAttrsToList (
+    ++ lib.mapAttrsToList (
+      n: keys:
+      lib.concatMapAttrs (
         _: v:
         let
-          target = "${config.users.users.${userName}.home}/${v.target}";
+          target = "${config.users.users.${n}.home}/${v.target}";
         in
         {
           ${builtins.baseNameOf target} = {
             inherit (v) permissions;
-            user = userName;
-            group = userName;
+            user = n;
+            group = n;
             uploadAt = "post-activation";
             keyFile = v.source;
             destDir = builtins.dirOf target;
           };
         }
       ) keys
-    )
+    ) usercfg
   );
 }

@@ -6,7 +6,7 @@
 }:
 
 let
-  mkMergeUsers = self.lib.mkMergeUsers config "n9.security.passwd";
+  usercfg = self.lib.users "passwd" (v: v.n9.security.passwd) config;
 in
 {
   options.n9.security.passwd = {
@@ -16,17 +16,21 @@ in
     };
   };
 
-  config.users.users = mkMergeUsers (
-    userName: v:
-    lib.optionalAttrs (v.file != null) {
-      ${userName}.hashedPasswordFile = "/run/keys/passwd-${userName}";
-    }
-  );
+  config = lib.mkMerge [
+    {
+      users.users = lib.mapAttrs (
+        n: v:
+        lib.mkIf (v.file != null) {
+          hashedPasswordFile = "/run/keys/passwd-${n}";
+        }
+      ) usercfg;
 
-  config.n9.security.secrets = mkMergeUsers (
-    userName: v:
-    lib.optionalAttrs (v.file != null) {
-      "/run/keys/passwd-${userName}".source = v.file;
+      n9.security.secrets = lib.concatMapAttrs (
+        n: v:
+        lib.mkIf (v.file != null) {
+          "/run/keys/passwd-${n}".source = v.file;
+        }
+      ) usercfg;
     }
-  );
+  ];
 }
