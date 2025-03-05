@@ -77,10 +77,6 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf (cfg != { }) {
-      # TODO: Place to passwd.nix:
-      users.users.root.hashedPassword = "!";
-      users.mutableUsers = false;
-
       # https://discourse.nixos.org/t/users-users-name-packages-vs-home-manager-packages/22240/2
       home-manager.useUserPackages = true;
       home-manager.useGlobalPkgs = true;

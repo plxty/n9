@@ -69,7 +69,7 @@ in
   networking.dhcpcd.enable = false;
   boot.kernelModules = [ "pppoe" ];
 
-  n9.security.secrets."/etc/ppp/secrets/wan".source = "wa/wan";
+  n9.security.secrets."/etc/ppp/keys/wan".source = "wa/wan";
   services.pppd = {
     enable = true;
     # https://man7.org/linux/man-pages/man8/pppd.8.html
@@ -77,7 +77,7 @@ in
       plugin pppoe.so
       ifname ${ports.wan}
       nic-${ports.vlan}
-      file /etc/ppp/secrets/wan
+      file /etc/ppp/keys/wan
 
       persist
       maxfail 0
