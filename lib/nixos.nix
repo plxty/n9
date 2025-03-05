@@ -66,7 +66,7 @@ let
           options.n9.os = lib.mkOption {
             type = lib.types.attrsOf (
               lib.types.submodule (
-                { config, name, ... }:
+                { name, ... }:
                 {
                   # FIXME: The imports are "fake" here, to keep user level API
                   # "consistency", archiving a real system option is hard.

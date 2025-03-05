@@ -33,6 +33,7 @@ let
             home = mkAttrsOption;
             programs = mkAttrsOption;
             services = mkAttrsOption;
+            dconf = mkAttrsOption;
           };
         }
         ../../common/config/secrets.nix
@@ -47,6 +48,9 @@ let
       class = "n9.users";
       specialArgs = {
         inherit pkgs self userName;
+        lib = lib // {
+          hm = import "${home-manager}/modules/lib" { inherit lib; };
+        };
         osConfig = config;
       };
     }).config;

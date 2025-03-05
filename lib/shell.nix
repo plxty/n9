@@ -11,7 +11,8 @@ system:
 let
   pkgs = nixpkgs.legacyPackages.${system};
 
-  # Patched of colmena:
+  # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
+  # It can be an overlay of nixpkgs, however for simplicity...
   colmenaPackage = self.lib.patches colmena.packages.${system}.colmena [
     ./patches/colmena-nix-store-sign.patch
   ];

@@ -39,13 +39,6 @@ in
         };
     })
 
-    {
-      users.users = lib.mapAttrs (
-        n: v:
-        lib.mkIf v.enable {
-          extraGroups = [ "libvirtd" ];
-        }
-      ) usercfg;
-    }
+    { users.users = lib.mapAttrs (_: v: lib.mkIf v.enable { extraGroups = [ "libvirtd" ]; }) usercfg; }
   ];
 }

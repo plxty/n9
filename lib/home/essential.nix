@@ -23,6 +23,7 @@
     bcc
     bpftrace
     binwalk
+    smartmontools
   ];
 
   services.ssh-agent.enable = true;

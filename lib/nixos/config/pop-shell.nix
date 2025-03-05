@@ -8,6 +8,7 @@
 
 let
   # @see lib/home/config/pop-shell.nix
+  # TODO: Rename to gnome?
   usercfg = self.lib.users "pop-shell" (v: v.n9.environment.pop-shell) config;
 in
 {
@@ -25,10 +26,6 @@ in
         gnome.core-utilities.enable = false;
       };
 
-      # Gnome requires, @see nixpkgs/nixos/modules/services/x11/desktop-managers/gnome.nix
-      # It can be safely eliminated, just keep here for a note.
-      networking.networkmanager.enable = true;
-
       environment = {
         sessionVariables.NIXOS_OZONE_WL = "1";
 
@@ -39,10 +36,8 @@ in
           nautilus
           gedit
           gnome-tweaks
-          dconf-editor
         ];
 
-        # Why not in services?
         gnome.excludePackages = with pkgs; [
           gnome-tour
           gnome-shell-extensions
@@ -67,6 +62,11 @@ in
           libpinyin
         ];
       };
+
+      # For I2C control of ddcutil:
+      hardware.i2c.enable = true;
     })
+
+    { users.users = lib.mapAttrs (_: v: lib.mkIf v.enable { extraGroups = [ "i2c" ]; }) usercfg; }
   ];
 }
