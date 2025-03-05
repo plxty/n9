@@ -7,13 +7,10 @@
 }:
 
 let
+  # @see lib/home/config/pop-shell.nix
   usercfg = self.lib.users "pop-shell" (v: v.n9.environment.pop-shell) config;
 in
 {
-  options.n9.environment.pop-shell = {
-    enable = lib.mkEnableOption "pop-shell";
-  };
-
   config = lib.mkMerge [
     (self.lib.mkIfUsers (v: v.enable) usercfg {
       services = {
@@ -70,23 +67,5 @@ in
         ];
       };
     })
-
-    {
-      home-manager.users = lib.mapAttrs (
-        _: v:
-        lib.mkIf v.enable {
-          home.packages = with pkgs; [ pop-launcher ];
-
-          # TODO: dconf
-          programs.gnome-shell = {
-            enable = true;
-            extensions = [
-              { package = pkgs.gnomeExtensions.pop-shell; }
-              { package = pkgs.gnomeExtensions.customize-ibus; }
-            ];
-          };
-        }
-      ) usercfg;
-    }
   ];
 }

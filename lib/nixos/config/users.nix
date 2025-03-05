@@ -1,12 +1,11 @@
 {
-  options,
   config,
   lib,
-  pkgs, # MUST have, maybe the module system is using `functionArgs`?
+  pkgs,
   self,
   home-manager,
   ...
-}@args:
+}:
 let
   cfg = config.n9.users;
 
@@ -25,23 +24,29 @@ let
     userName: modules:
     (lib.evalModules {
       modules = [
+        # options
         {
-          # Fake type here, types will be valided when exposed to
-          # top-level, by home-manager itself.
-          # Using home-manager's options directly is kind of difficult, it's
-          # hard to keep consistency of home-manager and ours users states.
-          options.home = mkAttrsOption;
-          options.programs = mkAttrsOption;
-          options.services = mkAttrsOption;
-
-          # N9, expose to n9.users, options check MUST be done within users:
-          options.n9 = lib.removeAttrs options.n9 [ "users" ];
+          options = {
+            # Using home-manager's options directly is kind of difficult, it's
+            # hard to keep consistency of home-manager and ours users states.
+            home = mkAttrsOption;
+            programs = mkAttrsOption;
+            services = mkAttrsOption;
+          };
         }
+        ../../common/config/secrets.nix
+        ../../home/config/passwd.nix
+        ../../home/config/ssh-key.nix
+        ../../home/config/pop-shell.nix
+        ../../home/config/boxes.nix
+
+        # configs
         ../../home/essential.nix
       ] ++ modules;
       class = "n9.users";
-      specialArgs = args // {
-        inherit userName;
+      specialArgs = {
+        inherit pkgs self userName;
+        osConfig = config;
       };
     }).config;
 in
@@ -71,8 +76,9 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf (cfg != { }) {
-      # disable root for security:
+      # TODO: Place to passwd.nix:
       users.users.root.hashedPassword = "!";
+      users.mutableUsers = false;
 
       # https://discourse.nixos.org/t/users-users-name-packages-vs-home-manager-packages/22240/2
       home-manager.useUserPackages = true;

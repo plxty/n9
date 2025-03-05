@@ -16,8 +16,10 @@ let
       ./nixos/config/disk.nix
       ./nixos/config/sshd.nix
       ./nixos/config/users.nix
+      ./common/config/secrets.nix
       ./nixos/config/secrets.nix
       ./nixos/config/passwd.nix
+      ./nixos/config/ssh-key.nix
       ./nixos/config/pop-shell.nix
       ./nixos/config/boxes.nix
 

@@ -40,11 +40,11 @@
       mkSystems = import ./lib/nixos.nix inputs;
 
       colmenaHive = colmena.lib.makeHive (
-        (lib.fold lib.recursiveUpdate {
+        lib.fold lib.recursiveUpdate {
           # @see lib/nixos.nix
           meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; # will be overridden
           meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
-        } (lib.flatten (lib.map (mach: mkSystems ./mach/${mach}) [ "evil" ])))
+        } (lib.flatten (lib.map (mach: mkSystems ./mach/${mach}) [ "evil" ]))
       );
     in
     {

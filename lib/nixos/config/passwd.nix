@@ -9,13 +9,7 @@ let
   usercfg = self.lib.users "passwd" (v: v.n9.security.passwd) config;
 in
 {
-  options.n9.security.passwd = {
-    file = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-    };
-  };
-
+  # @see lib/home/config/passwd.nix
   config = lib.mkMerge [
     {
       users.users = lib.mapAttrs (

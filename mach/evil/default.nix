@@ -19,18 +19,18 @@
           n9.environment.pop-shell.enable = true;
           n9.virtualisation.boxes.enable = true;
 
+          n9.security.ssh-key = {
+            private = "evil/id_ed25519";
+            public = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICw9akIf3We4wbAwVfaqr8ANZYHLbtQ5sQGz1W5ZUE8Y byte@evil";
+          };
+
           n9.security.secrets.".config/git/work".source = "evil/git";
           programs.git.includes = [
             {
-              path = "~/.config/git/work"; # TODO: config.xdg.configHome?
+              path = "~/.config/git/work";
               condition = "hasconfig:remote.*.url:*://*-inc.com*/**";
             }
           ];
-
-          #     miscell.ssh = {
-          #       ed25519.private = "${secret}/id_ed25519";
-          #       ed25519.public = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICw9akIf3We4wbAwVfaqr8ANZYHLbtQ5sQGz1W5ZUE8Y byte@evil";
-          #     };
 
           n9.security.secrets.".ssh/config.d/hosts".source = "evil/ssh";
           programs.ssh.includes = [ "config.d/*" ];
