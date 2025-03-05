@@ -21,7 +21,7 @@ let
     if lib.length split == 3 then
       keyOrPair
     else
-      nodes.${hostName}.config.n9.users.${userName}.n9.security.ssh-key.public
+      nodes.${hostName}.config.n9.users.${userName}.imports.n9.security.ssh-key.public
   );
 in
 {
