@@ -1,23 +1,26 @@
-{ self, ... }:
+{
+  n9.os.harm.imports = [
+    { system = "aarch64-linux"; }
+    ./hardware-configuration.nix
+    (
+      { pkgs, ... }:
+      {
+        boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.callPackage ./linux-kernel-wsl2.nix { });
 
-self.lib.nixosSystem "harm" "aarch64-linux" [
-  ./hardware-configuration.nix
-  (
-    { pkgs, ... }:
+        # https://github.com/nix-community/nixos-anywhere/issues/18#issuecomment-1500952398
+        # https://colmena.cli.rs/unstable/examples/multi-arch.html
+        # It takes some times if no nix store cache available...
+        # Maybe remote build if the target machine has enough performance.
+        # boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+      }
+    )
     {
-      boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.callPackage ./linux-kernel-wsl2.nix { });
+      n9.hardware.disk.sda.type = "btrfs";
+      deployment.allowLocalDeployment = true;
 
-      # https://github.com/nix-community/nixos-anywhere/issues/18#issuecomment-1500952398
-      # https://colmena.cli.rs/unstable/examples/multi-arch.html
-      # It takes some times if no nix store cache available...
-      # Maybe remote build if the target machine has enough performance.
-      # boot.binfmt.emulatedSystems = [ "x86_64-linux" ];
+      n9.users.byte.imports = [
+        { n9.security.passwd.file = "harm/passwd"; }
+      ];
     }
-  )
-  {
-    n9.hardware.disk.sda.type = "btrfs";
-    n9.users.byte.modules = [
-      { n9.security.passwd.file = "/home/byte/.n9/asterisk/harm/passwd"; }
-    ];
-  }
-]
+  ];
+}

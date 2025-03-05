@@ -45,5 +45,10 @@ in
         }
       ) usercfg;
     }
+
+    # Hmmm, no disable.
+    (self.lib.mkIfUsers (v: v.authorities != [ ] || v.agents != [ ]) usercfg {
+      n9.services.sshd.enable = true;
+    })
   ];
 }

@@ -20,6 +20,7 @@ let
   # Evaluate here to prevent infinite recursion, what we want is to "customize"
   # the home-manager so that we can define some system options within users.
   # Kind of "ugly", but it works for now, it costs me too much efforts...
+  # TODO: Place some user configurations to n9.users.xxx.yyy other than modules?
   apply =
     userName: modules:
     (lib.evalModules {
@@ -64,7 +65,7 @@ in
           # In here, we can avoid touching `config.home-manager`, because many
           # of modules are trying to define options within `config.home-manager`,
           # and that will cause infinite loop.
-          options.modules = lib.mkOption {
+          options.imports = lib.mkOption {
             type = lib.types.listOf lib.types.unspecified;
             default = [ ];
             apply = apply name;
@@ -94,7 +95,7 @@ in
         extraGroups = [ "wheel" ];
       }) cfg;
 
-      home-manager.users = lib.mapAttrs (userName: v: lib.removeAttrs v.modules [ "n9" ]) cfg;
+      home-manager.users = lib.mapAttrs (userName: v: lib.removeAttrs v.imports [ "n9" ]) cfg;
     }
   ];
 }

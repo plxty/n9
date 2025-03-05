@@ -29,7 +29,7 @@ let
     fi
 
     sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
-      lib/nixos/config/secrets.nix
+      lib/common/config/secrets.nix
   '';
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''

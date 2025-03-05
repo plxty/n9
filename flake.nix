@@ -44,7 +44,7 @@
           # @see lib/nixos.nix
           meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; # will be overridden
           meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
-        } (lib.flatten (lib.map (mach: mkSystems ./mach/${mach}) [ "evil" ]))
+        } (lib.flatten (lib.map (mach: mkSystems ./mach/${mach}) (listDirectories ./mach)))
       );
     in
     {
@@ -65,7 +65,7 @@
     substituters = [
       "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://mirrors.sustech.edu.cn/nix-channels/store"
-      "https://mirror.sjtu.edu.cn/nix-channels/store"
+      # "https://mirror.sjtu.edu.cn/nix-channels/store"
     ];
   };
 }

@@ -69,6 +69,7 @@ in
   networking.dhcpcd.enable = false;
   boot.kernelModules = [ "pppoe" ];
 
+  n9.security.secrets."/etc/ppp/secrets/wan".source = "wa/wan";
   services.pppd = {
     enable = true;
     # https://man7.org/linux/man-pages/man8/pppd.8.html

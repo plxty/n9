@@ -1,42 +1,23 @@
-{ self, n9, ... }:
-
 {
-  # Kind of a template.
-  nixosConfigurations = n9.lib.nixos self "nowhere" "x86_64-linux" {
-    modules = with n9.lib.nixos-modules; [
-      ./hardware-configuration.nix
-      (disk.btrfs "/dev/vda")
+  n9.os.nowhere.imports = [
+    ./hardware-configuration.nix
+    {
+      n9.hardware.disk.vda.type = "btrfs";
+      nix.settings.trusted-public-keys = [ "evil.xa-1:3N+fGCh9nVbctbwFhQad1qF2EqOp6FM83E08sBNGIlw=" ];
+      deployment = {
+        # ssh -R within vm
+        targetHost = "127.0.0.1";
+        targetPort = 2233;
+        targetUser = "byte";
+      };
 
-      # https://nixos.wiki/wiki/XMonad
-      (
-        { ... }:
+      n9.users.byte.imports = [
         {
-          services.xserver.windowManager.xmonad = {
-            enable = true;
-            enableContribAndExtras = true;
-            config = builtins.readFile ./xmonad.hs;
-          };
+          # Just a test virtual machine under evil, for simplicity.
+          n9.security.passwd.file = "evil/passwd";
+          n9.security.ssh-key.agents = [ "byte@evil" ];
         }
-      )
-    ];
-
-    # ssh -R within vm
-    deployment = {
-      targetHost = "127.0.0.1";
-      targetPort = 2233;
-      targetUser = "byte";
-      nixKey = "evil.xa-1:3N+fGCh9nVbctbwFhQad1qF2EqOp6FM83E08sBNGIlw=";
-    };
-  };
-
-  # Just a test virtual machine under evil, for simplicity.
-  homeConfigurations = n9.lib.home self "byte" "@ASTERISK@/evil/passwd" {
-    modules = with n9.lib.home-modules; [
-      shell.fish
-    ];
-
-    agentKeys = [
-      "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICw9akIf3We4wbAwVfaqr8ANZYHLbtQ5sQGz1W5ZUE8Y byte@evil"
-    ];
-  };
+      ];
+    }
+  ];
 }

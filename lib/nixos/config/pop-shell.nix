@@ -37,6 +37,7 @@ in
           brave
           ptyxis
           nautilus
+          gedit
           gnome-tweaks
           dconf-editor
         ];

@@ -1,10 +1,12 @@
 {
-  n9.os.evil.modules = [
+  n9.os.evil.imports = [
     ./hardware-configuration.nix
     {
       n9.hardware.disk."disk/by-id/nvme-eui.002538b231b633a2".type = "zfs";
       n9.services.sshd.enable = true;
-      n9.users.byte.modules = [
+      deployment.allowLocalDeployment = true;
+
+      n9.users.byte.imports = [
         (
           { pkgs, ... }:
           {
@@ -36,7 +38,6 @@
           programs.ssh.includes = [ "config.d/*" ];
         }
       ];
-      deployment.allowLocalDeployment = true;
     }
   ];
 }

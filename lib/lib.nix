@@ -45,7 +45,7 @@ rec {
   users =
     name: attrFn: config:
     let
-      val = lib.mapAttrs (_: v: attrFn v.modules) config.n9.users;
+      val = lib.mapAttrs (_: v: attrFn v.imports) config.n9.users;
     in
     lib.traceSeq [ name val ] val;
 
