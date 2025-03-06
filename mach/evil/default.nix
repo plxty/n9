@@ -13,6 +13,9 @@
             home.packages = with pkgs; [
               git-repo
               jetbrains.clion
+              lmstudio
+              zenity
+              freerdp3
             ];
           }
         )
