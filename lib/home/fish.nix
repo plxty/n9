@@ -1,7 +1,8 @@
-{ pkgs, ... }: # <- Home Manager `imports = []`
+{ pkgs, ... }:
 
 let
   plugin = pkg: { inherit (pkg) name src; };
+  tideToken = "003";
 in
 {
   programs = {
@@ -37,18 +38,31 @@ in
         };
 
         gitignore = "curl -sL https://www.gitignore.io/api/$argv";
+
+        # https://github.com/IlanCosman/tide/blob/main/functions/_tide_item_nix_shell.fish
+        # https://github.com/haslersn/any-nix-shell/blob/master/bin/nix-shell-info
+        _tide_item_nix_shell = {
+          body = ''
+            if test -z "$IN_NIX_SHELL" -a -z "$IN_NIX_RUN"
+              return
+            end
+
+            set -l info (echo "$ANY_NIX_SHELL_PKGS" | xargs)
+            if test -n "$info"
+              set info " ($info)"
+            end
+            _tide_print_item nix_shell $tide_nix_shell_icon' ' "$IN_NIX_SHELL$info"
+          '';
+        };
       };
 
-      shellInit = ''
-        # https://linux.overshoot.tv/wiki/ls
-        set -gx LS_COLORS (string replace -a '05;' "" "$LS_COLORS")
-
-        # FIXME: (no) local:
-        fish_add_path "$HOME/.local/bin"
-      '';
+      # FIXME: (no) local:
+      shellInit = ''fish_add_path "$HOME/.local/bin"'';
 
       interactiveShellInit = ''
-        if not set -qu tide_nix_shell_color
+        if test "$tide_configure_token" != "${tideToken}"
+          set -eU (set -U | awk '/tide/ {print $1}')
+
           # what `tide configure` shows:
           tide configure \
             --auto \
@@ -60,13 +74,17 @@ in
             --prompt_spacing=Sparse \
             --icons='Few icons' \
             --transient=Yes
+          set -U tide_configure_token ${tideToken}
         end
+
+        # https://linux.overshoot.tv/wiki/ls
+        set -gx LS_COLORS (string replace -a '05;' "" "$LS_COLORS")
 
         # No greetings:
         set fish_greeting
 
         # Trying if it is useful:
-        set -qu fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && cd "$fish_most_recent_dir"
+        set -qU fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && cd "$fish_most_recent_dir"
 
         # https://fishshell.com/docs/current/language.html#syntax-function-autoloading
         __fish_save_most_recent_dir
