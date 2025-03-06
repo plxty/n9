@@ -12,7 +12,10 @@ with lib.hm.gvariant;
 
     "org/gnome/Ptyxis/Profiles/8b11dd3e6b265e6a5fd6ce60678873ea" = {
       custom-command = "fish";
+      exit-action = "close";
       login-shell = true;
+      preserve-directory = "never";
+      scrollback-lines = 99999;
       use-custom-command = true;
     };
 
@@ -145,6 +148,22 @@ with lib.hm.gvariant;
       input-indicator-only-on-toggle = false;
       input-indicator-only-use-ascii = false;
       input-indicator-right-close = true;
+    };
+
+    "org/gnome/shell/extensions/dash-to-dock" = {
+      apply-custom-theme = false;
+      background-opacity = 0.8;
+      custom-background-color = false;
+      custom-theme-shrink = false;
+      dash-max-icon-size = 48;
+      dock-position = "LEFT";
+      height-fraction = 0.9;
+      hot-keys = false;
+      intellihide-mode = "FOCUS_APPLICATION_WINDOWS";
+      running-indicator-style = "DEFAULT";
+      scroll-action = "switch-workspace";
+      show-trash = false;
+      transparency-mode = "DYNAMIC";
     };
 
     "org/gnome/shell/extensions/display-brightness-ddcutil" = {

@@ -13,15 +13,6 @@ in
         (plugin tide)
         (plugin puffer)
         {
-          name = "autols";
-          src = pkgs.fetchFromGitHub {
-            owner = "kpbaks";
-            repo = "autols.fish";
-            rev = "fe2693e80558550e0d995856332b280eb86fde19";
-            hash = "sha256-EPgvY8gozMzai0qeDH2dvB4tVvzVqfEtPewgXH6SPGs=";
-          };
-        }
-        {
           name = "upto";
           src = pkgs.fetchFromGitHub {
             owner = "Markcial";
@@ -31,6 +22,22 @@ in
           };
         }
       ];
+
+      functions = {
+        # https://superuser.com/a/1721923
+        __fish_save_most_recent_dir = {
+          body = "set -U fish_most_recent_dir $PWD";
+          onVariable = "PWD";
+        };
+
+        # https://github.com/kpbaks/autols.fish
+        __fish_auto_ls = {
+          body = "ls -AF --group-directories-first";
+          onVariable = "PWD";
+        };
+
+        gitignore = "curl -sL https://www.gitignore.io/api/$argv";
+      };
 
       shellInit = ''
         # https://linux.overshoot.tv/wiki/ls
@@ -55,6 +62,16 @@ in
             --transient=Yes
         end
 
+        # No greetings:
+        set fish_greeting
+
+        # Trying if it is useful:
+        set -qu fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && cd "$fish_most_recent_dir"
+
+        # https://fishshell.com/docs/current/language.html#syntax-function-autoloading
+        __fish_save_most_recent_dir
+        __fish_auto_ls
+
         # fzf, Ctrl+(R|V) Ctrl+Alt+(L|S|P)
         set -gx FZF_DEFAULT_OPTS --bind "alt-k:clear-query"
 
@@ -63,11 +80,12 @@ in
       '';
 
       shellAbbrs = {
-        hi = "hx .";
         ra = "rg --hidden --no-ignore";
         ff = "fd --type f .";
         up = "upto";
         ze = "zoxide query";
+        dh = "dirh";
+        dc = "cdh";
       };
     };
 

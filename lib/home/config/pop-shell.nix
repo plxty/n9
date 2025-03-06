@@ -23,11 +23,12 @@ in
 
     programs.gnome-shell = {
       enable = true;
-      extensions = [
-        { package = pkgs.gnomeExtensions.brightness-control-using-ddcutil; }
-        { package = pkgs.gnomeExtensions.switcher; }
+      extensions = with pkgs.gnomeExtensions; [
+        { package = brightness-control-using-ddcutil; }
+        { package = switcher; }
         { package = self.inputs.paperwm.packages.${pkgs.system}.default; }
-        { package = pkgs.gnomeExtensions.customize-ibus; }
+        { package = dash-to-dock; }
+        { package = customize-ibus; }
       ];
     };
 

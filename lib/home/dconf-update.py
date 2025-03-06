@@ -116,6 +116,7 @@ EXCLUDIND = [
             "disabled-extensions",  # ['native-window-placement@gnome-shell-extensions.gcampax.github.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'drive-menu@gnome-shell-extensions.gcampax.github.com', 'screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com', 'status-icons@gnome-shell-extensions.gcampax.github.com', 'system-monitor@gnome-shell-extensions.gcampax.github.com', 'window-list@gnome-shell-extensions.gcampax.github.com', 'windowsNavigator@gnome-shell-extensions.gcampax.github.com', 'workspace-indicator@gnome-shell-extensions.gcampax.github.com']
             "last-selected-power-profile",  # 'performance'
             "welcome-dialog-last-shown-version",  # '47.2'
+            "favorite-apps",
         ],
     ),
     ("org/gnome/shell/extensions/customize-ibus", ["input-mode-list"]),
@@ -135,6 +136,10 @@ EXCLUDIND = [
     ),
     ("org/gnome/shell/extensions/paperwm/workspaces", ["list"]),
     ("org/gnome/shell/extensions/paperwm/workspaces/*", ["index"]),
+    (
+        "org/gnome/shell/extensions/dash-to-dock",
+        ["preferred-monitor", "preferred-monitor-by-connector"],
+    ),
     ("org/gnome/tweaks", ["show-extensions-notice"]),
     ("org/gtk/gtk4/settings/file-chooser", ["show-hidden"]),
     (
