@@ -61,7 +61,7 @@ in
         Kind = "vlan";
         Name = ports.vlan;
       };
-      vlanConfig.Id = 1201;
+      vlanConfig.Id = 1210;
     };
 
     "20-lan" = {

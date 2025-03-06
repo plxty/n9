@@ -23,10 +23,24 @@ let
 
     B_THIS="$(hostname)"
     B_THAT="''${1:-}"
+    B_NIX=(nix --extra-experimental-features "nix-command flakes" --accept-flake-config)
+    B_SSHOPTS=(-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no)
 
-    if [[ ! -d "asterisk" ]]; then
-      echo "Run me in project root!"
-      exit 1
+    if [[ ! -d asterisk ]]; then
+      cd "$HOME/.n9"
+      if [[ ! -d asterisk ]]; then
+        echo "Run me in project root!"
+        exit 1
+      fi
+    fi
+
+    if [[ "$B_THAT" != "" ]]; then
+      B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
+      read -r B_USER B_HOST B_PORT < \
+        <("''${B_NIX[@]}" eval --json "$B_DEPLOY" --apply "a:[a.targetUser a.targetHost a.targetPort]" | jq -r '@tsv')
+      if [[ "$B_PORT" == "" || "$B_PORT" == "null" ]]; then
+        B_PORT=22
+      fi
     fi
 
     sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
@@ -37,16 +51,18 @@ let
     ${burn}
 
     B_COLMENA=(colmena --show-trace --experimental-flake-eval)
+    B_HWCONF=(sudo nixos-generate-config --show-hardware-config --no-filesystems)
+
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
-      B_HWCONF="mach/$B_THIS/hardware-configuration.nix"
-      sudo nixos-generate-config --show-hardware-config --no-filesystems \
-        > "$B_HWCONF"
+      "''${B_HWCONF[@]}" > "mach/$B_THIS/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply-local --sudo --verbose
 
       # Try updateing the database for command-not-found as well:
       sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos
       sudo nix-channel --update nixos
     else
+      ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "''${B_HWCONF[@]}" \
+        > "mach/$B_THAT/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
         --sign "asterisk/$B_THIS/nix-key"
     fi
@@ -61,40 +77,26 @@ let
       echo "{ ... }: { }" > "$B_HWCONF"
     fi
 
-    B_NIX=(nix --extra-experimental-features "nix-command flakes" --accept-flake-config)
-    B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
     B_KEYS="$("''${B_NIX[@]}" eval --json "$B_DEPLOY.keys" \
       | jq -r 'to_entries[]
         | select(.value.user == "root" and .value.uploadAt == "pre-activation")
         | [.value.keyFile, .value.path] | @tsv')"
 
-    read -r B_HOST B_PORT < \
-      <("''${B_NIX[@]}" eval --json "$B_DEPLOY" --apply "a:[a.targetHost a.targetPort]" | jq -r '@tsv')
-    B_HOST="root@$B_HOST"
-    if [[ "$B_PORT" == "" || "$B_PORT" == "null" ]]; then
-      B_PORT=22
-    fi
-
-    B_INSTALL=(nixos-anywhere --target-host "$B_HOST" -p "$B_PORT"
-      --generate-hardware-config nixos-generate-config "$B_HWCONF"
-      --flake ".#$B_THAT")
+    B_INSTALL=(nixos-anywhere --target-host "$B_USER@$B_HOST" -p "$B_PORT"
+      --generate-hardware-config nixos-generate-config "$B_HWCONF" --flake ".#$B_THAT")
 
     # Format disk:
     "''${B_INSTALL[@]}" --phases kexec,disko
     B_SSHOPTS=(-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no)
-    ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_HOST" -- "
-      umount -R /mnt/run
-      mount -m -t tmpfs -o rw,nosuid,nodev,mode=755 tmpfs /mnt/run
-      mount -m -t ramfs -o rw,nosuid,nodev,relatime,mode=750 ramfs /mnt/run/keys
-    "
+    ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "mkdir -p /mnt/etc/nixos/keys"
 
     # Upload keys:
     while read -r B_KEY_FROM B_KEY_TO; do
-      if [[ "$B_KEY_TO" != "/run/keys/"* ]]; then
+      if [[ "$B_KEY_TO" != "/etc/nixos/keys/"* ]]; then
         continue
       fi
       echo "key: $B_KEY_FROM -> $B_KEY_TO"
-      scp "''${B_SSHOPTS[@]}" -P "$B_PORT" "$B_KEY_FROM" "$B_HOST:/mnt$B_KEY_TO"
+      scp "''${B_SSHOPTS[@]}" -P "$B_PORT" "$B_KEY_FROM" "$B_USER@$B_HOST:/mnt$B_KEY_TO"
     done <<< "$B_KEYS"
 
     # Real switch:

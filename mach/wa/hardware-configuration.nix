@@ -8,7 +8,7 @@
     [ (modulesPath + "/installer/scan/not-detected.nix")
     ];
 
-  boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" "usbhid" "sdhci_pci" ];
+  boot.initrd.availableKernelModules = [ "xhci_pci" "nvme" "sdhci_pci" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ "kvm-intel" ];
   boot.extraModulePackages = [ ];
@@ -23,7 +23,7 @@
   # networking.interfaces.enp2s0.useDHCP = lib.mkDefault true;
   # networking.interfaces.enp4s0.useDHCP = lib.mkDefault true;
   # networking.interfaces.enp5s0f0np0.useDHCP = lib.mkDefault true;
-  # networking.interfaces.enp5s0f1.101.useDHCP = lib.mkDefault true;
+  # networking.interfaces.enp5s0f1.1210.useDHCP = lib.mkDefault true;
   # networking.interfaces.enp5s0f1np1.useDHCP = lib.mkDefault true;
   # networking.interfaces.pppoe-wan.useDHCP = lib.mkDefault true;
   # networking.interfaces.wlo1.useDHCP = lib.mkDefault true;

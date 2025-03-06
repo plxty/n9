@@ -1,12 +1,15 @@
 {
   n9.os.wa.imports = [
     ./hardware-configuration.nix
+    { boot.initrd.availableKernelModules = [ "usbhid" ]; }
     ./networking.nix
     {
       n9.hardware.disk.mmcblk0.type = "btrfs";
-      # nix.settings.trusted-public-keys = [ "..." ];
+      nix.settings.trusted-public-keys = [
+        "coffee.y.xas.is:f2SgLhtRkyjc9yjfW39H9hxPh0KHPMmySJjzhd2whlY="
+      ];
       deployment = {
-        targetHost = "wa.y.xas.is";
+        targetHost = "10.0.0.1";
         targetUser = "byte";
       };
 
