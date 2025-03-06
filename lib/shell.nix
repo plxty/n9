@@ -58,7 +58,7 @@ let
       "''${B_COLMENA[@]}" apply-local --sudo --verbose
 
       # Try updateing the database for command-not-found as well:
-      sudo nix-channel --add https://nixos.org/channels/nixos-unstable nixos
+      sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
       sudo nix-channel --update nixos
     else
       ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "''${B_HWCONF[@]}" \

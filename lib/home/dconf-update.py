@@ -40,6 +40,8 @@ EXCLUDIND = [
             "window-size",  # [1250, 1368]
         ],
     ),
+    # TODO: Make dconf remove some entries?
+    ("org/gnome/Ptyxis/Profiles/e76c429b687c3cf0ba8a89d367b71beb", None),
     ("org/gnome/control-center", ["last-panel", "window-state"]),
     ("org/gnome/desktop/app-folders", ["folder-children"]),
     (
@@ -120,7 +122,6 @@ EXCLUDIND = [
         ],
     ),
     ("org/gnome/shell/extensions/customize-ibus", ["input-mode-list"]),
-    # TODO: Remove from dconf database...
     ("org/gnome/shell/extensions/pop-shell", None),
     ("org/gnome/shell/extensions/display-brightness-ddcutil", ["ddcutil-binary-path"]),
     ("org/gnome/shell/extensions/switcher", ["launcher-stats"]),

@@ -29,6 +29,7 @@ with lib.hm.gvariant;
       color-scheme = "prefer-dark";
       font-antialiasing = "grayscale";
       font-hinting = "slight";
+      toolkit-accessibility = false;
     };
 
     "org/gnome/desktop/session" = {
