@@ -42,6 +42,8 @@
           "--sync-url=https://brave-sync.pteno.cn/v2"
         ];
       });
+
+      linux_wsl2 = pkgs.linuxPackagesFor (pkgs.callPackage ../pkgs/linux-kernel-wsl2.nix);
     })
   ];
 

@@ -4,7 +4,12 @@
 # 10.42.0.0 => Proxy
 # May conflicts with?
 
-{ lib, pkgs, ... }:
+{
+  lib,
+  pkgs,
+  hostName,
+  ...
+}:
 
 let
   ports = {
@@ -33,11 +38,14 @@ let
       linkConfig.RequiredForOnline = "carrier";
     };
 
-  mkBridgeSlave =
+  mkLanBridgeSlave =
     port: master:
     mkNetwork port {
       networkConfig.Bridge = master;
-      linkConfig.RequiredForOnline = "enslaved";
+      linkConfig = {
+        MTUBytes = "9000";
+        RequiredForOnline = "enslaved";
+      };
     };
 
   # Y-AXIS
@@ -115,9 +123,9 @@ in
       linkConfig.RequiredForOnline = "yes"; # TODO: Is it really working?
     };
 
-    "30-rj45-0" = mkBridgeSlave ports.rj45-0 ports.lan;
-    "31-rj45-1" = mkBridgeSlave ports.rj45-1 ports.lan;
-    "32-rj45-2" = mkBridgeSlave ports.rj45-2 ports.lan;
+    "30-rj45-0" = mkLanBridgeSlave ports.rj45-0 ports.lan;
+    "31-rj45-1" = mkLanBridgeSlave ports.rj45-1 ports.lan;
+    "32-rj45-2" = mkLanBridgeSlave ports.rj45-2 ports.lan;
     "33-lan" = mkNetwork ports.lan {
       networkConfig = {
         Address = "10.0.0.1/8";
@@ -131,6 +139,7 @@ in
         OtherInformation = "yes";
       };
       dhcpPrefixDelegationConfig.Token = "::1";
+      linkConfig.MTUBytes = "9000";
     };
   };
 
@@ -189,7 +198,7 @@ in
 
       inherit domain;
       local = "/${domain}/"; # only resolve in local, don't go out
-      address = [ "/wa.${domain}/10.0.0.1" ];
+      address = [ "/${hostName}.${domain}/10.0.0.1" ];
 
       # tftp, TODO: https://nixos.wiki/wiki/Netboot
       enable-tftp = true;

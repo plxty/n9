@@ -1,17 +1,5 @@
-From c550986e57d82fe14166ca8169129607fa71a64f Mon Sep 17 00:00:00 2001
-From: Zigit Zo <ptr@ffi.fyi>
-Date: Mon, 30 Dec 2024 17:11:27 +0800
-Subject: [PATCH] feat(librime): hack
-
----
- .gitignore                      |   4 +
- src/rime/gear/ascii_composer.cc | 145 ++++++++++++++++++++++++++++++--
- src/rime_api.h                  |   1 +
- src/rime_api_impl.h             |   1 +
- 4 files changed, 143 insertions(+), 8 deletions(-)
-
 diff --git a/.gitignore b/.gitignore
-index a2da978424..d34e7f66b4 100644
+index a2da978..d34e7f6 100644
 --- a/.gitignore
 +++ b/.gitignore
 @@ -1,10 +1,14 @@
@@ -30,7 +18,7 @@ index a2da978424..d34e7f66b4 100644
  share/*
  deps/*/*
 diff --git a/src/rime/gear/ascii_composer.cc b/src/rime/gear/ascii_composer.cc
-index a9e333b96f..94badb0af0 100644
+index a9e333b..7a33c7b 100644
 --- a/src/rime/gear/ascii_composer.cc
 +++ b/src/rime/gear/ascii_composer.cc
 @@ -12,6 +12,7 @@
@@ -41,7 +29,7 @@ index a9e333b96f..94badb0af0 100644
  
  namespace rime {
  
-@@ -55,10 +56,136 @@ AsciiComposer::~AsciiComposer() {
+@@ -55,6 +56,127 @@ AsciiComposer::~AsciiComposer() {
    connection_.disconnect();
  }
  
@@ -54,10 +42,7 @@ index a9e333b96f..94badb0af0 100644
 + *
 + * 在输入中文后可以直接通过按下空格键进入到临时 ASCII 模式，也可以通过大写字母的
 + * 方式进入。直到输入特殊字符（频率最高的应该就是空格了）后解除临时 ASCII 模式。
-+ *
 + * 任意模式下，都可以使用 shift+space 的方式强制输入空格。
-+ * 目前左 shift 键会无视切换 temp_ascii，右 shift 键则会关闭 temp_ascii 并强制
-+ * 回到中文模式。这个习惯是否易学，还需要体验一下（。
 + *
 + * TODO: 空格键作为触发的体验如何？如何重新利用 i 键呢？
 + * 感觉 i 可以作为自动填充的 prefix，比如填充云服务器的 sudo 等命令。
@@ -170,41 +155,9 @@ index a9e333b96f..94badb0af0 100644
 +}
 +
  ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
-+  Context* ctx = engine_->context();
    if ((key_event.shift() && key_event.ctrl()) || key_event.alt() ||
        key_event.super()) {
-     shift_key_pressed_ = ctrl_key_pressed_ = false;
-+    TempAsciiOff(ctx);
-     return kNoop;
-   }
-   if (caps_lock_switch_style_ != kAsciiModeSwitchNoop) {
-@@ -85,7 +212,11 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
-         if (((is_shift && shift_key_pressed_) ||
-              (is_ctrl && ctrl_key_pressed_)) &&
-             now < toggle_expired_) {
--          ToggleAsciiModeWithKey(ch);
-+          TempAsciiOff(ctx);
-+          if (ch == XK_Shift_R)
-+            SwitchAsciiMode(false, AsciiModeSwitchStyle::kAsciiModeSwitchNoop);
-+          else
-+            ToggleAsciiModeWithKey(ch);
-         }
-         shift_key_pressed_ = ctrl_key_pressed_ = false;
-         return kNoop;
-@@ -93,8 +224,11 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
-     } else if (!(shift_key_pressed_ || ctrl_key_pressed_)) {  // first key down
-       if (is_shift)
-         shift_key_pressed_ = true;
--      else
-+      else {
-+        // Maybe a ctrl+ shortcut, reset the temp_ascii:
-+        TempAsciiOff(ctx);
-         ctrl_key_pressed_ = true;
-+      }
-       // will not toggle unless the toggle key is released shortly
-       const auto toggle_duration_limit = std::chrono::milliseconds(500);
-       auto now = std::chrono::steady_clock::now();
-@@ -104,11 +238,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+@@ -104,10 +226,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
    }
    // other keys
    shift_key_pressed_ = ctrl_key_pressed_ = false;
@@ -212,11 +165,10 @@ index a9e333b96f..94badb0af0 100644
 -  if (key_event.ctrl() || (key_event.shift() && ch == XK_space)) {
 -    return kNoop;
 -  }
--  Context* ctx = engine_->context();
+   Context* ctx = engine_->context();
    bool ascii_mode = ctx->get_option("ascii_mode");
    if (ascii_mode) {
-     if (!ctx->IsComposing()) {
-@@ -120,7 +249,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+@@ -120,7 +238,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
        return kAccepted;
      }
    }
@@ -225,8 +177,21 @@ index a9e333b96f..94badb0af0 100644
  }
  
  ProcessResult AsciiComposer::ProcessCapsLock(const KeyEvent& key_event) {
+@@ -205,8 +323,11 @@ bool AsciiComposer::ToggleAsciiModeWithKey(int key_code) {
+     return false;
+   AsciiModeSwitchStyle style = it->second;
+   Context* ctx = engine_->context();
+-  bool ascii_mode = !ctx->get_option("ascii_mode");
++  // Treat temp ascii the same as ascii:
++  bool ascii_mode =
++      !(ctx->get_option("ascii_mode") || ctx->get_option("temp_ascii"));
+   SwitchAsciiMode(ascii_mode, style);
++  TempAsciiOff(ctx);
+   toggle_with_caps_ = (key_code == XK_Caps_Lock);
+   return true;
+ }
 diff --git a/src/rime_api.h b/src/rime_api.h
-index 2fccde0fb8..91fd50a95a 100644
+index 2fccde0..91fd50a 100644
 --- a/src/rime_api.h
 +++ b/src/rime_api.h
 @@ -177,6 +177,7 @@ typedef struct RIME_FLAVORED(rime_status_t) {
@@ -238,7 +203,7 @@ index 2fccde0fb8..91fd50a95a 100644
  
  typedef struct rime_candidate_list_iterator_t {
 diff --git a/src/rime_api_impl.h b/src/rime_api_impl.h
-index 6e906cfe45..22fb027cc9 100644
+index 6e906cf..22fb027 100644
 --- a/src/rime_api_impl.h
 +++ b/src/rime_api_impl.h
 @@ -351,6 +351,7 @@ RIME_DEPRECATED Bool RimeGetStatus(RimeSessionId session_id,

@@ -5,7 +5,7 @@
     (
       { pkgs, ... }:
       {
-        boot.kernelPackages = pkgs.linuxPackagesFor (pkgs.callPackage ./linux-kernel-wsl2.nix { });
+        boot.kernelPackages = pkgs.linux_wsl2;
 
         # https://github.com/nix-community/nixos-anywhere/issues/18#issuecomment-1500952398
         # https://colmena.cli.rs/unstable/examples/multi-arch.html
