@@ -190,6 +190,57 @@ index a9e333b..7a33c7b 100644
    toggle_with_caps_ = (key_code == XK_Caps_Lock);
    return true;
  }
+diff --git a/src/rime/gear/punctuator.cc b/src/rime/gear/punctuator.cc
+index 435babc..6f43ddd 100644
+--- a/src/rime/gear/punctuator.cc
++++ b/src/rime/gear/punctuator.cc
+@@ -91,6 +91,12 @@ static bool is_after_digit_separator(Context* ctx) {
+          comp[0].length == ctx->input().length();
+ }
+ 
++static ProcessResult accept(Context* ctx) {
++  // Drop punctuator in words, to make temp_ascii works:
++  ctx->commit_history().clear();
++  return kAccepted;
++};
++
+ ProcessResult Punctuator::ProcessKeyEvent(const KeyEvent& key_event) {
+   if (key_event.release() || key_event.ctrl() || key_event.alt() ||
+       key_event.super())
+@@ -104,13 +110,13 @@ ProcessResult Punctuator::ProcessKeyEvent(const KeyEvent& key_event) {
+   }
+   if ((isdigit(ch) || ch == XK_space) && is_after_digit_separator(ctx)) {
+     ctx->PushInput(ch) && ctx->Commit();
+-    return kAccepted;
++    return accept(ctx);
+   }
+   if (!use_space_ && ch == XK_space && ctx->IsComposing()) {
+     return kNoop;
+   }
+   if (ConvertDigitSeparator(ch)) {
+-    return kAccepted;
++    return accept(ctx);
+   }
+   // sync with full_shape option
+   config_.LoadConfig(engine_);
+@@ -120,7 +126,7 @@ ProcessResult Punctuator::ProcessKeyEvent(const KeyEvent& key_event) {
+     return kNoop;
+   DLOG(INFO) << "punct key: '" << key << "'";
+   if (AlternatePunct(key, punct_definition)) {
+-    return kAccepted;
++    return accept(ctx);
+   }
+   if (ReconvertDigitSeparatorAsPunct(key) || ctx->PushInput(ch)) {
+     if (punctuation_is_translated(ctx, "punct")) {
+@@ -128,7 +134,7 @@ ProcessResult Punctuator::ProcessKeyEvent(const KeyEvent& key_event) {
+           AutoCommitPunct(punct_definition) || PairPunct(punct_definition);
+     }
+   }
+-  return kAccepted;
++  return accept(ctx);
+ }
+ 
+ bool Punctuator::ConvertDigitSeparator(char ch) {
 diff --git a/src/rime_api.h b/src/rime_api.h
 index 2fccde0..91fd50a 100644
 --- a/src/rime_api.h

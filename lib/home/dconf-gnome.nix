@@ -27,6 +27,7 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
+      enable-hot-corners = false;
       font-antialiasing = "grayscale";
       font-hinting = "slight";
       toolkit-accessibility = false;
@@ -158,11 +159,13 @@ with lib.hm.gvariant;
       custom-background-color = false;
       custom-theme-shrink = false;
       dash-max-icon-size = 48;
-      dock-position = "LEFT";
+      dock-position = "BOTTOM";
+      extend-height = false;
       height-fraction = 0.9;
       hot-keys = false;
       intellihide-mode = "FOCUS_APPLICATION_WINDOWS";
-      running-indicator-style = "DEFAULT";
+      multi-monitor = false;
+      running-indicator-style = "DASHES";
       scroll-action = "switch-workspace";
       show-trash = false;
       transparency-mode = "DYNAMIC";
