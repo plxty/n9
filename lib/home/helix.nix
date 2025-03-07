@@ -1,9 +1,9 @@
-{ pkgs, self, ... }:
+{ pkgs, ... }:
 
 {
   home.packages = with pkgs; [
     nixd
-    self.inputs.nixfmt.packages.${pkgs.system}.default
+    nixfmt-rfc-style
     clang-tools
     bash-language-server
     shellcheck

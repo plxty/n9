@@ -22,19 +22,14 @@ in
     })
 
     {
-      users.users = lib.mapAttrs (
-        n: v:
-        lib.mkIf (v.file != null) {
-          hashedPasswordFile = "/etc/nixos/keys/passwd-${n}";
-        }
-      ) usercfg;
+      # Never null now:
+      users.users = lib.mapAttrs (n: v: {
+        hashedPasswordFile = "/etc/nixos/keys/passwd-${n}";
+      }) usercfg;
 
-      n9.security.secrets = lib.concatMapAttrs (
-        n: v:
-        lib.mkIf (v.file != null) {
-          "/etc/nixos/keys/passwd-${n}".source = v.file;
-        }
-      ) usercfg;
+      n9.security.secrets = lib.concatMapAttrs (n: v: {
+        "/etc/nixos/keys/passwd-${n}".source = v.file;
+      }) usercfg;
     }
   ];
 }

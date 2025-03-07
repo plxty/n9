@@ -4,10 +4,6 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixfmt = {
-      url = "github:NixOS/nixfmt";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
     colmena = {
       url = "github:zhaofengli/colmena";
       inputs.nixpkgs.follows = "nixpkgs";

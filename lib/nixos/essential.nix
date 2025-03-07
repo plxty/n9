@@ -64,6 +64,9 @@
     sessionVariables.NIX_CRATES_INDEX = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/";
   };
 
+  # To catch some faults:
+  systemd.coredump.extraConfig = "Storage=journal";
+
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
 

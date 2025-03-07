@@ -17,7 +17,7 @@ let
     ./patches/colmena-nix-store-sign.patch
   ];
 
-  # The package of burn:
+  # The package of burn, TODO: offline? timeout?
   burn = ''
     set -uex
 
@@ -34,6 +34,12 @@ let
       fi
     fi
 
+    # Pull the latest changes if have:
+    git pull --rebase || true
+    pushd asterisk 1>/dev/null
+    git pull --rebase || true
+    popd 1>/dev/null
+
     if [[ "$B_THAT" != "" ]]; then
       B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
       read -r B_USER B_HOST B_PORT < \
@@ -45,6 +51,9 @@ let
 
     sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
       lib/common/config/secrets.nix
+
+    # Updating nixpkgs:
+    nix flake update || true
   '';
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''
@@ -59,18 +68,18 @@ let
 
       # Try updateing the database for command-not-found as well:
       sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
-      sudo nix-channel --update nixos
+      sudo nix-channel --update nixos || true
     else
       ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "''${B_HWCONF[@]}" \
         > "mach/$B_THAT/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
-        --sign "asterisk/$B_THIS/nix-key"
+        --no-substitute --sign "asterisk/$B_THIS/nix-key"
     fi
   '';
 
   burnInstall = pkgs.writers.writeBashBin "burn-install" ''
     ${burn}
-    test -n "$1"
+    test -n "$B_THAT"
 
     B_HWCONF="mach/$B_THAT/hardware-configuration.nix"
     if [[ ! -f "$B_HWCONF" ]]; then
@@ -82,21 +91,21 @@ let
         | select(.value.user == "root" and .value.uploadAt == "pre-activation")
         | [.value.keyFile, .value.path] | @tsv')"
 
-    B_INSTALL=(nixos-anywhere --target-host "$B_USER@$B_HOST" -p "$B_PORT"
+    B_INSTALL=(nixos-anywhere --target-host "root@$B_HOST" -p "$B_PORT"
       --generate-hardware-config nixos-generate-config "$B_HWCONF" --flake ".#$B_THAT")
 
     # Format disk:
     "''${B_INSTALL[@]}" --phases kexec,disko
     B_SSHOPTS=(-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no)
-    ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "mkdir -p /mnt/etc/nixos/keys"
+    ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "root@$B_HOST" -- "mkdir -p /mnt/etc/nixos/keys"
 
-    # Upload keys:
+    # Upload keys, TODO: colmena?
     while read -r B_KEY_FROM B_KEY_TO; do
       if [[ "$B_KEY_TO" != "/etc/nixos/keys/"* ]]; then
         continue
       fi
       echo "key: $B_KEY_FROM -> $B_KEY_TO"
-      scp "''${B_SSHOPTS[@]}" -P "$B_PORT" "$B_KEY_FROM" "$B_USER@$B_HOST:/mnt$B_KEY_TO"
+      scp "''${B_SSHOPTS[@]}" -P "$B_PORT" "$B_KEY_FROM" "root@$B_HOST:/mnt$B_KEY_TO"
     done <<< "$B_KEYS"
 
     # Real switch:
@@ -110,10 +119,9 @@ pkgs.mkShell {
   inputsFrom = [ ];
 
   packages = with pkgs; [
+    # RDepends:
     gnused
     jq
-
-    # RDepends:
     nixos-anywhere.packages.${system}.default
     colmenaPackage
 
@@ -121,9 +129,4 @@ pkgs.mkShell {
     burnSwitch
     burnInstall
   ];
-
-  shellHook = ''
-    echo "burn [hostname || $(hostname)]"
-    echo "burn-install [hostname]"
-  '';
 }
