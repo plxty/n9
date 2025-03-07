@@ -32,6 +32,9 @@ in
       ];
     };
 
+    # Force xdg to be non-unicode directories, just using defaults:
+    xdg.userDirs.enable = true;
+
     inherit (dconf) dconf;
   };
 }

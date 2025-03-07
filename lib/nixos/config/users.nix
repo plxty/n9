@@ -31,9 +31,11 @@ let
           options = {
             # Using home-manager's options directly is kind of difficult, it's
             # hard to keep consistency of home-manager and ours users states.
+            # TODO: Let home-manager manage it, huh...
             home = mkAttrsOption;
             programs = mkAttrsOption;
             services = mkAttrsOption;
+            xdg = mkAttrsOption;
             dconf = mkAttrsOption;
           };
         }

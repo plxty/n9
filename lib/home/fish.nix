@@ -28,7 +28,7 @@ in
         # https://superuser.com/a/1721923
         __fish_save_most_recent_dir = {
           body = "set -U fish_most_recent_dir $PWD";
-          onVariable = "PWD";
+          onEvent = "fish_postexec";
         };
 
         # https://github.com/kpbaks/autols.fish
