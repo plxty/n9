@@ -1,6 +1,5 @@
 {
   n9.os.evil.imports = [
-    ./hardware-configuration.nix
     {
       n9.hardware.disk."disk/by-id/nvme-eui.002538b231b633a2".type = "zfs";
       n9.services.sshd.enable = true;
@@ -20,16 +19,15 @@
           }
         )
         {
-          n9.security.passwd.file = "evil/passwd";
           n9.environment.pop-shell.enable = true;
           n9.virtualisation.boxes.enable = true;
 
           n9.security.ssh-key = {
-            private = "evil/id_ed25519";
+            private = "id_ed25519"; # n9/asterisk/evil/id_ed25519
             public = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICw9akIf3We4wbAwVfaqr8ANZYHLbtQ5sQGz1W5ZUE8Y byte@evil";
           };
 
-          n9.security.secrets.".config/git/work".source = "evil/git";
+          n9.security.secrets.".config/git/work".source = "git";
           programs.git.includes = [
             {
               path = "~/.config/git/work";
@@ -37,7 +35,7 @@
             }
           ];
 
-          n9.security.secrets.".ssh/config.d/hosts".source = "evil/ssh";
+          n9.security.secrets.".ssh/config.d/hosts".source = "ssh";
           programs.ssh.includes = [ "config.d/*" ];
         }
       ];

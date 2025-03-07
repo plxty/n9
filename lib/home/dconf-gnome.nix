@@ -149,6 +149,7 @@ with lib.hm.gvariant;
       input-indicator-only-on-toggle = false;
       input-indicator-only-use-ascii = false;
       input-indicator-right-close = true;
+      menu-ibus-restart = true;
     };
 
     "org/gnome/shell/extensions/dash-to-dock" = {

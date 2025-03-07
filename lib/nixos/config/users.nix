@@ -3,6 +3,7 @@
   lib,
   pkgs,
   self,
+  hostName,
   home-manager,
   ...
 }:
@@ -47,7 +48,12 @@ let
       ] ++ modules;
       class = "n9.users";
       specialArgs = {
-        inherit pkgs self userName;
+        inherit
+          pkgs
+          self
+          hostName
+          userName
+          ;
         lib = lib // {
           hm = import "${home-manager}/modules/lib" { inherit lib; };
         };

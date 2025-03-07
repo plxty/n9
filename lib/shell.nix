@@ -114,7 +114,7 @@ pkgs.mkShell {
     jq
 
     # RDepends:
-    nixos-anywhere.packages.${system}.nixos-anywhere
+    nixos-anywhere.packages.${system}.default
     colmenaPackage
 
     # Real stuff:

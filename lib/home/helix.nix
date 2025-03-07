@@ -1,9 +1,9 @@
-{ pkgs, ... }: # <- Home Manager `imports = []`
+{ pkgs, self, ... }:
 
 {
   home.packages = with pkgs; [
     nixd
-    nixfmt-rfc-style
+    self.inputs.nixfmt.packages.${pkgs.system}.default
     clang-tools
     bash-language-server
     shellcheck

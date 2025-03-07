@@ -4,6 +4,10 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixfmt = {
+      url = "github:NixOS/nixfmt";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
     colmena = {
       url = "github:zhaofengli/colmena";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -39,23 +43,21 @@
           contents = builtins.readDir dir;
           directories = builtins.filter ({ value, ... }: value == "directory") (lib.attrsToList contents);
         in
-        lib.map ({ name, ... }: name) directories;
+        lib.map ({ name, ... }: "${dir}/${name}") directories;
 
       mkSystems = import ./lib/nixos.nix inputs;
-
       colmenaHive = colmena.lib.makeHive (
         lib.fold lib.recursiveUpdate {
           # @see lib/nixos.nix
           meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; # will be overridden
           meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
-        } (lib.flatten (lib.map (mach: mkSystems ./mach/${mach}) (listDirectories ./mach)))
+        } (lib.flatten (lib.map mkSystems (listDirectories ./mach)))
       );
     in
     {
       lib = import ./lib/lib.nix inputs;
 
       inherit colmenaHive;
-
       nixosConfigurations = colmenaHive.nodes; # compatible
 
       # @see nix/flake.nix

@@ -1,4 +1,4 @@
-{ lib, ... }@args:
+{ lib, hostName, ... }@args:
 
 let
   # The module system will try to deduce what you need from args, this will make
@@ -24,7 +24,7 @@ in
                   basedir = "/home/byte/.n9/asterisk";
                 in
                 assert lib.assertMsg (lib.hasPrefix "/" basedir) "wrong secret directory!";
-                "${basedir}/${k}";
+                "${basedir}/${hostName}/${k}";
             };
 
             target = lib.mkOption {

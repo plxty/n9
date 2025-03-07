@@ -104,6 +104,7 @@ in
         ze = "zoxide query";
         dh = "dirh";
         dc = "cdh";
+        dr = "direnv reload";
       };
     };
 

@@ -1,45 +1,29 @@
 { nixpkgs, ... }:
 
-file:
+mach:
 
 # For reverting to nixosSystem, commit 0dfc786daefb441c8e14b3f97fa3393847d1de9d
 let
   inherit (nixpkgs) lib;
 
-  # Trying to find { system } within the modules, it now MUST be a simple attrs,
-  # because without system we can't provide the "pkgs" argument to the module.
-  foldSystem =
-    modules:
-    lib.fold
-      (
-        a: b:
-        if lib.isAttrs a && a ? system then
-          {
-            inherit (a) system;
-            modules = b.modules ++ [ (lib.removeAttrs a "system") ];
-          }
-        else
-          {
-            inherit (b) system;
-            modules = b.modules ++ [ a ];
-          }
-      )
-      {
-        system = null;
-        modules = [ ];
-      }
-      modules;
-
   # Feed the colmena:
   apply =
-    hostName:
-    { system, modules }:
+    hostName: modules:
     let
-      system' = if system == null then "x86_64-linux" else system;
-      system'' = lib.trace "selecting ${system'} for ${hostName}" system';
+      # Fetch nixpkgs.hostPlatform for system, it's a fake import as well:
+      hwModule = "${mach}/hardware-configuration.nix";
+      hwConfig = import hwModule {
+        config.hardware.enableRedistributableFirmware = null;
+        inherit lib;
+        pkgs = null;
+        modulesPath = "";
+      };
+
+      system = hwConfig.nixpkgs.hostPlatform.content;
+      system' = lib.trace "selecting ${system} for ${hostName}" system;
     in
     {
-      meta.nodeNixpkgs.${hostName} = nixpkgs.legacyPackages.${system''};
+      meta.nodeNixpkgs.${hostName} = nixpkgs.legacyPackages.${system'};
       meta.nodeSpecialArgs.${hostName} = { inherit hostName; };
 
       ${hostName}.imports = [
@@ -56,6 +40,7 @@ let
 
         # configs
         ./nixos/essential.nix
+        hwModule
       ] ++ modules;
     };
 
@@ -72,7 +57,7 @@ let
                   # "consistency", archiving a real system option is hard.
                   options.imports = lib.mkOption {
                     type = lib.types.listOf lib.types.unspecified;
-                    apply = v: apply name (foldSystem v);
+                    apply = apply name;
                   };
                 }
               )
@@ -81,7 +66,7 @@ let
         }
 
         # Top level, here we are!
-        file
+        mach
       ];
       class = "n9.os";
     })

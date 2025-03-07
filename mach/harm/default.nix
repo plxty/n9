@@ -1,7 +1,5 @@
 {
   n9.os.harm.imports = [
-    { system = "aarch64-linux"; }
-    ./hardware-configuration.nix
     (
       { pkgs, ... }:
       {
@@ -18,9 +16,7 @@
       n9.hardware.disk.sda.type = "btrfs";
       deployment.allowLocalDeployment = true;
 
-      n9.users.byte.imports = [
-        { n9.security.passwd.file = "harm/passwd"; }
-      ];
+      n9.users.byte.imports = [ ];
     }
   ];
 }
