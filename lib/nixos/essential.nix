@@ -13,6 +13,10 @@
     ];
     inherit ((import ../../flake.nix).nixConfig) substituters;
   };
+  nix.extraOptions = ''
+    keep-outputs = true
+    keep-derivations = true
+  '';
 
   # https://nixos.wiki/wiki/Storage_optimization
   nix.optimise.automatic = true;
