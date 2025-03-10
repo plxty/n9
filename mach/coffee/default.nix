@@ -5,6 +5,12 @@
       deployment.allowLocalDeployment = true;
 
       n9.users.byte.imports = [
+        (
+          { pkgs, ... }:
+          {
+            home.packages = [ pkgs.wechat ];
+          }
+        )
         {
           n9.environment.pop-shell.enable = true;
           n9.security.ssh-key = {

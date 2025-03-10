@@ -16,6 +16,8 @@
     yq
     bat
     cached-nix-shell
+    nix-index
+    file
 
     strace
     sysstat
