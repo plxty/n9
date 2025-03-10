@@ -54,6 +54,14 @@ let
 
     # Updating nixpkgs:
     nix flake update || true
+
+    # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
+    trap 'pkill -P $$' SIGINT SIGTERM EXIT
+    sudo -v
+    while true; do
+      sleep 180
+      sudo -k
+    done &
   '';
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''
