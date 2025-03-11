@@ -21,25 +21,18 @@ let
       .${target};
   targetList = { aarch64-linux = "aarch64-softmmu"; }.${target};
 
-  fetch = pkgs.writers.writeBashBin "fetch" ''
-    set -xeu
-
-    if [[ ! -d qemu ]]; then
-      curl https://mirrors.tuna.tsinghua.edu.cn/git/qemu/qemu.sh | bash
-    fi
-
-    cd qemu
-    echo "use flake n9#qemu" >> .envrc
-    direnv allow
-  '';
-
   # TODO: other targets like rv64?
   configure = pkgs.writers.writeBashBin "configure" ''
     set -xeu
 
     if [[ ! -f qemu-options.hx ]]; then
-      echo 'Run `fetch` first or cd to existing QEMU source!'
+      echo 'Run me inside a existing QEMU source!'
       exit 1
+    fi
+
+    if [[ ! -f .envrc ]]; then
+      echo "use flake n9#qemu" > .envrc
+      direnv allow
     fi
 
     mkdir -p build
@@ -52,6 +45,7 @@ let
       --enable-kvm \
       --enable-linux-io-uring \
       --enable-vhost-net \
+      --disable-tools \
       "$@"
 
     ninja -t compdb > compile_commands.json
@@ -68,7 +62,8 @@ in
 cross.pkgs.mkShell {
   name = "qemu";
 
-  inputsFrom = with cross.pkgs; [
+  # We need to build a static QEMU to run on boards:
+  inputsFrom = with cross.pkgs.pkgsStatic; [
     # Keep it simple to reduce dependency build time:
     (qemu.override { minimal = true; })
     # Requires some buildInputs by glib:
@@ -80,8 +75,16 @@ cross.pkgs.mkShell {
     pkgs.gcc
   ];
 
+  # Don't know why placing it to nativeBuildInputs won't work, because it's a library?
+  # https://discourse.nixos.org/t/use-buildinputs-or-nativebuildinputs-for-nix-shell/8464
+  # > nativeBuildInputs: Should be used for commands which need to run at build time (e.g. cmake) or shell hooks (e.g. autoPatchelfHook). These packages will be of the buildPlatforms architecture, and added to PATH.
+  # > buildInputs: Should be used for things that need to be linked against (e.g. openssl). These will be of the hostPlaform’s architecture. With strictDeps = true; (or by extension cross-platform builds), these will not be added to PATH. However, linking related variables will capture these packages (e.g. NIX_LD_FLAGS, CMAKE_PREFIX_PATH, PKG_CONFIG_PATH)
+  buildInputs = [
+    # For static libc it should be specified individually:
+    cross.pkgs.glibc.static
+  ];
+
   packages = [
-    fetch
     configure
     build
   ];
