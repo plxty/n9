@@ -15,6 +15,9 @@ rec {
     });
   patch = pkg: attr: patches pkg [ attr ];
 
+  # Hmm, why not?
+  flatMap = fn: list: lib.flatten (lib.map fn list);
+
   # Like recursiveUpdate, but also handle the lists concation:
   # When using mergeAttrs, recursiveUpdate or other merging functions, you'd
   # better think twice of what you want, and what is the inner types you're

@@ -1,12 +1,11 @@
 {
+  system,
   self,
   nixpkgs,
   colmena,
   nixos-anywhere,
   ...
 }:
-
-system:
 
 let
   pkgs = nixpkgs.legacyPackages.${system};
@@ -124,10 +123,7 @@ let
   '';
 in
 pkgs.mkShell {
-  # This will import/inherit packages to this shell from `inputsFrom` packages.
-  # e.g. if `inputsFrom = [ linux.dev ]` will make gcc,gnumake and other deps
-  #      available to this shell, avoiding have duplicated `packages`.
-  inputsFrom = [ ];
+  name = "burn";
 
   packages = with pkgs; [
     # RDepends:

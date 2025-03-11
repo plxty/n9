@@ -28,27 +28,44 @@
   };
 
   outputs =
-    { nixpkgs, colmena, ... }@inputs:
+    {
+      self,
+      nixpkgs,
+      colmena,
+      ...
+    }@inputs:
     let
       inherit (nixpkgs) lib;
 
-      # TODO: builtins.filterSource like?
-      listDirectories =
-        dir:
-        let
-          contents = builtins.readDir dir;
-          directories = builtins.filter ({ value, ... }: value == "directory") (lib.attrsToList contents);
-        in
-        lib.map ({ name, ... }: "${dir}/${name}") directories;
-
       mkSystems = import ./lib/nixos.nix inputs;
       colmenaHive = colmena.lib.makeHive (
-        lib.fold lib.recursiveUpdate {
-          # @see lib/nixos.nix
-          meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; # will be overridden
-          meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
-        } (lib.flatten (lib.map mkSystems (listDirectories ./mach)))
+        lib.fold lib.recursiveUpdate
+          {
+            # @see lib/nixos.nix, meta.nixpkgs will be overridden:
+            meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux;
+            meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
+          }
+          (
+            self.lib.flatMap mkSystems [
+              ./mach/evil
+              ./mach/wa
+              ./mach/coffee
+              ./mach/harm
+            ]
+          )
       );
+
+      mkShells =
+        system:
+        let
+          args = inputs // {
+            inherit system;
+          };
+        in
+        {
+          default = import ./shell/burn.nix args;
+          qemu = import ./shell/qemu.nix args;
+        };
     in
     {
       lib = import ./lib/lib.nix inputs;
@@ -57,10 +74,10 @@
       nixosConfigurations = colmenaHive.nodes; # compatible
 
       # @see nix/flake.nix
-      devShell = nixpkgs.lib.genAttrs [
+      devShells = nixpkgs.lib.genAttrs [
         "x86_64-linux"
         "aarch64-linux"
-      ] (import ./shell/burn.nix inputs);
+      ] mkShells;
     };
 
   nixConfig = {

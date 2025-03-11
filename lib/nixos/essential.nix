@@ -20,7 +20,7 @@
     # nix develop n9#qemu
     n9.to = {
       type = "path";
-      path = builtins.toString ../../shell;
+      path = builtins.toString ../..;
     };
   };
 
