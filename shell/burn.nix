@@ -32,9 +32,6 @@ let
       fi
     fi
 
-    # Hope it will survive the time-cost update:
-    sudo -v
-
     if [[ "$B_THAT" != "" ]]; then
       B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
       read -r B_USER B_HOST B_PORT < \
@@ -64,6 +61,7 @@ let
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
       # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
+      sudo -v
       trap 'pkill -P $$' SIGINT SIGTERM EXIT
       {
         # "Wakeup" the sleeping parent when exit normally or abnormally:
