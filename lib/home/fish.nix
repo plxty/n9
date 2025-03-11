@@ -56,8 +56,13 @@ in
         };
       };
 
-      # FIXME: (no) local:
-      shellInit = ''fish_add_path "$HOME/.local/bin"'';
+      shellInit = ''
+        # FIXME: (no) local:
+        fish_add_path "$HOME/.local/bin"
+
+        # https://github.com/haslersn/any-nix-shell
+        ${pkgs.any-nix-shell}/bin/any-nix-shell fish | source
+      '';
 
       interactiveShellInit = ''
         if test "$tide_configure_token" != "${tideToken}"
@@ -84,7 +89,10 @@ in
         set fish_greeting
 
         # Trying if it is useful:
-        set -qU fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && cd "$fish_most_recent_dir"
+        if test "/proc/$(ps -o ppid --no-headers $fish_pid)/comm" != "fish"
+          set -qU fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && \
+            cd "$fish_most_recent_dir"
+        end
 
         # https://fishshell.com/docs/current/language.html#syntax-function-autoloading
         __fish_save_most_recent_dir
@@ -92,14 +100,12 @@ in
 
         # fzf, Ctrl+(R|V) Ctrl+Alt+(L|S|P)
         set -gx FZF_DEFAULT_OPTS --bind "alt-k:clear-query"
-
-        # https://github.com/haslersn/any-nix-shell
-        ${pkgs.any-nix-shell}/bin/any-nix-shell fish | source
       '';
 
       shellAbbrs = {
         ra = "rg --hidden --no-ignore";
         ff = "fd --type f .";
+        fa = "fd --hidden --no-ignore";
         up = "upto";
         ze = "zoxide query";
         dh = "dirh";
@@ -123,12 +129,11 @@ in
     };
 
     # other deps:
-    thefuck.enable = true;
-    zoxide.enable = true;
-    fzf.enable = true;
     direnv = {
       enable = true;
       nix-direnv.enable = true;
     };
+    fzf.enable = true;
+    zoxide.enable = true;
   };
 }
