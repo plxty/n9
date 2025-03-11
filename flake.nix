@@ -60,7 +60,7 @@
       devShell = nixpkgs.lib.genAttrs [
         "x86_64-linux"
         "aarch64-linux"
-      ] (import ./lib/shell.nix inputs);
+      ] (import ./shell/burn.nix inputs);
     };
 
   nixConfig = {

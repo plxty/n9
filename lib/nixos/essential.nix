@@ -1,7 +1,7 @@
 { hostName, ... }:
 
 {
-  imports = [ ./nixpkgs.nix ];
+  imports = [ ../../pkgs/overlay.nix ];
 
   nix.settings = {
     experimental-features = [
@@ -10,10 +10,19 @@
     ];
     inherit ((import ../../flake.nix).nixConfig) substituters;
   };
+
   nix.extraOptions = ''
     keep-outputs = true
     keep-derivations = true
   '';
+
+  nix.registry = {
+    # nix develop n9#qemu
+    n9.to = {
+      type = "path";
+      path = builtins.toString ../../shell;
+    };
+  };
 
   # https://nixos.wiki/wiki/Storage_optimization
   nix.optimise.automatic = true;

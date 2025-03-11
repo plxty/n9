@@ -14,11 +14,10 @@ let
   # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
   # It can be an overlay of nixpkgs, however for simplicity...
   colmenaPackage = self.lib.patches colmena.packages.${system}.colmena [
-    ./patches/colmena-nix-store-sign.patch
+    ../pkgs/patches/colmena-nix-store-sign.patch
   ];
 
-  # The package of burn, TODO: offline? timeout?
-  burn = ''
+  preBurn = ''
     set -uex
 
     B_THIS="$(hostname)"
@@ -34,11 +33,8 @@ let
       fi
     fi
 
-    # Pull the latest changes if have:
-    git pull --rebase || true
-    pushd asterisk 1>/dev/null
-    git pull --rebase || true
-    popd 1>/dev/null
+    # Hope it will survive the time-cost update:
+    sudo -v
 
     if [[ "$B_THAT" != "" ]]; then
       B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
@@ -49,44 +45,50 @@ let
       fi
     fi
 
-    sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
-      lib/common/config/secrets.nix
-
-    # Updating nixpkgs:
+    # Pull the latest changes if have:
+    git pull --rebase || true
+    cd asterisk
+    git pull --rebase || true
+    cd ..
     nix flake update || true
 
-    # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
-    trap 'pkill -P $$' SIGINT SIGTERM EXIT
-    sudo -v
-    while true; do
-      sleep 180
-      sudo -k
-    done &
+    sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
+      lib/common/config/secrets.nix
   '';
 
-  burnSwitch = pkgs.writers.writeBashBin "burn" ''
-    ${burn}
+  postBurn = "";
 
+  burnSwitch = pkgs.writers.writeBashBin "burn" ''
+    ${preBurn}
     B_COLMENA=(colmena --show-trace --experimental-flake-eval)
     B_HWCONF=(sudo nixos-generate-config --show-hardware-config --no-filesystems)
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
-      "''${B_HWCONF[@]}" > "mach/$B_THIS/hardware-configuration.nix"
-      "''${B_COLMENA[@]}" apply-local --sudo --verbose
+      # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
+      trap 'pkill -P $$' SIGINT SIGTERM EXIT
+      {
+        # "Wakeup" the sleeping parent when exit normally or abnormally:
+        trap 'kill $(pgrep -P $$ sleep)' EXIT
 
-      # Try updateing the database for command-not-found as well:
-      sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
-      sudo nix-channel --update nixos || true
+        "''${B_HWCONF[@]}" > "mach/$B_THIS/hardware-configuration.nix"
+        "''${B_COLMENA[@]}" apply-local --sudo --verbose
+
+        # Try updateing the database for command-not-found as well:
+        sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
+        sudo nix-channel --update nixos || true
+      } &
+      while jobs %%; do sudo -v; sleep 180; done
     else
       ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "''${B_HWCONF[@]}" \
         > "mach/$B_THAT/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
         --no-substitute --sign "asterisk/$B_THIS/nix-key"
     fi
+    ${postBurn}
   '';
 
   burnInstall = pkgs.writers.writeBashBin "burn-install" ''
-    ${burn}
+    ${preBurn}
     test -n "$B_THAT"
 
     B_HWCONF="mach/$B_THAT/hardware-configuration.nix"
@@ -118,6 +120,7 @@ let
 
     # Real switch:
     "''${B_INSTALL[@]}" --phases install,reboot
+    ${postBurn}
   '';
 in
 pkgs.mkShell {
