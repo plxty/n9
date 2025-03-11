@@ -14,8 +14,9 @@ let
       {
         aarch64-linux = {
           # eq to 'pkgs = import <nixpkgs> { crossSystem.config = "..."; };'
-          pkgs = pkgs.pkgsCross.aarch64-multiplatform;
-          configure = "--cross-prefix=aarch64-unknown-linux-gnu-";
+          # It seems the static QEMU is using musl-c, we're trying to keep it up:
+          pkgs = pkgs.pkgsCross.aarch64-multiplatform-musl;
+          configure = "--cross-prefix=aarch64-unknown-linux-musl-";
         };
       }
       .${target};
@@ -38,14 +39,18 @@ let
     mkdir -p build
     cd build
 
+    # MUST disable split-debug to workaround ASM_FINAL_SPEC in GCC that trying to run native objcopy:
     ../configure \
       --target-list=${targetList} \
       ${cross.configure} \
       --static \
+      --disable-strip \
+      --disable-split-debug \
+      --disable-tools \
+      --disable-guest-agent \
       --enable-kvm \
       --enable-linux-io-uring \
       --enable-vhost-net \
-      --disable-tools \
       "$@"
 
     ninja -t compdb > compile_commands.json
@@ -62,27 +67,30 @@ in
 cross.pkgs.mkShell {
   name = "qemu";
 
-  # We need to build a static QEMU to run on boards:
+  # Making dependent libraries static:
   inputsFrom = with cross.pkgs.pkgsStatic; [
-    # Keep it simple to reduce dependency build time:
+    # Keep it simple to reduce dependency build time in nix:
     (qemu.override { minimal = true; })
-    # Requires some buildInputs by glib:
+    # The glib requires some of the depencies be installed:
     glib
   ];
 
-  nativeBuildInputs = [
-    # We need a native gcc as well to build some QEMU objects:
+  # In cross compile (in my own opinion),
+  # build: current the platform
+  # host: the cross compile toolchains
+  # target: eventually runs at
+  depsBuildBuild = [
+    # QEMU needs for hexagon:
     pkgs.gcc
   ];
 
-  # Don't know why placing it to nativeBuildInputs won't work, because it's a library?
   # https://discourse.nixos.org/t/use-buildinputs-or-nativebuildinputs-for-nix-shell/8464
-  # > nativeBuildInputs: Should be used for commands which need to run at build time (e.g. cmake) or shell hooks (e.g. autoPatchelfHook). These packages will be of the buildPlatforms architecture, and added to PATH.
-  # > buildInputs: Should be used for things that need to be linked against (e.g. openssl). These will be of the hostPlaform’s architecture. With strictDeps = true; (or by extension cross-platform builds), these will not be added to PATH. However, linking related variables will capture these packages (e.g. NIX_LD_FLAGS, CMAKE_PREFIX_PATH, PKG_CONFIG_PATH)
-  buildInputs = [
-    # For static libc it should be specified individually:
-    cross.pkgs.glibc.static
-  ];
+  # @see NixOS Reference: Dependency propagation
+  # buildInputs = with cross.pkgs; [
+  #   # Need both dynamic (for meson configure) and static (for building to target) glibc:
+  #   glibc
+  #   glibc.static
+  # ];
 
   packages = [
     configure

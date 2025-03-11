@@ -61,7 +61,6 @@ stdenv.mkDerivation {
     makeWrapper
   ];
 
-  # TODO: Shrink?
   buildInputs = [
     alsa-lib
     at-spi2-core
@@ -102,21 +101,28 @@ stdenv.mkDerivation {
   dontBuild = true;
 
   # https://github.com/NixOS/nixpkgs/issues/282749
-  # https://discourse.nixos.org/t/unexpected-sigtrap-when-running-electron/7864/2
-  # Better to watch out `coredumpctl` and some logs for other errors...
+  # SIGABRT: https://discourse.nixos.org/t/unexpected-sigtrap-when-running-electron/7864/2
+  # SIGSEGV: https://github.com/NixOS/nixpkgs/pull/354332
   installPhase = ''
     runHook preInstall
     dpkg -x $src $out
-    wrapProgram $out/opt/wechat/wechat \
+    pushd $out
+    mv opt/wechat .
+    mv usr/share .
+    rm -rf opt usr
+    popd
+
+    wrapProgram $out/wechat/wechat \
       --prefix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
           libGL
           udev
+          libpulseaudio
         ]
       }
-    substituteInPlace $out/usr/share/applications/wechat.desktop \
-      --replace-fail /usr/bin/wechat $out/opt/wechat/wechat \
-      --replace-fail /usr/share $out/usr/share
+    substituteInPlace $out/share/applications/wechat.desktop \
+      --replace-fail /usr/bin/wechat $out/wechat/wechat \
+      --replace-fail /usr/share $out/share
     runHook postInstall
   '';
 
@@ -124,6 +130,5 @@ stdenv.mkDerivation {
     homepage = "https://linux.weixin.qq.com";
     license = lib.licenses.unfree;
     platforms = [ "x86_64-linux" ];
-    mainProgram = "wechat";
   };
 }
