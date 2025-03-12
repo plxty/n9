@@ -7,12 +7,12 @@
 }:
 
 let
-  cfg = config.n9.environment.pop-shell;
+  cfg = config.n9.environment.gnome;
   dconf = import ../dconf-gnome.nix { inherit lib; };
 in
 {
-  options.n9.environment.pop-shell = {
-    enable = lib.mkEnableOption "pop-shell";
+  options.n9.environment.gnome = {
+    enable = lib.mkEnableOption "gnome";
   };
 
   config = lib.mkIf cfg.enable {

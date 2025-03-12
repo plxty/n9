@@ -38,7 +38,7 @@ in
 
   config = lib.mkMerge [
     (lib.mkIf (cfg.private != null) {
-      n9.security.secrets.".ssh/${builtins.baseNameOf cfg.private}".source = cfg.private;
+      n9.security.keys.".ssh/${builtins.baseNameOf cfg.private}".source = cfg.private;
     })
 
     (lib.mkIf (cfg.public != null) {

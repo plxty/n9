@@ -39,10 +39,10 @@ let
             dconf = mkAttrsOption;
           };
         }
-        ../../common/config/secrets.nix
+        ../../generic/config/keys.nix
         ../../home/config/passwd.nix
         ../../home/config/ssh-key.nix
-        ../../home/config/pop-shell.nix
+        ../../home/config/gnome.nix
         ../../home/config/boxes.nix
 
         # configs

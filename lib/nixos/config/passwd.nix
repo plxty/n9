@@ -23,12 +23,12 @@ in
 
     {
       # Never null now:
-      users.users = lib.mapAttrs (n: v: {
-        hashedPasswordFile = "/etc/nixos/keys/passwd-${n}";
+      users.users = lib.mapAttrs (n: _: {
+        hashedPasswordFile = "/etc/nixos/keys/${n}/passwd";
       }) usercfg;
 
-      n9.security.secrets = lib.concatMapAttrs (n: v: {
-        "/etc/nixos/keys/passwd-${n}".source = v.file;
+      n9.security.keys = lib.concatMapAttrs (n: v: {
+        "/etc/nixos/keys/${n}/passwd".source = v.file;
       }) usercfg;
     }
   ];

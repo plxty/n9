@@ -7,9 +7,8 @@
 }:
 
 let
-  # @see lib/home/config/pop-shell.nix
-  # TODO: Rename to gnome?
-  usercfg = self.lib.users "pop-shell" (v: v.n9.environment.pop-shell) config;
+  # @see lib/home/config/gnome.nix
+  usercfg = self.lib.users "gnome" (v: v.n9.environment.gnome) config;
 in
 {
   config = lib.mkMerge [

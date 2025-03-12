@@ -7,8 +7,8 @@ let
   osConfig = args.osConfig or { };
 in
 {
-  # only options here, config is defined in lib/nixos/config/secrets.nix:
-  options.n9.security.secrets = lib.mkOption {
+  # only options here, config is defined in lib/nixos/config/keys.nix:
+  options.n9.security.keys = lib.mkOption {
     type = lib.types.attrsOf (
       # @see home-manager/modules/lib/file-type.nix
       # @see https://colmena.cli.rs/unstable/reference/deployment.html
@@ -22,9 +22,10 @@ in
                 k:
                 let
                   basedir = "/home/byte/.n9/asterisk";
+                  basedir' = "${basedir}/${hostName}";
                 in
                 assert lib.assertMsg (lib.hasPrefix "/" basedir) "wrong secret directory!";
-                "${basedir}/${hostName}/${k}";
+                if userName == null then "${basedir'}/${k}" else "${basedir'}/${userName}/${k}";
             };
 
             target = lib.mkOption {
@@ -59,7 +60,6 @@ in
         }
       )
     );
-
     default = { };
   };
 }

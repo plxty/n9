@@ -45,11 +45,12 @@ let
     git pull --rebase || true
     cd asterisk
     git pull --rebase || true
+    chmod -R g-rwx,o-rwx .
     cd ..
     nix flake update || true
 
     sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
-      lib/common/config/secrets.nix
+      lib/generic/config/keys.nix
   '';
 
   postBurn = "";
@@ -84,7 +85,7 @@ let
     ${postBurn}
   '';
 
-  burnInstall = pkgs.writers.writeBashBin "burn-install" ''
+  burnInstall = pkgs.writers.writeBashBin "fire" ''
     ${preBurn}
     test -n "$B_THAT"
 

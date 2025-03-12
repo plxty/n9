@@ -6,14 +6,14 @@
 }:
 
 let
-  cfg = config.n9.security.secrets;
-  usercfg = self.lib.users "secrets" (v: v.n9.security.secrets) config;
+  cfg = config.n9.security.keys;
+  usercfg = self.lib.users "keys" (v: v.n9.security.keys) config;
   keys =
     lib.mapAttrsToList (_: lib.id) cfg
     ++ lib.flatten (lib.mapAttrsToList (_: lib.mapAttrsToList (_: lib.id)) usercfg);
 in
 {
-  # only config here, options are declared in lib/common/config/secrets.nix:
+  # only config here, options are declared in lib/generic/config/keys.nix:
   config.deployment.keys = lib.mkMerge (
     lib.map (v: {
       ${builtins.baseNameOf v.target} = {
