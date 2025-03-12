@@ -89,7 +89,7 @@ in
         set fish_greeting
 
         # Trying if it is useful:
-        if test "/proc/$(ps -o ppid --no-headers $fish_pid)/comm" != "fish"
+        if test "/proc/$(ps -o ppid --no-headers $fish_pid)/comm" != "nix-shell"
           set -qU fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && \
             cd "$fish_most_recent_dir"
         end

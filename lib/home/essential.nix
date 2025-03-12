@@ -46,5 +46,9 @@
     };
   };
 
+  home.file.".config/nixpkgs/config.nix".text = ''
+    { allowUnfree = true; }
+  '';
+
   home.stateVersion = "25.05";
 }
