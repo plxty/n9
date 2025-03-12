@@ -33,6 +33,12 @@ let
       direnv allow
     fi
 
+    # .clang-format from libslirp, maybe the same?
+    if [[ ! -f .clang-format ]]; then
+      curl -L -o .clang-format \
+        'https://gitlab.com/qemu-project/libslirp/-/raw/master/.clang-format?ref_type=heads&inline=false'
+    fi
+
     mkdir -p build
     cd build
 
