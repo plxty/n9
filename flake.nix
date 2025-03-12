@@ -47,10 +47,10 @@
           }
           (
             self.lib.flatMap mkSystems [
-              ./mach/evil
-              ./mach/wa
-              ./mach/coffee
-              ./mach/harm
+              ./hosts/evil
+              ./hosts/wa
+              ./hosts/coffee
+              ./hosts/harm
             ]
           )
       );

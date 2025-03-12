@@ -1,6 +1,6 @@
 { nixpkgs, ... }:
 
-mach:
+hosts:
 
 # For reverting to nixosSystem, commit 0dfc786daefb441c8e14b3f97fa3393847d1de9d
 let
@@ -11,7 +11,7 @@ let
     hostName: modules:
     let
       # Fetch nixpkgs.hostPlatform for system, it's a fake import as well:
-      hwModule = "${mach}/hardware-configuration.nix";
+      hwModule = "${hosts}/hardware-configuration.nix";
       hwConfig = import hwModule {
         config.hardware.enableRedistributableFirmware = null;
         inherit lib;
@@ -66,7 +66,7 @@ let
         }
 
         # Top level, here we are!
-        mach
+        hosts
       ];
       class = "n9.os";
     })

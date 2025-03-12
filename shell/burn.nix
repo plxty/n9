@@ -68,7 +68,7 @@ let
         # "Wakeup" the sleeping parent when exit normally or abnormally:
         trap 'kill $(pgrep -P $$ sleep)' EXIT
 
-        "''${B_HWCONF[@]}" > "mach/$B_THIS/hardware-configuration.nix"
+        "''${B_HWCONF[@]}" > "hosts/$B_THIS/hardware-configuration.nix"
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
 
         # Try updateing the database for command-not-found as well:
@@ -78,7 +78,7 @@ let
       while jobs %%; do sudo -v; sleep 180; done
     else
       ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "''${B_HWCONF[@]}" \
-        > "mach/$B_THAT/hardware-configuration.nix"
+        > "hosts/$B_THAT/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
         --no-substitute --sign "asterisk/$B_THIS/nix-key"
     fi
@@ -89,7 +89,7 @@ let
     ${preBurn}
     test -n "$B_THAT"
 
-    B_HWCONF="mach/$B_THAT/hardware-configuration.nix"
+    B_HWCONF="hosts/$B_THAT/hardware-configuration.nix"
     if [[ ! -f "$B_HWCONF" ]]; then
       echo "{ ... }: { }" > "$B_HWCONF"
     fi

@@ -10,7 +10,7 @@ stdenv.mkDerivation {
 }
 ```
 
-NixOS (partial) configurations of mine. Break it!
+NixOS (partial-non-secrets) configurations of mine. Break it!
 
 # ()ctothorp
 
@@ -25,7 +25,7 @@ burn
 burn evil
 
 # nixos-anywhere
-burn-install evil
+fire wa
 ```
 
-Checkout `mach` directory for my own builds, using [colmena](https://github.com/zhaofengli/colmena).
+Checkout `hosts` directory for my own builds, using [colmena](https://github.com/zhaofengli/colmena).
