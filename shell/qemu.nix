@@ -10,21 +10,13 @@ let
   target = "aarch64-linux";
 
   pkgs = nixpkgs.legacyPackages.${system};
-  cross =
+  pkgsCross =
     if target == system then
-      {
-        inherit pkgs;
-        configure = "";
-      }
+      pkgs
     else
-      {
-        aarch64-linux = {
-          # eq. 'pkgs = import <nixpkgs> { crossSystem.config = "..."; };'
-          pkgs = pkgs.pkgsCross.aarch64-multiplatform-musl;
-          configure = "--cross-prefix=aarch64-unknown-linux-musl-";
-        };
-      }
-      .${target};
+      # eq. 'pkgs = import <nixpkgs> { crossSystem.config = "..."; };'
+      { aarch64-linux = pkgs.pkgsCross.aarch64-multiplatform-musl; }.${target};
+  prefix = pkgsCross.stdenv.cc.targetPrefix;
   targetList = { aarch64-linux = "aarch64-softmmu"; }.${target};
 
   # TODO: other targets like rv64?
@@ -44,31 +36,45 @@ let
     mkdir -p build
     cd build
 
-    # MUST disable split-debug to workaround ASM_FINAL_SPEC in GCC that trying to run native objcopy:
-    # (The split-debug may still in development, it occurs in the latest QEMU commit.)
-    # GIO has problem with static link, causing redefinition of crc32c.
-    ../configure \
-      --target-list=${targetList} \
-      ${cross.configure} \
-      --static \
-      --disable-strip \
-      --disable-split-debug \
-      --disable-tools \
-      --disable-guest-agent \
-      --disable-gio \
-      --enable-kvm \
-      --enable-linux-io-uring \
-      --enable-vhost-net \
-      "$@"
+    CONFIGURE_FLAGS=(
+      --target-list=${targetList}
+      --static
+      --disable-strip
+      # To workaround ASM_FINAL_SPEC in GCC that trying to run native objcopy:
+      --disable-split-debug
+      --disable-tools
+      --disable-guest-agent
+      # GIO has problem with static link musl-c, causing redefinition of crc32c:
+      --disable-gio
+      --enable-kvm
+      --enable-linux-io-uring
+      --enable-vhost-net
+    )
+    if [[ "${prefix}" != "" ]]; then
+      CONFIGURE_FLAGS+=(--cross-prefix=${prefix})
+    fi
 
+    ../configure "''${CONFIGURE_FLAGS[@]}" "$@"
     ninja -t compdb > compile_commands.json
+    # The https://github.com/llvm/llvm-project/pull/129459 just merged days ago,
+    # we still need a very naive way (using clangd config) to play with it.
+    # Note: the --query-driver only plays well within LC_ALL=C environment.
+    # Run `clangd --log=verbose --check=system/main.c` to verify.
+    {
+      echo "CompileFlags:"
+      echo "  Add:"
+      echo "    - -ferror-limit=0"
+      for INC in $(${prefix}gcc -E -Wp,-v -xc /dev/null -fsyntax-only 2>&1 | sed -n 's,^ ,,p'); do
+        echo "    - -I$INC"
+      done
+    } > ../.clangd
   '';
 
   build = pkgs.writers.writeBashBin "build" ''
     make -C build -j $(nproc --ignore=2) "$@"
   '';
 in
-cross.pkgs.mkShell {
+pkgsCross.mkShell {
   name = "qemu";
 
   # Like configure or some code-gen tools that runs on build:
@@ -80,14 +86,14 @@ cross.pkgs.mkShell {
   ];
 
   # Mostly the cross compilers, kind of similar to depsBuildBuild:
-  nativeBuildInputs = with cross.pkgs.buildPackages; [
+  nativeBuildInputs = with pkgsCross.buildPackages; [
     gcc
     pkg-config
   ];
 
   # Making dependent libraries static, pkgsStatic.qemu is broken, and won't work
   # event { minimal = true; }, causing the inputsFrom a little bit awkward.
-  buildInputs = with cross.pkgs.pkgsStatic; [
+  buildInputs = with pkgsCross.pkgsStatic; [
     glib
     liburing
   ];
