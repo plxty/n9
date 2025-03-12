@@ -129,6 +129,7 @@ EXCLUDIND = [
         "org/gnome/shell/extensions/paperwm",
         [
             "last-used-display-server",
+            "open-window-position",
             "restore-attach-modal-dialogs",
             "restore-edge-tiling",
             "restore-keybinds",
