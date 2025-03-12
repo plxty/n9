@@ -64,7 +64,13 @@ EXCLUDIND = [
             "secondary-color",  # '#000000'
         ],
     ),
-    ("org/gnome/desktop/input-sources", ["mru-sources"]),
+    (
+        "org/gnome/desktop/input-sources",
+        [
+            "mru-sources",
+            "xkb-options",
+        ],
+    ),
     ("org/gnome/desktop/notifications", ["application-children"]),
     ("org/gnome/desktop/notifications/application/*", ["application-id"]),
     ("org/gnome/desktop/peripherals/mouse", ["speed"]),

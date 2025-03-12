@@ -25,6 +25,10 @@
       url = "github:paperwm/PaperWM";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    chinese-fonts = {
+      url = "github:brsvh/chinese-fonts-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs =

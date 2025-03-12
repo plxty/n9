@@ -37,6 +37,7 @@ let
             services = mkAttrsOption;
             xdg = mkAttrsOption;
             dconf = mkAttrsOption;
+            fonts = mkAttrsOption;
           };
         }
         ../../generic/config/keys.nix

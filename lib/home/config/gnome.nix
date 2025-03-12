@@ -13,28 +13,47 @@ in
 {
   options.n9.environment.gnome = {
     enable = lib.mkEnableOption "gnome";
-  };
-
-  config = lib.mkIf cfg.enable {
-    home.packages = with pkgs; [
-      dconf-editor
-      dconf2nix
-    ];
-
-    programs.gnome-shell = {
-      enable = true;
-      extensions = with pkgs.gnomeExtensions; [
-        { package = brightness-control-using-ddcutil; }
-        { package = switcher; }
-        { package = self.inputs.paperwm.packages.${pkgs.system}.default; }
-        { package = dash-to-dock; }
-        { package = customize-ibus; }
-      ];
+    swapCtrlCaps = lib.mkOption {
+      type = lib.types.bool;
+      default = false;
     };
-
-    # Force xdg to be non-unicode directories, just using defaults:
-    xdg.userDirs.enable = true;
-
-    inherit (dconf) dconf;
   };
+
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      {
+        home.packages = with pkgs; [
+          dconf-editor
+          dconf2nix
+        ];
+
+        programs.gnome-shell = {
+          enable = true;
+          extensions = with pkgs.gnomeExtensions; [
+            { package = brightness-control-using-ddcutil; }
+            { package = switcher; }
+            { package = self.inputs.paperwm.packages.${pkgs.system}.default; }
+            { package = dash-to-dock; }
+            { package = customize-ibus; }
+          ];
+        };
+
+        # Force xdg to be non-unicode directories, just using defaults:
+        xdg.userDirs.enable = true;
+
+        inherit (dconf) dconf;
+      }
+
+      {
+        dconf.settings."org/gnome/desktop/input-sources".xkb-options = [
+          "terminate:ctrl_alt_bksp"
+          "lv3:menu_switch"
+        ];
+      }
+
+      (lib.mkIf cfg.swapCtrlCaps {
+        dconf.settings."org/gnome/desktop/input-sources".xkb-options = [ "ctrl:swapcaps" ];
+      })
+    ]
+  );
 }

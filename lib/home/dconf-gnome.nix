@@ -22,7 +22,6 @@ with lib.hm.gvariant;
     "org/gnome/desktop/input-sources" = {
       per-window = true;
       sources = [ (mkTuple [ "xkb" "us" ]) (mkTuple [ "ibus" "rime" ]) ];
-      xkb-options = [ "terminate:ctrl_alt_bksp" "lv3:menu_switch" "ctrl:nocaps" "shift:both_capslock" ];
     };
 
     "org/gnome/desktop/interface" = {
