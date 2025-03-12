@@ -137,7 +137,14 @@ EXCLUDIND = [
         ],
     ),
     ("org/gnome/shell/extensions/paperwm/workspaces", ["list"]),
-    ("org/gnome/shell/extensions/paperwm/workspaces/*", ["index"]),
+    (
+        "org/gnome/shell/extensions/paperwm/workspaces/*",
+        [
+            "index",
+            "show-position-bar",
+            "show-top-bar",
+        ],
+    ),
     (
         "org/gnome/shell/extensions/dash-to-dock",
         ["preferred-monitor", "preferred-monitor-by-connector"],
