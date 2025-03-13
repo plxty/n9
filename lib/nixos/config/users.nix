@@ -2,9 +2,9 @@
   options,
   config,
   lib,
-  self,
+  n9,
+  inputs,
   hostName,
-  home-manager,
   ...
 }:
 let
@@ -12,14 +12,14 @@ let
 in
 {
   # @see https://nixos-and-flakes.thiscute.world/other-usage-of-flakes/module-system
-  imports = [ home-manager.nixosModules.default ];
+  imports = [ inputs.home-manager.nixosModules.default ];
 
   # Of home-manager, it will evalModules twice, but we can have a nice look.
   # The submoduleWith can handle the merge of options (nixpkgs/lib/types.nix):
   options.home-manager.users = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submoduleWith {
-        specialArgs = { inherit self hostName; };
+        specialArgs = { inherit n9 inputs hostName; };
         modules = [
           # special
           (

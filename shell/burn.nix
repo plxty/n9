@@ -1,18 +1,16 @@
 {
   system,
-  self,
-  nixpkgs,
-  colmena,
-  nixos-anywhere,
+  n9,
+  inputs,
   ...
 }:
 
 let
-  pkgs = nixpkgs.legacyPackages.${system};
+  pkgs = inputs.nixpkgs.legacyPackages.${system};
 
   # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
   # It can be an overlay of nixpkgs, however for simplicity...
-  colmenaPackage = self.lib.patches colmena.packages.${system}.colmena [
+  colmenaPackage = n9.patches inputs.colmena.packages.${system}.colmena [
     ../pkgs/patches/colmena-nix-store-sign.patch
   ];
 
@@ -128,7 +126,7 @@ pkgs.mkShell {
     # RDepends:
     gnused
     jq
-    nixos-anywhere.packages.${system}.default
+    inputs.nixos-anywhere.packages.${system}.default
     colmenaPackage
 
     # Real stuff:

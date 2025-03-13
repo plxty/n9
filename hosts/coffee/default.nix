@@ -6,15 +6,16 @@
 
       n9.users.byte.imports = [
         (
-          { pkgs, self, ... }:
+          { pkgs, inputs, ... }:
           {
             home.packages = with pkgs; [
               wechat
               wpsoffice-cn
+              netease-cloud-music-gtk
               # WARNING: Copyright! And extermely slow to download! It will
               # fetch the whole Windows ISO to extract the fonts.
               # TODO: Make a option of wps office?
-              self.inputs.chinese-fonts.packages.${pkgs.system}.windows-fonts
+              inputs.chinese-fonts.packages.${pkgs.system}.windows-fonts
             ];
 
             # https://github.com/nix-community/home-manager/issues/605

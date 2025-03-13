@@ -1,12 +1,12 @@
 {
   config,
   lib,
-  self,
+  n9,
   ...
 }:
 
 let
-  usercfg = self.lib.users "passwd" (v: v.n9.security.passwd) config;
+  usercfg = n9.users "passwd" (v: v.n9.security.passwd) config;
 in
 {
   # @see lib/home/config/passwd.nix

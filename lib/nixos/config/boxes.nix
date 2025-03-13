@@ -2,18 +2,18 @@
   config,
   lib,
   pkgs,
-  self,
+  n9,
   ...
 }:
 
 let
-  usercfg = self.lib.users "boxes" (v: v.n9.virtualisation.boxes) config;
+  usercfg = n9.users "boxes" (v: v.n9.virtualisation.boxes) config;
 in
 {
   # The config MUST be known at evaluate time, thus it can't be generate via
   # functions or other ways, still, infinite recursion.
   config = lib.mkMerge [
-    (self.lib.mkIfUsers (v: v.enable) usercfg {
+    (n9.mkIfUsers (v: v.enable) usercfg {
       # https://nixos.wiki/wiki/Libvirt
       virtualisation.libvirtd =
         let

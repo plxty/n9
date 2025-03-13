@@ -1,10 +1,10 @@
-{ nixpkgs, self, ... }@inputs:
+{ n9, inputs, ... }@args:
 
 whereHosts:
 
 # For reverting to nixosSystem, commit 0dfc786daefb441c8e14b3f97fa3393847d1de9d
 let
-  inherit (nixpkgs) lib;
+  inherit (inputs.nixpkgs) lib;
 
   # Feed the colmena:
   apply =
@@ -24,14 +24,14 @@ let
       system' = lib.trace "selecting ${system} for ${hostName}" system;
     in
     {
-      meta.nodeNixpkgs.${hostName} = nixpkgs.legacyPackages.${system'};
-      meta.nodeSpecialArgs.${hostName} = (lib.removeAttrs inputs [ "nixpkgs" ]) // {
+      meta.nodeNixpkgs.${hostName} = inputs.nixpkgs.legacyPackages.${system'};
+      meta.nodeSpecialArgs.${hostName} = args // {
         inherit hostName;
         userName = null; # make some "generic" modules working
         osConfig = config;
       };
 
-      ${hostName} = self.lib.recursiveMerge [
+      ${hostName} = n9.recursiveMerge [
         {
           imports = [
             # options
@@ -50,7 +50,6 @@ let
             ./nixos/essential.nix
           ];
         }
-
         modules
       ];
     };
@@ -64,8 +63,6 @@ let
           apply = hosts: lib.fold lib.recursiveUpdate { } (lib.mapAttrsToList apply hosts);
         };
       }
-
-      # Top level, here we are!
       whereHosts
     ];
   };

@@ -42,7 +42,6 @@ stdenv.mkDerivation {
     runHook postBuild
   '';
 
-  # TODO: use install -d...
   installPhase = ''
     runHook preInstall
     mkdir -p "$out/share/rime-data"

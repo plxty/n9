@@ -1,17 +1,17 @@
-{ pkgs, self, ... }:
+{ pkgs, n9, ... }:
 
 {
   nixpkgs.overlays = [
     (_: super: {
-      helix = self.lib.patch super.helix ./patches/helix-taste.patch;
-      openssh = self.lib.patch super.openssh ./patches/openssh-plainpass.patch;
+      helix = n9.patch super.helix ./patches/helix-taste.patch;
+      openssh = n9.patch super.openssh ./patches/openssh-plainpass.patch;
       ibus-engines = super.ibus-engines // {
-        rime = (self.lib.patch super.ibus-engines.rime ./patches/ibus-rime-temp-ascii.patch).override {
+        rime = (n9.patch super.ibus-engines.rime ./patches/ibus-rime-temp-ascii.patch).override {
           rimeDataPkgs = [ (pkgs.callPackage ./rime-ice.nix { }) ];
         };
       };
-      librime = self.lib.patch super.librime ./patches/librime-temp-ascii.patch;
-      ppp = self.lib.patch super.ppp ./patches/ppp-run-resolv.patch;
+      librime = n9.patch super.librime ./patches/librime-temp-ascii.patch;
+      ppp = n9.patch super.ppp ./patches/ppp-run-resolv.patch;
 
       brave = super.brave.override (prev: {
         commandLineArgs = builtins.concatStringsSep " " [

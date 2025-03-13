@@ -1,7 +1,7 @@
 {
   config,
   lib,
-  disko,
+  inputs,
   ...
 }:
 
@@ -10,7 +10,7 @@ let
   cfg = config.n9.hardware.disk;
 in
 {
-  imports = [ disko.nixosModules.disko ];
+  imports = [ inputs.disko.nixosModules.disko ];
 
   options.n9.hardware.disk = lib.mkOption {
     type = lib.types.attrsOf (

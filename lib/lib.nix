@@ -1,7 +1,7 @@
-{ nixpkgs, ... }:
+{ inputs, ... }:
 
 let
-  inherit (nixpkgs) lib;
+  inherit (inputs.nixpkgs) lib;
 in
 rec {
   # Helpers of mine:

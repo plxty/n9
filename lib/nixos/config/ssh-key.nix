@@ -1,13 +1,13 @@
 {
-  config,
   nodes,
+  config,
   lib,
-  self,
+  n9,
   ...
 }:
 
 let
-  usercfg = self.lib.users "ssh-key" (v: v.n9.security.ssh-key) config;
+  usercfg = n9.users "ssh-key" (v: v.n9.security.ssh-key) config;
 
   publicOrFind = lib.map (
     keyOrPair:
@@ -21,7 +21,7 @@ let
     if lib.length split == 3 then
       keyOrPair
     else
-      nodes.${hostName}.config.n9.users.${userName}.imports.n9.security.ssh-key.public
+      nodes.${hostName}.config.n9.users.${userName}.n9.security.ssh-key.public
   );
 in
 {
@@ -47,7 +47,7 @@ in
     }
 
     # Hmmm, no disable.
-    (self.lib.mkIfUsers (v: v.authorities != [ ] || v.agents != [ ]) usercfg {
+    (n9.mkIfUsers (v: v.authorities != [ ] || v.agents != [ ]) usercfg {
       n9.services.sshd.enable = true;
     })
   ];

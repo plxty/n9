@@ -1,13 +1,13 @@
 {
   config,
   lib,
-  self,
+  n9,
   ...
 }:
 
 let
   cfg = config.n9.security.keys;
-  usercfg = self.lib.users "keys" (v: v.n9.security.keys) config;
+  usercfg = n9.users "keys" (v: v.n9.security.keys) config;
   keys =
     lib.mapAttrsToList (_: lib.id) cfg
     ++ lib.flatten (lib.mapAttrsToList (_: lib.mapAttrsToList (_: lib.id)) usercfg);

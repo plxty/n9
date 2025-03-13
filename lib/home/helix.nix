@@ -8,8 +8,6 @@
     bash-language-server
     shellcheck
     ruff
-
-    # TODO: Add a devShell.
     python312Packages.jedi-language-server
     python312Packages.python-lsp-server
   ];

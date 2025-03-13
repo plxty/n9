@@ -2,17 +2,17 @@
   config,
   lib,
   pkgs,
-  self,
+  n9,
   ...
 }:
 
 let
   # @see lib/home/config/gnome.nix
-  usercfg = self.lib.users "gnome" (v: v.n9.environment.gnome) config;
+  usercfg = n9.users "gnome" (v: v.n9.environment.gnome) config;
 in
 {
   config = lib.mkMerge [
-    (self.lib.mkIfUsers (v: v.enable) usercfg {
+    (n9.mkIfUsers (v: v.enable) usercfg {
       services = {
         xserver = {
           enable = true;

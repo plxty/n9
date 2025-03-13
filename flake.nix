@@ -37,15 +37,22 @@
       nixpkgs,
       colmena,
       ...
-    }@inputs:
+    }@allInputs:
     let
       inherit (nixpkgs) lib;
+
+      # Unify the arguments, keep only n9 (outputs) and inputs:
+      n9 = self.lib;
+      inputs = {
+        inherit n9;
+        inputs = allInputs;
+      };
 
       mkSystems = import ./lib/nixos.nix inputs;
       colmenaHive = colmena.lib.makeHive (
         # @see lib/nixos.nix, meta.nixpkgs will be overridden:
         lib.fold lib.recursiveUpdate { meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; } (
-          self.lib.flatMap mkSystems [
+          n9.flatMap mkSystems [
             ./hosts/evil
             ./hosts/wa
             ./hosts/coffee
@@ -73,7 +80,7 @@
       nixosConfigurations = colmenaHive.nodes; # compatible
 
       # @see nix/flake.nix
-      devShells = nixpkgs.lib.genAttrs [
+      devShells = lib.genAttrs [
         "x86_64-linux"
         "aarch64-linux"
       ] mkShells;

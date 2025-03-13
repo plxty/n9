@@ -2,7 +2,7 @@
   config,
   lib,
   pkgs,
-  self,
+  inputs,
   ...
 }:
 
@@ -32,7 +32,7 @@ in
           extensions = with pkgs.gnomeExtensions; [
             { package = brightness-control-using-ddcutil; }
             { package = switcher; }
-            { package = self.inputs.paperwm.packages.${pkgs.system}.default; }
+            { package = inputs.paperwm.packages.${pkgs.system}.default; }
             { package = dash-to-dock; }
             { package = customize-ibus; }
           ];
