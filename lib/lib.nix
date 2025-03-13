@@ -1,12 +1,9 @@
-{ nixpkgs, ... }@inputs:
+{ nixpkgs, ... }:
 
 let
   inherit (nixpkgs) lib;
 in
 rec {
-  # NixOS, Nix (For package manager only, use lib.mkNixPackager?):
-  nixosSystem = import ./nixos.nix inputs;
-
   # Helpers of mine:
   patches =
     pkg: attrs:
@@ -42,13 +39,21 @@ rec {
     in
     f [ ] attrList;
 
+  # @see attrs = mkOptionType { ... }
+  mkAttrsOption = lib.mkOption {
+    type = lib.types.attrs // {
+      merge = _: defs: recursiveMerge (lib.map (def: def.value) defs);
+    };
+    default = { };
+  };
+
   # @see lib/nixos/config/users.nix
   # Returns { user: config; };
   # TODO: Fetch the name in a smarter way?
   users =
     name: attrFn: config:
     let
-      val = lib.mapAttrs (_: v: attrFn v.imports) config.n9.users;
+      val = lib.mapAttrs (_: attrFn) config.n9.users;
     in
     lib.traceSeq [ name val ] val;
 

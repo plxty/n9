@@ -43,20 +43,15 @@
 
       mkSystems = import ./lib/nixos.nix inputs;
       colmenaHive = colmena.lib.makeHive (
-        lib.fold lib.recursiveUpdate
-          {
-            # @see lib/nixos.nix, meta.nixpkgs will be overridden:
-            meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux;
-            meta.specialArgs = lib.removeAttrs inputs [ "nixpkgs" ];
-          }
-          (
-            self.lib.flatMap mkSystems [
-              ./hosts/evil
-              ./hosts/wa
-              ./hosts/coffee
-              ./hosts/harm
-            ]
-          )
+        # @see lib/nixos.nix, meta.nixpkgs will be overridden:
+        lib.fold lib.recursiveUpdate { meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; } (
+          self.lib.flatMap mkSystems [
+            ./hosts/evil
+            ./hosts/wa
+            ./hosts/coffee
+            ./hosts/harm
+          ]
+        )
       );
 
       mkShells =

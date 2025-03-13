@@ -1,11 +1,11 @@
-{ lib, hostName, ... }@args:
+{
+  lib,
+  hostName,
+  userName,
+  osConfig,
+  ...
+}:
 
-let
-  # The module system will try to deduce what you need from args, this will make
-  # setting default value of arguments failed.
-  userName = args.userName or null;
-  osConfig = args.osConfig or { };
-in
 {
   # only options here, config is defined in lib/nixos/config/keys.nix:
   options.n9.security.keys = lib.mkOption {
