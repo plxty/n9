@@ -40,6 +40,10 @@ EXCLUDIND = [
             "window-size",  # [1250, 1368]
         ],
     ),
+    (
+        "com/gitee/gmg137/NeteaseCloudMusicGtk4",
+        ["cache-clear-flag", "music-rate", "volume"],
+    ),
     # TODO: Make dconf remove some entries?
     ("org/gnome/Ptyxis/Profiles/e76c429b687c3cf0ba8a89d367b71beb", None),
     ("org/gnome/control-center", ["last-panel", "window-state"]),
@@ -124,7 +128,6 @@ EXCLUDIND = [
             "disabled-extensions",  # ['native-window-placement@gnome-shell-extensions.gcampax.github.com', 'places-menu@gnome-shell-extensions.gcampax.github.com', 'drive-menu@gnome-shell-extensions.gcampax.github.com', 'screenshot-window-sizer@gnome-shell-extensions.gcampax.github.com', 'status-icons@gnome-shell-extensions.gcampax.github.com', 'system-monitor@gnome-shell-extensions.gcampax.github.com', 'window-list@gnome-shell-extensions.gcampax.github.com', 'windowsNavigator@gnome-shell-extensions.gcampax.github.com', 'workspace-indicator@gnome-shell-extensions.gcampax.github.com']
             "last-selected-power-profile",  # 'performance'
             "welcome-dialog-last-shown-version",  # '47.2'
-            "favorite-apps",
         ],
     ),
     ("org/gnome/shell/extensions/customize-ibus", ["input-mode-list"]),

@@ -140,6 +140,7 @@ with lib.hm.gvariant;
 
     "org/gnome/shell" = {
       disable-user-extensions = false;
+      favorite-apps = [];
     };
 
     "org/gnome/shell/extensions/customize-ibus" = {
@@ -288,6 +289,14 @@ with lib.hm.gvariant;
       show-original-names = true;
       show-switcher = [ "<Super>x" ];
       workspace-indicator = false;
+    };
+
+    "org/gnome/shell/extensions/trayIconsReloaded" = {
+      applications = "[]";
+      icon-brightness = 0;
+      icon-contrast = 0;
+      icon-saturation = 0;
+      tray-position = "right";
     };
 
     "org/gnome/shell/keybindings" = {

@@ -35,6 +35,7 @@ in
             { package = inputs.paperwm.packages.${pkgs.system}.default; }
             { package = dash-to-dock; }
             { package = customize-ibus; }
+            { package = tray-icons-reloaded; }
           ];
         };
 
