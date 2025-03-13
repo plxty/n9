@@ -1,4 +1,4 @@
-{ system, nixpkgs, ... }:
+{ system, inputs, ... }:
 
 # The cross.pkgs.stdenv will handle (build,host,target) well, and we just use it:
 # https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/cross/default.nix
@@ -9,7 +9,7 @@
 let
   target = "aarch64-linux";
 
-  pkgs = nixpkgs.legacyPackages.${system};
+  pkgs = inputs.nixpkgs.legacyPackages.${system};
   pkgsCross =
     if target == system then
       pkgs

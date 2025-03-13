@@ -1,4 +1,4 @@
-{ n9, inputs, ... }@args:
+{ n9, inputs, ... }:
 
 whereHosts:
 
@@ -25,8 +25,8 @@ let
     in
     {
       meta.nodeNixpkgs.${hostName} = inputs.nixpkgs.legacyPackages.${system'};
-      meta.nodeSpecialArgs.${hostName} = args // {
-        inherit hostName;
+      meta.nodeSpecialArgs.${hostName} = {
+        inherit n9 inputs hostName;
         userName = null; # make some "generic" modules working
         osConfig = config;
       };
