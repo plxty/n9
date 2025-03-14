@@ -47,17 +47,24 @@ in
 
         # https://github.com/IlanCosman/tide/blob/main/functions/_tide_item_nix_shell.fish
         # https://github.com/haslersn/any-nix-shell/blob/master/bin/nix-shell-info
+        # The nix-shell will introdue some nix build environment in here, such
+        # as $name or else, the mkDerivation just works like that :/
         _tide_item_nix_shell = {
           body = ''
             if test -z "$IN_NIX_SHELL" -a -z "$IN_NIX_RUN"
               return
             end
 
-            set -l info (echo "$ANY_NIX_SHELL_PKGS" | xargs)
-            if test -n "$info"
-              set info " ($info)"
+            set -f pkgs $ANY_NIX_SHELL_PKGS
+            if test -n "$name" -a "$name" != "shell"
+              set -a pkgs " $name"
             end
-            _tide_print_item nix_shell $tide_nix_shell_icon' ' "$IN_NIX_SHELL$info"
+            if test -n "$pkgs"
+              set pkgs (echo "$pkgs $additional_pkgs" | xargs)
+              set pkgs " ($pkgs)"
+            end
+
+            _tide_print_item nix_shell $tide_nix_shell_icon' ' "$IN_NIX_SHELL$pkgs"
           '';
         };
       };
