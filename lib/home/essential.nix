@@ -7,18 +7,15 @@
   ];
 
   home.packages = with pkgs; [
-    ripgrep
-    fd
     wget
-    age
     p7zip
+    unrar
     jq
     yq
-    bat
     cached-nix-shell
     nix-index
-    file
-
+    pstree
+    binutils
     strace
     sysstat
     lm_sensors

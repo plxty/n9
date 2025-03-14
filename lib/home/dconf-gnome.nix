@@ -6,14 +6,24 @@ with lib.hm.gvariant;
 {
   dconf.settings = {
     "org/gnome/Ptyxis" = {
+      audible-bell = false;
+      cursor-shape = "underline";
       default-profile-uuid = "8b11dd3e6b265e6a5fd6ce60678873ea";
+      font-name = "MesloLGS NF 10";
       profile-uuids = [ "8b11dd3e6b265e6a5fd6ce60678873ea" ];
+      restore-session = true;
+      restore-window-size = true;
+      text-blink-mode = "never";
+      use-system-font = false;
     };
 
     "org/gnome/Ptyxis/Profiles/8b11dd3e6b265e6a5fd6ce60678873ea" = {
+      bold-is-bright = true;
+      cjk-ambiguous-width = "narrow";
       custom-command = "fish";
       exit-action = "close";
       login-shell = true;
+      palette = "Vs Code";
       preserve-directory = "never";
       scrollback-lines = 99999;
       use-custom-command = true;

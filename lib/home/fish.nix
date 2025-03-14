@@ -2,9 +2,15 @@
 
 let
   plugin = pkg: { inherit (pkg) name src; };
-  tideToken = "003";
+  tideToken = "0";
 in
 {
+  home.packages = with pkgs; [
+    ripgrep
+    fd
+    bat
+  ];
+
   programs = {
     fish = {
       enable = true;
@@ -69,27 +75,15 @@ in
           set -eU (set -U | awk '/tide/ {print $1}')
 
           # what `tide configure` shows:
-          tide configure \
-            --auto \
-            --style=Lean \
-            --prompt_colors='True color' \
-            --show_time='24-hour format' \
-            --lean_prompt_height='Two lines' \
-            --prompt_connection=Disconnected \
-            --prompt_spacing=Sparse \
-            --icons='Few icons' \
-            --transient=Yes
+          tide configure --auto --style=Rainbow --prompt_colors='True color' --show_time='24-hour format' --rainbow_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=No --prompt_spacing=Sparse --icons='Few icons' --transient=Yes
           set -U tide_configure_token ${tideToken}
         end
-
-        # https://linux.overshoot.tv/wiki/ls
-        set -gx LS_COLORS (string replace -a '05;' "" "$LS_COLORS")
 
         # No greetings:
         set fish_greeting
 
         # Trying if it is useful:
-        if test "/proc/$(ps -o ppid --no-headers $fish_pid)/comm" != "nix-shell"
+        if test $SHLVL -le 1
           set -qU fish_most_recent_dir && [ -d "$fish_most_recent_dir" ] && \
             cd "$fish_most_recent_dir"
         end

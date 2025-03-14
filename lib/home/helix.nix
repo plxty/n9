@@ -1,6 +1,7 @@
 { pkgs, ... }:
 
 {
+  # TODO: To shells.
   home.packages = with pkgs; [
     nixd
     nixfmt-rfc-style
@@ -65,18 +66,21 @@
             "paste_before"
           ];
           ";" = "goto_word_definition";
-          A-1 = ":focus 1";
-          A-2 = ":focus 2";
-          A-3 = ":focus 3";
-          A-4 = ":focus 4";
-          A-5 = ":focus 5";
-          A-6 = ":focus 6";
-          A-7 = ":focus 7";
-          A-8 = ":focus 8";
-          A-9 = ":focus 9";
+          # A-[1-7] is occupied by ptyxis, and C-[1-7] seems not working?
+          C-h = "jump_view_left";
+          C-j = "jump_view_down";
+          C-k = "jump_view_up";
+          C-l = "jump_view_right";
         };
 
         normal.space = {
+          "1" = ":focus 1";
+          "2" = ":focus 2";
+          "3" = ":focus 3";
+          "4" = ":focus 4";
+          "5" = ":focus 5";
+          "6" = ":focus 6";
+          "7" = ":focus 7";
           F = "file_picker_in_current_buffer_directory";
         };
 
@@ -127,15 +131,11 @@
           # Quick commands
           "A-;" = "command_mode";
           A-x = "command_palette";
-          A-1 = ":focus_insert 1";
-          A-2 = ":focus_insert 2";
-          A-3 = ":focus_insert 3";
-          A-4 = ":focus_insert 4";
-          A-5 = ":focus_insert 5";
-          A-6 = ":focus_insert 6";
-          A-7 = ":focus_insert 7";
-          A-8 = ":focus_insert 8";
-          A-9 = ":focus_insert 9";
+          # To keep consistency:
+          C-h = "jump_view_left";
+          C-j = "jump_view_down";
+          C-k = "jump_view_up";
+          C-l = "jump_view_right";
         };
       };
     };
