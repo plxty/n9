@@ -47,16 +47,28 @@ in
       ];
     };
 
-    fonts.packages = with pkgs; [
-      noto-fonts
-      noto-fonts-cjk-sans
-      noto-fonts-cjk-serif
-      noto-fonts-emoji
-      wqy_microhei
-      wqy_zenhei
-      sarasa-gothic
-      meslo-lgs-nf
-    ];
+    # https://wiki.nixos.org/wiki/Fonts
+    fonts = {
+      enableDefaultPackages = true;
+      packages = with pkgs; [
+        # Main fonts:
+        noto-fonts
+        noto-fonts-cjk-sans
+        noto-fonts-cjk-serif
+
+        # Extra fonts:
+        wqy_microhei
+        wqy_zenhei
+        meslo-lgs-nf
+      ];
+
+      # gnome-font-viewer
+      fontconfig.defaultFonts = {
+        serif = [ "Noto Serif CJK SC" ];
+        sansSerif = [ "Noto Sans CJK SC" ];
+        monospace = [ "Noto Sans Mono CJK SC" ];
+      };
+    };
 
     i18n.inputMethod = {
       enable = true;
