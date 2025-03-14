@@ -2,35 +2,6 @@
 # TODO: Mo(re)dules, when more devices.
 
 {
-  inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    colmena = {
-      url = "github:zhaofengli/colmena";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    nixos-anywhere = {
-      url = "github:nix-community/nixos-anywhere";
-      inputs.nixpkgs.follows = "nixpkgs";
-      inputs.disko.follows = "disko";
-    };
-    disko = {
-      url = "github:nix-community/disko";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    home-manager = {
-      url = "github:nix-community/home-manager";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    paperwm = {
-      url = "github:paperwm/PaperWM";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-    chinese-fonts = {
-      url = "github:brsvh/chinese-fonts-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-  };
-
   outputs =
     {
       self,
@@ -51,14 +22,19 @@
       mkSystems = import ./lib/nixos.nix inputs;
       colmenaHive = colmena.lib.makeHive (
         # @see lib/nixos.nix, meta.nixpkgs will be overridden:
-        lib.fold lib.recursiveUpdate { meta.nixpkgs = nixpkgs.legacyPackages.x86_64-linux; } (
-          n9.flatMap mkSystems [
-            ./hosts/evil
-            ./hosts/wa
-            ./hosts/coffee
-            ./hosts/harm
-          ]
-        )
+        lib.fold lib.recursiveUpdate
+          {
+            meta.nixpkgs.lib = lib;
+            meta.specialArgs = inputs;
+          }
+          (
+            n9.flatMap mkSystems [
+              ./hosts/evil
+              ./hosts/wa
+              ./hosts/coffee
+              ./hosts/harm
+            ]
+          )
       );
 
       mkShells =
@@ -85,6 +61,60 @@
         "aarch64-linux"
       ] mkShells;
     };
+
+  # Make `nix flake metadata` flatten, it also increases the chance of bugs :O
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
+    flake-parts = {
+      url = "github:hercules-ci/flake-parts";
+      inputs.nixpkgs-lib.follows = "nixpkgs";
+    };
+
+    flake-utils.url = "github:numtide/flake-utils";
+
+    colmena = {
+      url = "github:zhaofengli/colmena";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+
+      inputs.stable.follows = "";
+      inputs.nix-github-actions.follows = "";
+      inputs.flake-compat.follows = "";
+    };
+
+    nixos-anywhere = {
+      url = "github:nix-community/nixos-anywhere";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-parts.follows = "flake-parts";
+
+      inputs.disko.follows = "";
+      inputs.nixos-stable.follows = "";
+      inputs.nixos-images.follows = "";
+      inputs.treefmt-nix.follows = "";
+    };
+
+    disko = {
+      url = "github:nix-community/disko";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    home-manager = {
+      url = "github:nix-community/home-manager";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    paperwm = {
+      url = "github:paperwm/PaperWM";
+      inputs.nixpkgs.follows = "nixpkgs";
+      inputs.flake-utils.follows = "flake-utils";
+    };
+
+    chinese-fonts = {
+      url = "github:brsvh/chinese-fonts-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+  };
 
   nixConfig = {
     substituters = [

@@ -6,29 +6,32 @@ whereHosts:
 let
   inherit (inputs.nixpkgs) lib;
 
+  # Wow, is it a really config?
+  cfg = config.n9.os;
+
+  # Fetch nixpkgs.hostPlatform for system, it's a fake import as well:
+  # TODO: Multiple hosts, should use ${hostName}?
+  hwModule = "${whereHosts}/hardware-configuration.nix";
+  system =
+    (import hwModule {
+      config.hardware.enableRedistributableFirmware = null;
+      inherit lib;
+      pkgs = null;
+      modulesPath = "";
+    }).nixpkgs.hostPlatform.content;
+
   # Feed the colmena:
   apply =
     hostName: modules:
     let
-      # Fetch nixpkgs.hostPlatform for system, it's a fake import as well:
-      # TODO: Multiple hosts, should use ${hostName}?
-      hwModule = "${whereHosts}/hardware-configuration.nix";
-      hwConfig = import hwModule {
-        config.hardware.enableRedistributableFirmware = null;
-        inherit lib;
-        pkgs = null;
-        modulesPath = "";
-      };
-
-      system = hwConfig.nixpkgs.hostPlatform.content;
       system' = lib.trace "selecting ${system} for ${hostName}" system;
     in
     {
       meta.nodeNixpkgs.${hostName} = inputs.nixpkgs.legacyPackages.${system'};
       meta.nodeSpecialArgs.${hostName} = {
-        inherit n9 inputs hostName;
+        inherit hostName;
         userName = null; # make some "generic" modules working
-        osConfig = config;
+        osConfig = cfg.${hostName};
       };
 
       ${hostName} = n9.recursiveMerge [
@@ -60,7 +63,7 @@ let
         # funny: n9.os.evil.n9.users.byte.n9.security.keys
         options.n9.os = lib.mkOption {
           type = lib.types.unspecified;
-          apply = hosts: lib.fold lib.recursiveUpdate { } (lib.mapAttrsToList apply hosts);
+          apply = lib.mapAttrsToList apply;
         };
       }
       whereHosts
@@ -69,4 +72,4 @@ let
 
   inherit (modules) config;
 in
-config.n9.os
+cfg

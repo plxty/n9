@@ -1,4 +1,4 @@
-{ hostName, ... }:
+{ pkgs, hostName, ... }:
 
 {
   imports = [ ../../pkgs/overlay.nix ];
@@ -50,6 +50,14 @@
 
   # To catch some faults:
   systemd.coredump.extraConfig = "Storage=journal";
+
+  # https://github.com/luishfonseca/nixos-config/blob/main/modules/upgrade-diff.nix
+  system.activationScripts.diff = {
+    supportsDryActivation = true;
+    text = ''
+      ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff /run/current-system "$systemConfig"
+    '';
+  };
 
   time.timeZone = "Asia/Shanghai";
   i18n.defaultLocale = "zh_CN.UTF-8";
