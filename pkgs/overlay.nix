@@ -22,7 +22,6 @@
       });
 
       wechat = pkgs.callPackage ./wechat.nix { };
-      linux_wsl2 = pkgs.linuxPackagesFor (pkgs.callPackage ./linux-kernel-wsl2.nix { });
     })
   ];
 

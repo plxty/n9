@@ -32,7 +32,7 @@
               ./hosts/evil
               ./hosts/wa
               ./hosts/coffee
-              ./hosts/harm
+              ./hosts/dragon
             ]
           )
       );
@@ -104,6 +104,13 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
+      inputs.nixpkgs.follows = "nixpkgs";
+
+      inputs.flake-compat.follows = "";
+    };
+
     paperwm = {
       url = "github:paperwm/PaperWM";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -121,6 +128,7 @@
       "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://mirrors.sustech.edu.cn/nix-channels/store"
       # "https://mirror.sjtu.edu.cn/nix-channels/store"
+      "https://cache.nixos.org"
     ];
   };
 }

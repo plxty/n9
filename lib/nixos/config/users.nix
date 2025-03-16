@@ -54,10 +54,9 @@ in
     })
 
     {
-      users.groups = lib.mapAttrs (_: _: { gid = null; }) cfg;
+      users.groups = lib.mapAttrs (_: _: { }) cfg;
       users.users = lib.mapAttrs (userName: _: {
         isNormalUser = true;
-        uid = null;
         group = userName;
         extraGroups = [ "wheel" ];
       }) cfg;

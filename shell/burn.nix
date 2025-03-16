@@ -45,7 +45,7 @@ let
     git pull --rebase || true
     chmod -R g-rwx,o-rwx .
     cd ..
-    nix flake update || true
+    "''${B_NIX[@]}" flake update || true
 
     sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
       lib/generic/config/keys.nix
@@ -66,6 +66,7 @@ let
         # "Wakeup" the sleeping parent when exit normally or abnormally:
         trap 'kill $(pgrep -P $$ sleep)' EXIT
 
+        # For hosts that mismatch with local, suggest `hostname xxx`:
         "''${B_HWCONF[@]}" > "hosts/$B_THIS/hardware-configuration.nix"
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
 

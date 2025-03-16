@@ -26,6 +26,7 @@ in
         };
       }
     );
+    default = { };
   };
 
   config = lib.mkMerge [

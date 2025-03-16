@@ -6,7 +6,7 @@
 {
   imports = [ ];
 
-  boot.initrd.availableKernelModules = [ "sr_mod" ];
+  boot.initrd.availableKernelModules = [ "virtio_pci" ];
   boot.initrd.kernelModules = [ ];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
@@ -19,5 +19,4 @@
   # networking.interfaces.eth0.useDHCP = lib.mkDefault true;
 
   nixpkgs.hostPlatform = lib.mkDefault "aarch64-linux";
-  virtualisation.hypervGuest.enable = true;
 }
