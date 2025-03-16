@@ -1,12 +1,12 @@
 {
-  system,
+  pkgs,
   n9,
   inputs,
   ...
 }:
 
 let
-  pkgs = inputs.nixpkgs.legacyPackages.${system};
+  inherit (pkgs) system;
 
   # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
   # It can be an overlay of nixpkgs, however for simplicity...

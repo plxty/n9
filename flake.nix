@@ -41,11 +41,12 @@
         system:
         let
           args = inputs // {
-            inherit system;
+            pkgs = nixpkgs.legacyPackages.${system};
           };
         in
         {
           default = import ./shell/burn.nix args;
+          tex = import ./shell/tex.nix args;
           qemu = import ./shell/qemu.nix args;
         };
     in

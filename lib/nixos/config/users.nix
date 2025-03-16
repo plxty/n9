@@ -46,24 +46,20 @@ in
   # To have our own namespace :) And to avoid potential inifinite recursion :(
   options.n9.users = options.home-manager.users;
 
-  config = lib.mkMerge [
-    (lib.mkIf (cfg != { }) {
-      # https://discourse.nixos.org/t/users-users-name-packages-vs-home-manager-packages/22240/2
-      home-manager.useUserPackages = true;
-      home-manager.useGlobalPkgs = true;
-    })
+  config = lib.mkIf (cfg != { }) {
+    users.groups = lib.mapAttrs (_: _: { }) cfg;
+    users.users = lib.mapAttrs (userName: _: {
+      isNormalUser = true;
+      group = userName;
+      extraGroups = [ "wheel" ];
+    }) cfg;
 
-    {
-      users.groups = lib.mapAttrs (_: _: { }) cfg;
-      users.users = lib.mapAttrs (userName: _: {
-        isNormalUser = true;
-        group = userName;
-        extraGroups = [ "wheel" ];
-      }) cfg;
+    # https://discourse.nixos.org/t/users-users-name-packages-vs-home-manager-packages/22240/2
+    home-manager.useUserPackages = true;
+    home-manager.useGlobalPkgs = true;
 
-      # We can access the "raw" definition values within options.definitions,
-      # thus avoiding to have all the default configurations (like doRename).
-      home-manager.users = lib.mkAliasDefinitions options.n9.users;
-    }
-  ];
+    # We can access the "raw" definition values within options.definitions,
+    # thus avoiding to have all the default configurations (like doRename).
+    home-manager.users = lib.mkAliasDefinitions options.n9.users;
+  };
 }

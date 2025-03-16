@@ -1,22 +1,35 @@
 {
   n9.os.dragon.imports = [
-    ({ inputs, ... }: inputs.nixos-wsl.nixosModules.default)
     (
-      { lib, ... }:
       {
+        lib,
+        pkgs,
+        inputs,
+        ...
+      }:
+      {
+        imports = [ inputs.nixos-wsl.nixosModules.default ];
+
+        # sudo nix build '.#nixosConfigurations.dragon.config.system.build.tarballBuilder'
+        wsl = {
+          enable = true;
+          defaultUser = "byte";
+        };
+
+        # @see NixOS-WSL/modules/wsl-distro.nix
+        security.sudo.wheelNeedsPassword = true;
+
         # Against lib/nixos/essential.nix:
-        boot.loader = {
-          systemd-boot.enable = lib.mkForce false;
-          efi.canTouchEfiVariables = lib.mkForce false;
+        boot.loader.systemd-boot.enable = lib.mkForce false;
+
+        # for vscode remote server:
+        programs.nix-ld = {
+          enable = true;
+          package = pkgs.nix-ld-rs;
         };
       }
     )
     {
-      # sudo nix build '.#nixosConfigurations.dragon.config.system.build.tarballBuilder'
-      wsl = {
-        enable = true;
-        defaultUser = "byte";
-      };
       deployment.allowLocalDeployment = true;
 
       # After username changes, please do follow:

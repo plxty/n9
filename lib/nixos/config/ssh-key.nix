@@ -25,30 +25,26 @@ let
   );
 in
 {
-  config = lib.mkMerge [
-    {
-      users.users = lib.mapAttrs (
-        _: v:
-        lib.mkIf (v.authorities != [ ]) {
-          openssh.authorizedKeys.keys = publicOrFind v.authorities;
-        }
-      ) usercfg;
+  config = n9.mkIfUsers (v: v.authorities != [ ] || v.agents != [ ]) usercfg {
+    users.users = lib.mapAttrs (
+      _: v:
+      lib.mkIf (v.authorities != [ ]) {
+        openssh.authorizedKeys.keys = publicOrFind v.authorities;
+      }
+    ) usercfg;
 
-      # @see lib/nixos/config/sshd.nix
-      environment.etc = lib.concatMapAttrs (
-        n: v:
-        lib.mkIf (v.agents != [ ]) {
-          "ssh/agent_keys.d/${n}" = {
-            text = lib.concatStringsSep "\n" (publicOrFind v.agents);
-            mode = "0644";
-          };
-        }
-      ) usercfg;
-    }
+    # @see lib/nixos/config/sshd.nix
+    environment.etc = lib.concatMapAttrs (
+      n: v:
+      lib.mkIf (v.agents != [ ]) {
+        "ssh/agent_keys.d/${n}" = {
+          text = lib.concatStringsSep "\n" (publicOrFind v.agents);
+          mode = "0644";
+        };
+      }
+    ) usercfg;
 
     # Hmmm, no disable.
-    (n9.mkIfUsers (v: v.authorities != [ ] || v.agents != [ ]) usercfg {
-      n9.services.sshd.enable = true;
-    })
-  ];
+    n9.services.sshd.enable = true;
+  };
 }

@@ -1,4 +1,4 @@
-{ system, inputs, ... }:
+{ pkgs, ... }:
 
 # The cross.pkgs.stdenv will handle (build,host,target) well, and we just use it:
 # https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/cross/default.nix
@@ -7,9 +7,9 @@
 # https://github.com/NixOS/nixpkgs/issues/35543
 
 let
+  inherit (pkgs) system;
   target = "aarch64-linux";
 
-  pkgs = inputs.nixpkgs.legacyPackages.${system};
   pkgsCross =
     if target == system then
       pkgs
@@ -26,11 +26,6 @@ let
     if [[ ! -f qemu-options.hx ]]; then
       echo 'Run me inside a existing QEMU source!'
       exit 1
-    fi
-
-    if [[ ! -f .envrc ]]; then
-      echo "use flake n9#qemu" > .envrc
-      direnv allow
     fi
 
     # .clang-format from libslirp, maybe the same?
