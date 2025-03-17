@@ -17,6 +17,7 @@
     nix-index
     pstree
     binutils
+    file
     strace
     sysstat
     lm_sensors

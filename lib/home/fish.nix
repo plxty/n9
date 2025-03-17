@@ -45,6 +45,14 @@ in
 
         gitignore = "curl -sL https://www.gitignore.io/api/$argv";
 
+        envrc = ''
+          if test -z "$argv[1]"
+            echo "envrc [env]"
+          else
+            test ! -f .envrc && echo "use flake n9#$argv[1]" > .envrc && direnv allow
+          end
+        '';
+
         # https://github.com/IlanCosman/tide/blob/main/functions/_tide_item_nix_shell.fish
         # https://github.com/haslersn/any-nix-shell/blob/master/bin/nix-shell-info
         # The nix-shell will introdue some nix build environment in here, such
