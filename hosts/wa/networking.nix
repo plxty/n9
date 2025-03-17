@@ -4,12 +4,7 @@
 # 10.42.0.0 => Proxy
 # May conflicts with?
 
-{
-  lib,
-  pkgs,
-  hostName,
-  ...
-}:
+{ pkgs, n9, ... }:
 
 let
   ports = {
@@ -26,35 +21,28 @@ let
     lan = "br-lan";
   };
 
-  # Without link local address and required online by default:
-  mkNetwork =
-    port:
-    lib.recursiveUpdate {
-      matchConfig.Name = port;
-      networkConfig = {
-        LinkLocalAddressing = "no";
-        DHCP = "no";
-      };
-      linkConfig.RequiredForOnline = "carrier";
-    };
-
-  mkLanBridgeSlave =
+  mkJumboLanBridgeSlave =
     port: master:
-    mkNetwork port {
+    n9.mkCarrierOnlyNetwork port {
       networkConfig.Bridge = master;
       linkConfig = {
         MTUBytes = "9000";
         RequiredForOnline = "enslaved";
       };
     };
-
-  # Y-AXIS
-  domain = "y.xas.is";
 in
 {
-  # Netdev:
-  systemd.network.enable = true;
+  n9.network.router = {
+    inherit (ports) lan wan;
+    address = "10.0.0.1/8";
+    range = {
+      from = "10.254.0.1";
+      to = "10.254.254.254";
+      mask = "255.255.0.0";
+    };
+  };
 
+  # Netdev:
   systemd.network.netdevs = {
     "10-vlan" = {
       netdevConfig = {
@@ -100,13 +88,13 @@ in
 
   # Networks:
   systemd.network.networks = {
-    "10-sfp-0" = mkNetwork ports.sfp-0 {
+    "10-sfp-0" = n9.mkCarrierOnlyNetwork ports.sfp-0 {
       vlan = [ ports.vlan ];
       networkConfig.Address = "192.168.0.2/24"; # XE-99S: 192.168.0.1
     };
-    "11-vlan" = mkNetwork ports.vlan { };
+    "11-vlan" = n9.mkCarrierOnlyNetwork ports.vlan { };
 
-    "20-wan" = mkNetwork ports.wan {
+    "20-wan" = n9.mkCarrierOnlyNetwork ports.wan {
       # https://wiki.debian.org/IPv6PrefixDelegation
       networkConfig = {
         DHCP = "ipv6";
@@ -123,29 +111,15 @@ in
       linkConfig.RequiredForOnline = "yes"; # TODO: Is it really working?
     };
 
-    "30-rj45-0" = mkLanBridgeSlave ports.rj45-0 ports.lan;
-    "31-rj45-1" = mkLanBridgeSlave ports.rj45-1 ports.lan;
-    "32-rj45-2" = mkLanBridgeSlave ports.rj45-2 ports.lan;
-    "33-lan" = mkNetwork ports.lan {
-      networkConfig = {
-        Address = "10.0.0.1/8";
-        IPv6SendRA = "yes";
-        IPv6AcceptRA = "no";
-        DHCPPrefixDelegation = "yes";
-        LinkLocalAddressing = "ipv6";
-      };
-      ipv6SendRAConfig = {
-        Managed = "yes";
-        OtherInformation = "yes";
-      };
-      dhcpPrefixDelegationConfig.Token = "::1";
+    "30-rj45-0" = mkJumboLanBridgeSlave ports.rj45-0 ports.lan;
+    "31-rj45-1" = mkJumboLanBridgeSlave ports.rj45-1 ports.lan;
+    "32-rj45-2" = mkJumboLanBridgeSlave ports.rj45-2 ports.lan;
+    "33-lan" = {
       linkConfig.MTUBytes = "9000";
     };
   };
 
   # Relavents:
-  services.resolved.enable = false;
-
   services.networkd-dispatcher = {
     enable = true;
     rules."restart-dnsmasq" = {
@@ -163,76 +137,22 @@ in
   # DHCP and DNS server (kea?):
   systemd.tmpfiles.rules = [ "d /srv/tftp 0777 dnsmasq dnsmasq -" ];
 
-  services.dnsmasq = {
-    enable = true;
-    # https://wiki.archlinux.org/title/Dnsmasq
-    settings = {
-      interface = [
-        "lo"
-        ports.lan
-      ];
-      bind-dynamic = true;
-      cache-size = "10000";
-      enable-ra = true;
+  services.dnsmasq.settings = {
+    interface = [ "lo" ];
 
-      resolv-file = "/run/pppd/resolv.conf";
-      server = [
-        "223.5.5.5"
-        "119.29.29.29"
-      ];
+    resolv-file = "/run/pppd/resolv.conf";
+    server = [
+      "223.5.5.5"
+      "119.29.29.29"
+    ];
 
-      dhcp-authoritative = true;
-      dhcp-option = [
-        "1,255.0.0.0"
-        "3,10.0.0.1"
-        "6,10.0.0.1"
-      ];
-      dhcp-range = [
-        "10.254.0.1,10.254.254.254,72h"
-        "::,constructor:${ports.wan},slaac,ra-stateless,ra-names,72h"
-      ];
-      dhcp-host = [
-        # @see /var/lib/dnsmasq/dnsmasq.leases
-        "24:5e:be:87:47:cc,10.254.38.179" # snap
-      ];
+    dhcp-host = [
+      # @see /var/lib/dnsmasq/dnsmasq.leases
+      "24:5e:be:87:47:cc,10.254.38.179,snap"
+    ];
 
-      inherit domain;
-      local = "/${domain}/"; # only resolve in local, don't go out
-      address = [ "/${hostName}.${domain}/10.0.0.1" ];
-
-      # tftp, TODO: https://nixos.wiki/wiki/Netboot
-      enable-tftp = true;
-      tftp-root = "/srv/tftp";
-    };
-  };
-
-  # NAT + Firewall with nftables.
-  # @see nixpkgs/nixos/modules/services/networking/nat-nftables.nix)
-  # nix eval --raw ".#nixosConfigurations.rout.config.networking.nftables.tables"
-  networking.nftables.enable = true;
-
-  networking.nat = {
-    enable = true;
-    enableIPv6 = true;
-    internalInterfaces = [ ports.lan ];
-    externalInterface = ports.wan;
-  };
-
-  networking.firewall.allowedUDPPorts = [
-    53 # DNS
-    67 # DHCP
-  ];
-
-  # The `networking.firewall.filterForward = true` is conflicted, and has no
-  # such customization options. TODO: How to make one?
-  # https://github.com/LostAttractor/Router/blob/master/configuration/network/nftables.nix
-  networking.nftables.tables."mss-clamping" = {
-    family = "inet";
-    content = ''
-      chain forward {
-        type filter hook forward priority filter; policy accept;
-        tcp flags syn tcp option maxseg size set rt mtu
-      }
-    '';
+    # tftp, TODO: https://nixos.wiki/wiki/Netboot
+    enable-tftp = true;
+    tftp-root = "/srv/tftp";
   };
 }

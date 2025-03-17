@@ -39,6 +39,7 @@ let
           imports = [
             # options
             ./nixos/config/disk.nix
+            ./nixos/config/network.nix
             ./nixos/config/sshd.nix
             ./nixos/config/users.nix
             ./generic/config/keys.nix

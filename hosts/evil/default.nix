@@ -15,6 +15,8 @@
               lmstudio
               zenity
               freerdp3
+              rpi-imager
+              minicom
             ];
           }
         )
@@ -31,14 +33,36 @@
           programs.git.includes = [
             {
               path = "~/.config/git/work";
-              condition = "hasconfig:remote.*.url:*://*-inc.com*/**";
+              # The git will separate `/` for sure, making `ssh://` and `git@`
+              # hard to match in one condition.
+              condition = "hasconfig:remote.*.url:*://*.alibaba-inc.com:*/**";
+            }
+            {
+              path = "~/.config/git/work";
+              condition = "hasconfig:remote.*.url:*.alibaba-inc.com:*/**";
             }
           ];
 
           n9.security.keys.".ssh/config.d/hosts".source = "ssh";
-          programs.ssh.includes = [ "config.d/*" ];
+          programs.ssh.includes = [ "config.d/hosts" ];
         }
       ];
+
+      # To access to dev boards:
+      n9.network.router = {
+        lan = "enp91s0";
+        wan = "enp92s0";
+        address = "10.0.0.1/8";
+        range = {
+          from = "10.254.254.0";
+          to = "10.254.254.254";
+          mask = "255.255.255.0";
+        };
+      };
+      services.dnsmasq.settings.dhcp-host = [
+        "2c:cf:67:d7:25:bc,10.254.254.33,pi"
+      ];
+      users.users.byte.extraGroups = [ "dialout" ];
     }
   ];
 }

@@ -59,4 +59,16 @@ rec {
 
   # Anyone has enabled?
   mkIfUsers = testFn: cfg: lib.mkIf (lib.any testFn (lib.attrValues cfg));
+
+  # Network, maybe:
+  mkCarrierOnlyNetwork =
+    port:
+    lib.recursiveUpdate {
+      matchConfig.Name = port;
+      networkConfig = {
+        LinkLocalAddressing = "no";
+        DHCP = "no";
+      };
+      linkConfig.RequiredForOnline = "carrier";
+    };
 }

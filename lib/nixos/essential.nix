@@ -20,7 +20,7 @@
     # nix develop n9#qemu
     n9.to = {
       type = "path";
-      path = builtins.toString ../..;
+      path = "/home/byte/.n9/asterisk"; # save some debug times
     };
   };
 
