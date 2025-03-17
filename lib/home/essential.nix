@@ -12,6 +12,7 @@
     unrar
     jq
     yq
+    python3
     cached-nix-shell
     nix-index
     pstree

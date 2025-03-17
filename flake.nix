@@ -48,6 +48,7 @@
           default = import ./shell/burn.nix args;
           tex = import ./shell/tex.nix args;
           qemu = import ./shell/qemu.nix args;
+          kernel = import ./shell/kernel.nix args;
         };
     in
     {

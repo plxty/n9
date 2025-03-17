@@ -82,7 +82,6 @@ pkgsCross.mkShell {
   depsBuildBuild = with pkgs; [
     meson
     ninja
-    python3
     gcc # needs for hexagon
   ];
 
