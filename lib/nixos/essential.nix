@@ -1,8 +1,6 @@
 { pkgs, hostName, ... }:
 
 {
-  imports = [ ../../pkgs/overlay.nix ];
-
   nix.settings = {
     experimental-features = [
       "nix-command"
@@ -32,6 +30,8 @@
     options = "--delete-older-than 29d";
     randomizedDelaySec = "3h";
   };
+
+  nixpkgs.config.allowUnfree = true;
 
   boot.loader = {
     systemd-boot.enable = true;

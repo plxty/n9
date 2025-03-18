@@ -1,4 +1,4 @@
-{ inputs, ... }:
+{ inputs, ... }@args:
 
 let
   inherit (inputs.nixpkgs) lib;
@@ -59,6 +59,14 @@ rec {
 
   # Anyone has enabled?
   mkIfUsers = testFn: cfg: lib.mkIf (lib.any testFn (lib.attrValues cfg));
+
+  # Replacing legacyPackages, for consistency. TODO: overriding in flake?
+  mkPkgs =
+    system:
+    import inputs.nixpkgs {
+      inherit system;
+      overlays = [ (import ../pkgs/overlay.nix args) ];
+    };
 
   # Network, maybe:
   mkCarrierOnlyNetwork =

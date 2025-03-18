@@ -41,7 +41,7 @@
         system:
         let
           args = inputs // {
-            pkgs = nixpkgs.legacyPackages.${system};
+            pkgs = n9.mkPkgs system;
           };
         in
         {

@@ -27,7 +27,7 @@ let
       system' = lib.trace "selecting ${system} for ${hostName}" system;
     in
     {
-      meta.nodeNixpkgs.${hostName} = inputs.nixpkgs.legacyPackages.${system'};
+      meta.nodeNixpkgs.${hostName} = n9.mkPkgs system';
       meta.nodeSpecialArgs.${hostName} = {
         inherit hostName;
         userName = null; # make some "generic" modules working
