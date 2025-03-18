@@ -19,11 +19,11 @@ let
   pkgsRust = pkgs.extend inputs.rust-overlay.overlays.default;
   arch = { aarch64-linux = "arm64"; }.${target};
 
-  makk = pkgs.writers.writeBashBin "makk" ''
+  mk = pkgs.writers.writeBashBin "mk" ''
     make ARCH=${arch} CROSS_COMPILE=${pkgsCross.stdenv.cc.targetPrefix} V=1 "$@"
   '';
 
-  makr = pkgs.writers.writeBashBin "makr" ''
+  mkllvm = pkgs.writers.writeBashBin "mkllvm" ''
     make ARCH=${arch} LLVM=1 V=1 "$@"
   '';
 in
@@ -45,12 +45,8 @@ pkgsCross.mkShell {
     ncurses # menuconfig
   ];
 
-  # nativeBuildInputs = with pkgsCross.buildPackages; [
-  #   pkg-config
-  # ];
-
   packages = [
-    makk
-    makr
+    mk
+    mkllvm
   ];
 }

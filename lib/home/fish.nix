@@ -48,7 +48,7 @@ in
         envrc = ''
           if test -f .envrc
             cat .envrc
-            exit
+            return
           end
 
           set -f env $argv[1]

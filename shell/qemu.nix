@@ -71,7 +71,7 @@ let
     } > ../.clangd
   '';
 
-  build = pkgs.writers.writeBashBin "build" ''
+  mk = pkgs.writers.writeBashBin "mk" ''
     make -C build -j $(nproc --ignore=2) "$@"
   '';
 in
@@ -100,6 +100,6 @@ pkgsCross.mkShell {
 
   packages = [
     configure
-    build
+    mk
   ];
 }

@@ -40,7 +40,10 @@ in
     users.users = lib.mapAttrs (
       _: v:
       lib.mkIf v.enable {
-        extraGroups = [ "libvirtd" ];
+        extraGroups = [
+          "libvirtd"
+          "kvm"
+        ];
       }
     ) usercfg;
   };
