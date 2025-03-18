@@ -48,8 +48,9 @@ in
         envrc = ''
           if test -z "$argv[1]"
             echo "envrc [env]"
-          else
-            test ! -f .envrc && echo "use flake n9#$argv[1]" > .envrc && direnv allow
+          else if test ! -f .envrc
+            echo "use flake n9#$argv[1]" > .envrc
+            direnv allow
           end
         '';
 

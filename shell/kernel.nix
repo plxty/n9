@@ -27,8 +27,22 @@ pkgsCross.mkShell {
   name = "kernel";
 
   depsBuildBuild = with pkgs; [
+    # rust-for-linux
+    rustup
+    rust-bindgen
+    clang
+    lld
+    # normal stuff
     gcc
+    flex
+    bison
+    ncurses # menuconfig
   ];
+
+  shellHook = ''
+    rustup toolchain install nightly -c rust-src rust-analyzer
+    export PATH=$PATH:$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin
+  '';
 
   nativeBuildInputs = with pkgsCross.buildPackages; [
     gcc
