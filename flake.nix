@@ -46,10 +46,10 @@
         in
         {
           default = import ./shell/burn.nix args;
-          rust = import ./shell/rust.nix args;
           tex = import ./shell/tex.nix args;
           qemu = import ./shell/qemu.nix args;
-          kernel = import ./shell/kernel.nix args;
+          linux = import ./shell/linux.nix args;
+          asterinas = import ./shell/asterinas.nix args;
         };
     in
     {
@@ -122,6 +122,11 @@
 
     chinese-fonts = {
       url = "github:brsvh/chinese-fonts-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };

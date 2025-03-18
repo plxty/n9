@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, inputs, ... }:
 
 # The cross.pkgs.stdenv will handle (build,host,target) well, and we just use it:
 # https://github.com/NixOS/nixpkgs/blob/master/pkgs/stdenv/cross/default.nix
@@ -16,11 +16,15 @@ let
       pkgs
     else
       { aarch64-linux = pkgs.pkgsCross.aarch64-multiplatform-musl; }.${target};
-  arch = { aarch64-linux = "ARM64"; }.${target};
-  prefix = pkgsCross.stdenv.cc.targetPrefix;
+  pkgsRust = pkgs.extend inputs.rust-overlay.overlays.default;
+  arch = { aarch64-linux = "arm64"; }.${target};
 
-  kmake = pkgs.writers.writeBashBin "kmake" ''
-    make ARCH=${arch} CROSS_COMPILE=${prefix} V=1 "$@"
+  makk = pkgs.writers.writeBashBin "makk" ''
+    make ARCH=${arch} CROSS_COMPILE=${pkgsCross.stdenv.cc.targetPrefix} V=1 "$@"
+  '';
+
+  makr = pkgs.writers.writeBashBin "makr" ''
+    make ARCH=${arch} LLVM=1 V=1 "$@"
   '';
 in
 pkgsCross.mkShell {
@@ -28,9 +32,11 @@ pkgsCross.mkShell {
 
   depsBuildBuild = with pkgs; [
     # rust-for-linux
-    rustup
+    (pkgsRust.rust-bin.stable.latest.default.override {
+      extensions = [ "rust-src" ];
+    })
     rust-bindgen
-    clang
+    clang # TODO: clang isn't used for cross compile?
     lld
     # normal stuff
     gcc
@@ -39,17 +45,12 @@ pkgsCross.mkShell {
     ncurses # menuconfig
   ];
 
-  shellHook = ''
-    rustup toolchain install nightly -c rust-src rust-analyzer
-    export PATH=$PATH:$HOME/.rustup/toolchains/nightly-x86_64-unknown-linux-gnu/bin
-  '';
-
-  nativeBuildInputs = with pkgsCross.buildPackages; [
-    gcc
-    pkg-config
-  ];
+  # nativeBuildInputs = with pkgsCross.buildPackages; [
+  #   pkg-config
+  # ];
 
   packages = [
-    kmake
+    makk
+    makr
   ];
 }

@@ -46,10 +46,19 @@ in
         gitignore = "curl -sL https://www.gitignore.io/api/$argv";
 
         envrc = ''
-          if test -z "$argv[1]"
-            echo "envrc [env]"
-          else if test ! -f .envrc
-            echo "use flake n9#$argv[1]" > .envrc
+          if test -f .envrc
+            cat .envrc
+            exit
+          end
+
+          set -f env $argv[1]
+          if test -z "$env"
+            set env (basename "$PWD")
+          end
+
+          read -l -P "will use env \"$env\", y? " confirm
+          if test "$confirm" = "y"
+            echo "use flake n9#$env" | tee .envrc
             direnv allow
           end
         '';
