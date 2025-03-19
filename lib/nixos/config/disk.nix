@@ -117,7 +117,6 @@ in
               datasets.home = {
                 type = "zfs_fs";
                 mountpoint = "/home";
-                options.dedup = "on";
               };
 
               datasets.nix = {
