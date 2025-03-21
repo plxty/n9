@@ -17,6 +17,7 @@
               freerdp3
               rpi-imager
               minicom
+              openocd
             ];
           }
         )

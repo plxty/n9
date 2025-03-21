@@ -6,6 +6,10 @@
 # build: current the platform, host: the cross compile toolchains, target: eventually runs at
 # https://github.com/NixOS/nixpkgs/issues/35543
 
+# Maybe using "trait" (or lib) within each project is better, for different
+# project we may use different shells.
+# Or making `shell` here another flake, and use linux#arm64 like things to make
+# the shell? Or simplier, using n9#linux.arm64?
 let
   inherit (pkgs) system;
   target = "aarch64-linux";
@@ -29,6 +33,18 @@ let
 in
 pkgsCross.mkShell {
   name = "kernel";
+
+  shellHook = ''
+    {
+      echo "CompileFlags:"
+      echo "  Remove:"
+      echo "    - -march=*"
+      echo "    - -mabi=*"
+      echo "    - -mcpu=*"
+      echo "    - -fno-allow-store-data-races"
+      echo "    - -fconserve-stack"
+    } > .clangd
+  '';
 
   depsBuildBuild = with pkgs; [
     # rust-for-linux
