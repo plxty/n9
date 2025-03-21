@@ -149,4 +149,16 @@
       }
     ];
   };
+
+  home.file.".config/clangd/config.yaml".text = ''
+    CompileFlags:
+      Add:
+        - -ferror-limit=0
+      Remove:
+        - -march=*
+        - -mabi=*
+        - -mcpu=*
+        - -fno-allow-store-data-races
+        - -fconserve-stack
+  '';
 }

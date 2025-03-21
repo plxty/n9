@@ -64,7 +64,6 @@ let
     {
       echo "CompileFlags:"
       echo "  Add:"
-      echo "    - -ferror-limit=0"
       for INC in $(${prefix}gcc -E -Wp,-v -xc /dev/null -fsyntax-only 2>&1 | sed -n 's,^ ,,p'); do
         echo "    - -I$INC"
       done

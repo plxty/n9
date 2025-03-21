@@ -6,63 +6,80 @@
 # build: current the platform, host: the cross compile toolchains, target: eventually runs at
 # https://github.com/NixOS/nixpkgs/issues/35543
 
-# Maybe using "trait" (or lib) within each project is better, for different
-# project we may use different shells.
-# Or making `shell` here another flake, and use linux#arm64 like things to make
-# the shell? Or simplier, using n9#linux.arm64?
+# linux.<arch>.<toolchain>
+#       ^^^^^^              arm64,x86
+#              ^^^^^^^^^^^  gcc,clang
+# Note: x86 only supports 64 bit.
 let
   inherit (pkgs) system;
-  target = "aarch64-linux";
+  inherit (inputs.nixpkgs) lib;
 
-  # TODO: Merge with QEMU
-  pkgsCross =
-    if target == system then
-      pkgs
-    else
-      { aarch64-linux = pkgs.pkgsCross.aarch64-multiplatform-musl; }.${target};
+  # TODO: Host rust and build rust? Seems no difference...
   pkgsRust = pkgs.extend inputs.rust-overlay.overlays.default;
-  arch = { aarch64-linux = "arm64"; }.${target};
 
-  mk = pkgs.writers.writeBashBin "mk" ''
-    make ARCH=${arch} CROSS_COMPILE=${pkgsCross.stdenv.cc.targetPrefix} V=1 "$@"
-  '';
+  mkLinux =
+    arch: toolchain:
+    let
+      target =
+        {
+          arm64 = "aarch64-linux";
+          x86 = "x86_64-linux";
+        }
+        .${arch};
 
-  mkllvm = pkgs.writers.writeBashBin "mkllvm" ''
-    make ARCH=${arch} LLVM=1 V=1 "$@"
-  '';
+      # TODO: Merge with QEMU
+      pkgsCross =
+        if target == system then pkgs else { arm64 = pkgs.pkgsCross.aarch64-multiplatform-musl; }.${arch};
+
+      mkShell =
+        if toolchain == "gcc" then
+          pkgsCross.mkShell
+        else
+          pkgsCross.mkShell.override { stdenv = pkgsCross.clangStdenv; };
+
+      # M="vmlinux" C="-o ..." 1
+      oneStep = pkgs.writers.writeBashBin "1" ''
+        set -uex
+
+        make ARCH=${arch} -j$(nproc --ignore 3) \
+          ${
+            if toolchain == "gcc" then
+              if target != system then "CROSS_COMPILE=${pkgsCross.stdenv.cc.targetPrefix}" else ""
+            else
+              "LLVM=1" # FIXME: LLVM still broken...
+          } \
+          ''${M:-}
+        ./scripts/clang-tools/gen_compile_commands.py ''${C:-}
+      '';
+    in
+    mkShell {
+      name = "linux";
+
+      # Tools in host:
+      depsBuildBuild =
+        with pkgs;
+        [
+          # rust-for-linux
+          (pkgsRust.rust-bin.stable.latest.default.override {
+            extensions = [ "rust-src" ];
+          })
+          rust-bindgen
+          # rest of all
+          flex
+          bison
+          ncurses
+          bc
+          pkg-config
+          libelf
+        ]
+        ++ lib.optionals (toolchain == "clang") [
+          libllvm
+          lld # using host lld seems fine...
+        ];
+
+      packages = [ oneStep ];
+    };
 in
-pkgsCross.mkShell {
-  name = "kernel";
-
-  shellHook = ''
-    {
-      echo "CompileFlags:"
-      echo "  Remove:"
-      echo "    - -march=*"
-      echo "    - -mabi=*"
-      echo "    - -mcpu=*"
-      echo "    - -fno-allow-store-data-races"
-      echo "    - -fconserve-stack"
-    } > .clangd
-  '';
-
-  depsBuildBuild = with pkgs; [
-    # rust-for-linux
-    (pkgsRust.rust-bin.stable.latest.default.override {
-      extensions = [ "rust-src" ];
-    })
-    rust-bindgen
-    clang # TODO: clang isn't used for cross compile?
-    lld
-    # normal stuff
-    gcc
-    flex
-    bison
-    ncurses # menuconfig
-  ];
-
-  packages = [
-    mk
-    mkllvm
-  ];
-}
+lib.genAttrs [ "arm64" "x86" ] (
+  arch: lib.genAttrs [ "gcc" "clang" ] (toolchain: mkLinux arch toolchain)
+)

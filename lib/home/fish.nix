@@ -53,7 +53,8 @@ in
 
           set -f env $argv[1]
           if test -z "$env"
-            set env (basename "$PWD")
+            echo "envrc [env]"
+            return
           end
 
           read -l -P "will use env \"$env\", y? " confirm
