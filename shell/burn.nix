@@ -39,21 +39,33 @@ let
       fi
     fi
 
-    # Pull the latest changes if have:
-    git pull --rebase || true
-    cd asterisk
-    git pull --rebase || true
-    chmod -R g-rwx,o-rwx .
-    cd ..
-    "''${B_NIX[@]}" flake update || true
+    B_UP=true
+    if [[ -f .last ]]; then
+      if (("$(date +%s)" - "$(stat -c %Y .last)" < 86400)); then
+        B_UP=false
+      fi
+    fi
 
+    if $B_UP; then
+      # Pull the latest changes if have:
+      git pull --rebase || true
+      cd asterisk
+      git pull --rebase || true
+      chmod -R g-rwx,o-rwx .
+      cd ..
+      "''${B_NIX[@]}" flake update || true
+    fi
+
+    # Das template:
     sed -i -E 's!(path = )[^;]+\;$!\1"'"$PWD"'";!' \
       lib/nixos/essential.nix
     sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
       lib/generic/config/keys.nix
   '';
 
-  postBurn = "";
+  postBurn = ''
+    touch .last
+  '';
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''
     ${preBurn}
@@ -72,9 +84,11 @@ let
         "''${B_HWCONF[@]}" > "hosts/$B_THIS/hardware-configuration.nix"
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
 
-        # Try updateing the database for command-not-found as well:
-        sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
-        sudo nix-channel --update nixos || true
+        if $B_UP; then
+          # Try updateing the database for command-not-found as well:
+          sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
+          sudo nix-channel --update nixos || true
+        fi
       } &
       while jobs %%; do sudo -v; sleep 180; done
     else

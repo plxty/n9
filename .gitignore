@@ -5,3 +5,4 @@ asterisk/
 .direnv/
 .gcroots/
 result
+.last

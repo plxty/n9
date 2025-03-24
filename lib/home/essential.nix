@@ -1,4 +1,9 @@
-{ pkgs, ... }:
+{
+  osConfig,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -14,7 +19,6 @@
     yq
     python3
     cached-nix-shell
-    nix-index
     pstree
     binutils
     file
@@ -48,6 +52,15 @@
   home.file.".config/nixpkgs/config.nix".text = ''
     { allowUnfree = true; }
   '';
+
+  home.file.".local/share/nix/trusted-settings.json" = {
+    text = ''
+      {
+        "substituters": { "${lib.concatStringsSep " " osConfig.nix.settings.substituters}": true },
+      }
+    '';
+    force = true;
+  };
 
   home.stateVersion = "25.05";
 }

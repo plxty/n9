@@ -77,7 +77,7 @@ let
           export MAKEFLAGS="-j$(nproc --ignore 3)"
         ''
         + lib.optionalString (toolchain == "gcc" && target != system) ''
-          export CROSS_COMPILE="${pkgsCross.stdenv.cc.targetPrefix}
+          export CROSS_COMPILE="${pkgsCross.stdenv.cc.targetPrefix}"
         ''
         + lib.optionalString (toolchain == "clang") ''
           export NIX_CFLAGS_COMPILE+=" -Qunused-arguments"
