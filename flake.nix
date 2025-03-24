@@ -65,17 +65,29 @@
       ] mkShells;
     };
 
+  # Test inputs are removed:
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
     colmena = {
       url = "github:zhaofengli/colmena";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        stable.follows = "";
+        nix-github-actions.follows = "";
+        flake-compat.follows = "";
+      };
     };
 
     nixos-anywhere = {
       url = "github:nix-community/nixos-anywhere";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        disko.follows = "";
+        nixos-stable.follows = "";
+        nixos-images.follows = "";
+        treefmt-nix.follows = "";
+      };
     };
 
     disko = {
@@ -90,7 +102,10 @@
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL";
-      inputs.nixpkgs.follows = "nixpkgs";
+      inputs = {
+        nixpkgs.follows = "nixpkgs";
+        flake-compat.follows = "";
+      };
     };
 
     paperwm = {

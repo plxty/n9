@@ -10,12 +10,12 @@
 #       ^^^^^^              arm64,x86
 #              ^^^^^^^^^^^  gcc,clang
 # Note: x86 only supports 64 bit.
+# TODO: Generic way to do the cross compiling...
 let
   inherit (pkgs) system;
   inherit (inputs.nixpkgs) lib;
-
-  # TODO: Host rust and build rust? Seems no difference...
   pkgsRust = pkgs.extend inputs.rust-overlay.overlays.default;
+  underscore = lib.replaceStrings [ "-" ] [ "_" ];
 
   mkLinux =
     arch: toolchain:
@@ -26,39 +26,72 @@ let
           x86 = "x86_64-linux";
         }
         .${arch};
-
-      # TODO: Merge with QEMU
+      # Linux requires no <vendor> part, to disable the warning of clang...
+      # This triggers building of gcc, will take some time for the clang...
       pkgsCross =
-        if target == system then pkgs else { arm64 = pkgs.pkgsCross.aarch64-multiplatform-musl; }.${arch};
-
-      mkShell =
-        if toolchain == "gcc" then
-          pkgsCross.mkShell
+        if target == system then
+          pkgs
         else
-          pkgsCross.mkShell.override { stdenv = pkgsCross.clangStdenv; };
+          import inputs.nixpkgs {
+            inherit system;
+            crossSystem.config = "${target}-gnu";
+          };
+      triplet = {
+        build = pkgs.stdenv.buildPlatform.config;
+        target = pkgsCross.stdenv.targetPlatform.config;
+      };
 
-      # M="vmlinux" C="-o ..." 1
-      oneStep = pkgs.writers.writeBashBin "1" ''
-        set -uex
+      # LLVM cross compile is quite annoying, especially in Linux:
+      # 1. The linux uses clang for both depsBuildBuild and depsBuildHost
+      # 2. NixOS wrapped clang in stdenv for both cross and non-cross
+      # 3. They can't coexists due to linux hardcoded the host clang and target
+      # Therefore we can only write a little wrapper to help us call the right
+      # side of clang, kind of ugly :(
+      # Other tools (e.g. lld) from host seems usable, only clang needs it.
+      # P.S. The stdenv.cc.cc is the unwrapped drv of compiler, use at risk.
+      # TODO: arm-linux-gnueabi
+      clangWrapper = pkgs.writers.writeBashBin "clang" ''
+        for __clang_arg in "$@"; do
+          if [[ "$__clang_arg" == "--target=${triplet.target}" ]]; then
+            exec ${pkgsCross.clangStdenv.cc}/bin/${triplet.target}-clang "$@"
+          fi
+        done
+        exec ${pkgs.clangStdenv.cc}/bin/clang "$@"
+      '';
 
-        make ARCH=${arch} -j$(nproc --ignore 3) \
-          ${
-            if toolchain == "gcc" then
-              if target != system then "CROSS_COMPILE=${pkgsCross.stdenv.cc.targetPrefix}" else ""
-            else
-              "LLVM=1" # FIXME: LLVM still broken...
-          } \
-          ''${M:-}
-        ./scripts/clang-tools/gen_compile_commands.py ''${C:-}
+      makeWrapper = pkgs.writers.writeBashBin "make" ''
+        if [[ "$1" == "compdb" ]]; then
+          shift 1
+          exec ./scripts/clang-tools/gen_compile_commands.py "$@"
+        fi
+        exec ${pkgs.gnumake}/bin/make "$@"
       '';
     in
-    mkShell {
+    (if toolchain == "gcc" then pkgsCross.mkShell else pkgsCross.mkShellNoCC) {
       name = "linux";
 
-      # Tools in host:
+      # Setup the customized stdenv (the nix sets CC, LD, ... by default):
+      shellHook =
+        ''
+          export ARCH="${arch}"
+          export MAKEFLAGS="-j$(nproc --ignore 3)"
+        ''
+        + lib.optionalString (toolchain == "gcc" && target != system) ''
+          export CROSS_COMPILE="${pkgsCross.stdenv.cc.targetPrefix}
+        ''
+        + lib.optionalString (toolchain == "clang") ''
+          export NIX_CFLAGS_COMPILE+=" -Qunused-arguments"
+          export NIX_CFLAGS_COMPILE_${underscore triplet.build}+=" -Qunused-arguments"
+          export NIX_CFLAGS_COMPILE_${underscore triplet.target}+=" -Qunused-arguments"
+          export LLVM="1"
+        '';
+
+      # Tools in host (like packages):
       depsBuildBuild =
         with pkgs;
         [
+          # own
+          makeWrapper
           # rust-for-linux
           (pkgsRust.rust-bin.stable.latest.default.override {
             extensions = [ "rust-src" ];
@@ -69,15 +102,13 @@ let
           bison
           ncurses
           bc
-          pkg-config
-          libelf
+          openssl
         ]
         ++ lib.optionals (toolchain == "clang") [
+          clangWrapper
+          lld
           libllvm
-          lld # using host lld seems fine...
         ];
-
-      packages = [ oneStep ];
     };
 in
 lib.genAttrs [ "arm64" "x86" ] (
