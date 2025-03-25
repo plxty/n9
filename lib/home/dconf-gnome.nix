@@ -9,7 +9,7 @@ with lib.hm.gvariant;
       audible-bell = false;
       cursor-shape = "underline";
       default-profile-uuid = "8b11dd3e6b265e6a5fd6ce60678873ea";
-      font-name = "MesloLGS NF 10";
+      font-name = "Mononoki Nerd Font Mono 10";
       profile-uuids = [ "8b11dd3e6b265e6a5fd6ce60678873ea" ];
       restore-session = true;
       restore-window-size = true;
@@ -101,6 +101,24 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/wm/preferences" = {
       workspace-names = [ "Workspace 1" "Workspace 2" "Workspace 3" "Workspace 4" ];
+    };
+
+    "org/gnome/gedit/plugins" = {
+      active-plugins = [ "spell" "sort" "textsize" "docinfo" "quickhighlight" "filebrowser" ];
+    };
+
+    "org/gnome/gedit/preferences/editor" = {
+      display-line-numbers = true;
+      display-right-margin = true;
+      editor-font = "Noto Sans Mono CJK SC 10";
+      style-scheme-for-dark-theme-variant = "oblivion";
+      use-default-font = false;
+      wrap-last-split-mode = "word";
+    };
+
+    "org/gnome/gedit/preferences/ui" = {
+      statusbar-visible = true;
+      theme-variant = "dark";
     };
 
     "org/gnome/mutter" = {

@@ -79,6 +79,7 @@ EXCLUDIND = [
     ("org/gnome/desktop/notifications/application/*", ["application-id"]),
     ("org/gnome/desktop/peripherals/mouse", ["speed"]),
     ("org/gnome/desktop/peripherals/touchpad", ["two-finger-scrolling-enabled"]),
+    ("org/gnome/desktop/peripherals/keyboard", ["numlock-state"]),
     (
         "org/gnome/desktop/screensaver",
         [

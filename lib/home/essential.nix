@@ -1,9 +1,4 @@
-{
-  osConfig,
-  pkgs,
-  lib,
-  ...
-}:
+{ pkgs, lib, ... }:
 
 {
   imports = [
@@ -53,14 +48,21 @@
     { allowUnfree = true; }
   '';
 
-  home.file.".local/share/nix/trusted-settings.json" = {
-    text = ''
-      {
-        "substituters": { "${lib.concatStringsSep " " osConfig.nix.settings.substituters}": true },
-      }
-    '';
-    force = true;
-  };
+  home.file.".local/share/nix/trusted-settings.json" =
+    let
+      # using osConfig.nix.settings.substituters directly will introduce an
+      # extra defult cache.nixos.org, we use this way to avoid it... TODO
+      # make a osOptions to obtain the raw values?
+      inherit ((import ../../flake.nix).nixConfig) substituters;
+    in
+    {
+      text = ''
+        {
+          "substituters": { "${lib.concatStringsSep " " substituters}": true }
+        }
+      '';
+      force = true;
+    };
 
   home.stateVersion = "25.05";
 }

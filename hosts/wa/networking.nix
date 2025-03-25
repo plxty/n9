@@ -94,7 +94,14 @@ in
     };
     "11-vlan" = n9.mkCarrierOnlyNetwork ports.vlan { };
 
-    "20-wan" = n9.mkCarrierOnlyNetwork ports.wan {
+    "20-rj45-0" = mkJumboLanBridgeSlave ports.rj45-0 ports.lan;
+    "21-rj45-1" = mkJumboLanBridgeSlave ports.rj45-1 ports.lan;
+    "22-rj45-2" = mkJumboLanBridgeSlave ports.rj45-2 ports.lan;
+    "23-lan" = n9.mkCarrierOnlyNetwork ports.lan {
+      linkConfig.MTUBytes = "9000";
+    };
+
+    "30-wan" = n9.mkCarrierOnlyNetwork ports.wan {
       # https://wiki.debian.org/IPv6PrefixDelegation
       networkConfig = {
         DHCP = "ipv6";
@@ -109,13 +116,6 @@ in
         UseHostname = "no";
       };
       linkConfig.RequiredForOnline = "yes"; # TODO: Is it really working?
-    };
-
-    "30-rj45-0" = mkJumboLanBridgeSlave ports.rj45-0 ports.lan;
-    "31-rj45-1" = mkJumboLanBridgeSlave ports.rj45-1 ports.lan;
-    "32-rj45-2" = mkJumboLanBridgeSlave ports.rj45-2 ports.lan;
-    "33-lan" = {
-      linkConfig.MTUBytes = "9000";
     };
   };
 
@@ -134,9 +134,7 @@ in
     };
   };
 
-  # DHCP and DNS server (kea?):
-  systemd.tmpfiles.rules = [ "d /srv/tftp 0777 dnsmasq dnsmasq -" ];
-
+  # DNS and TFTP, and more:
   services.dnsmasq.settings = {
     interface = [ "lo" ];
 
@@ -155,4 +153,6 @@ in
     enable-tftp = true;
     tftp-root = "/srv/tftp";
   };
+
+  systemd.tmpfiles.rules = [ "d /srv/tftp 0777 dnsmasq dnsmasq -" ];
 }

@@ -59,7 +59,7 @@ in
         # Extra fonts:
         wqy_microhei
         wqy_zenhei
-        meslo-lgs-nf
+        nerd-fonts.mononoki
       ];
 
       # gnome-font-viewer

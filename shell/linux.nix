@@ -67,7 +67,8 @@ let
         exec ${pkgs.gnumake}/bin/make "$@"
       '';
     in
-    (if toolchain == "gcc" then pkgsCross.mkShell else pkgsCross.mkShellNoCC) {
+    # CC is set by ourselves (with CROSS_COMPILE or LLVM).
+    pkgsCross.mkShellNoCC {
       name = "linux";
 
       # Setup the customized stdenv (the nix sets CC, LD, ... by default):
