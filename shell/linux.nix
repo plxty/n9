@@ -104,6 +104,12 @@ let
           ncurses
           bc
           openssl
+          # debug, still flavor of gdb instead of lldb:
+          pkgsCross.buildPackages.gdb
+        ]
+        ++ lib.optionals (toolchain == "gcc") [
+          gcc
+          pkgsCross.stdenv.cc
         ]
         ++ lib.optionals (toolchain == "clang") [
           clangWrapper
