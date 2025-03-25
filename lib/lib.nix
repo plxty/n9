@@ -14,6 +14,7 @@ rec {
 
   # Hmm, why not?
   flatMap = fn: list: lib.flatten (lib.map fn list);
+  flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
 
   # Like recursiveUpdate, but also handle the lists concation:
   # When using mergeAttrs, recursiveUpdate or other merging functions, you'd

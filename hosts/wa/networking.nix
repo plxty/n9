@@ -33,13 +33,17 @@ let
 in
 {
   n9.network.router = {
-    inherit (ports) lan wan;
-    address = "10.0.0.1/8";
-    range = {
-      from = "10.254.0.1";
-      to = "10.254.254.254";
-      mask = "255.255.0.0";
+    lan.${ports.lan} = {
+      address = "10.0.0.1/8";
+      range = {
+        from = "10.254.0.1";
+        to = "10.254.254.254";
+        mask = "255.255.0.0";
+      };
+      extraConfig.linkConfig.MTUBytes = "9000";
     };
+
+    wan.${ports.wan}.enable = true;
   };
 
   # Netdev:
@@ -97,11 +101,7 @@ in
     "20-rj45-0" = mkJumboLanBridgeSlave ports.rj45-0 ports.lan;
     "21-rj45-1" = mkJumboLanBridgeSlave ports.rj45-1 ports.lan;
     "22-rj45-2" = mkJumboLanBridgeSlave ports.rj45-2 ports.lan;
-    "23-lan" = n9.mkCarrierOnlyNetwork ports.lan {
-      linkConfig.MTUBytes = "9000";
-    };
-
-    "30-wan" = n9.mkCarrierOnlyNetwork ports.wan {
+    "23-wan" = n9.mkCarrierOnlyNetwork ports.wan {
       # https://wiki.debian.org/IPv6PrefixDelegation
       networkConfig = {
         DHCP = "ipv6";

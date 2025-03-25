@@ -18,50 +18,69 @@ in
 
     # networkd + nat, mostly v4, v6 may have some issues...
     router = {
-      # act as enable as well:
       lan = lib.mkOption {
-        type = lib.types.nullOr lib.types.str;
-        default = null;
-      };
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            # cidr address, of local:
+            options.address = lib.mkOption {
+              type = lib.types.str;
+            };
 
-      # cidr address, of local:
-      address = lib.mkOption {
-        type = lib.types.str;
-      };
+            # TODO: Calculate in nix? Seems quite hard as math lib is missing...
+            options.range = {
+              from = lib.mkOption { type = lib.types.str; };
+              to = lib.mkOption { type = lib.types.str; };
+              mask = lib.mkOption { type = lib.types.str; };
+            };
 
-      # TODO: Calculate in nix? Seems quite hard as math lib is missing...
-      range = {
-        from = lib.mkOption { type = lib.types.str; };
-        to = lib.mkOption { type = lib.types.str; };
-        mask = lib.mkOption { type = lib.types.str; };
+            options.extraConfig = lib.mkOption {
+              type = lib.types.attrs;
+              default = { };
+            };
+          }
+        );
+        default = { };
       };
 
       wan = lib.mkOption {
-        type = lib.types.str;
+        type = lib.types.attrsOf (
+          lib.types.submodule {
+            options.enable = lib.mkEnableOption "wan";
+          }
+        );
+        apply =
+          v:
+          let
+            names = lib.attrNames (lib.filterAttrs (_: v: v.enable) v);
+          in
+          assert lib.assertMsg ((lib.length names) == 1) "only one wan is supported!";
+          lib.elemAt names 0;
       };
     };
   };
 
-  config = lib.mkIf (cfg.router.lan != null) {
+  config = lib.mkIf (cfg.router.lan != { }) {
     systemd.network.enable = true;
 
     # Don't like the resolved...
     services.resolved.enable = false;
 
-    systemd.network.networks."66-${cfg.router.lan}" = n9.mkCarrierOnlyNetwork cfg.router.lan {
-      networkConfig = {
-        Address = cfg.router.address;
-        IPv6SendRA = "yes";
-        IPv6AcceptRA = "no";
-        DHCPPrefixDelegation = "yes";
-        LinkLocalAddressing = "ipv6";
-      };
-      ipv6SendRAConfig = {
-        Managed = "yes";
-        OtherInformation = "yes";
-      };
-      dhcpPrefixDelegationConfig.Token = "::1";
-    };
+    systemd.network.networks = lib.concatMapAttrs (n: v: {
+      "66-${n}" = lib.recursiveUpdate (n9.mkCarrierOnlyNetwork n {
+        networkConfig = {
+          Address = v.address;
+          IPv6SendRA = "yes";
+          IPv6AcceptRA = "no";
+          DHCPPrefixDelegation = "yes";
+          LinkLocalAddressing = "ipv6";
+        };
+        ipv6SendRAConfig = {
+          Managed = "yes";
+          OtherInformation = "yes";
+        };
+        dhcpPrefixDelegationConfig.Token = "::1";
+      }) v.extraConfig;
+    }) cfg.router.lan;
 
     # Don't try to resolve the LAN if NetworkManager is enabled:
     networking.networkmanager.unmanaged = lib.mkIf config.networking.networkmanager.enable [
@@ -72,35 +91,43 @@ in
     systemd.network.wait-online.enable = !config.networking.networkmanager.enable;
 
     # https://wiki.archlinux.org/title/Dnsmasq
-    services.dnsmasq =
-      let
-        range = cfg.router.range;
-        address = lib.elemAt (lib.splitString "/" cfg.router.address) 0;
-      in
-      {
-        enable = true;
-        settings = {
-          interface = [ cfg.router.lan ];
-          bind-dynamic = true;
-          cache-size = "10000";
-          enable-ra = true;
+    services.dnsmasq = {
+      enable = true;
+      settings = {
+        interface = lib.attrNames cfg.router.lan;
+        bind-dynamic = true;
+        cache-size = "10000";
+        enable-ra = true;
 
-          dhcp-authoritative = true;
-          dhcp-option = [
-            "1,${range.mask}"
-            "3,${address}" # gateway
-            "6,${address}" # dns
-          ];
-          dhcp-range = [
-            "${range.from},${range.to},72h"
-            "::,constructor:${cfg.router.wan},slaac,ra-stateless,ra-names,72h"
-          ];
+        dhcp-authoritative = true;
+        dhcp-option = n9.flatMapAttrsToList (
+          n: v:
+          let
+            address = lib.elemAt (lib.splitString "/" v.address) 0;
+          in
+          [
+            "interface:${n},1,${v.range.mask}"
+            "interface:${n},3,${address}" # gateway
+            "interface:${n},6,${address}" # dns
+          ]
+        ) cfg.router.lan;
 
-          inherit (cfg) domain;
-          local = "/${cfg.domain}/"; # only resolve in local, don't go out
-          address = [ "/${hostName}.${cfg.domain}/${address}" ];
-        };
+        dhcp-range = n9.flatMapAttrsToList (n: v: [
+          "interface:${n},${v.range.from},${v.range.to},72h"
+          "interface:${n},::,constructor:${cfg.router.wan},slaac,ra-stateless,ra-names,72h"
+        ]) cfg.router.lan;
+
+        inherit (cfg) domain;
+        local = "/${cfg.domain}/"; # only resolve in local, don't go out
+        address = lib.mapAttrsToList (
+          _: v:
+          let
+            address = lib.elemAt (lib.splitString "/" v.address) 0;
+          in
+          "/${hostName}.${cfg.domain}/${address}"
+        ) cfg.router.lan;
       };
+    };
 
     # NAT + Firewall with nftables.
     # @see nixpkgs/nixos/modules/services/networking/nat-nftables.nix)
@@ -110,7 +137,7 @@ in
     networking.nat = {
       enable = true;
       enableIPv6 = true;
-      internalInterfaces = [ cfg.router.lan ];
+      internalInterfaces = lib.attrNames cfg.router.lan;
       externalInterface = cfg.router.wan;
     };
 

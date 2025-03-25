@@ -78,7 +78,7 @@ let
       trap 'pkill -P $$' SIGINT SIGTERM EXIT
       {
         # "Wakeup" the sleeping parent when exit normally or abnormally:
-        trap 'kill $(pgrep -P $$ sleep)' EXIT
+        trap 'pkill -P $$ sleep' EXIT
 
         # For hosts that mismatch with local, suggest `hostname xxx`:
         "''${B_HWCONF[@]}" > "hosts/$B_THIS/hardware-configuration.nix"
@@ -89,6 +89,9 @@ let
           sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
           sudo nix-channel --update nixos || true
         fi
+
+        # The `sleep` will be killed whether successful or not...
+        ${postBurn}
       } &
       while jobs %%; do sudo -v; sleep 180; done
     else
@@ -96,8 +99,8 @@ let
         > "hosts/$B_THAT/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
         --no-substitute --sign "asterisk/$B_THIS/nix-key"
+      ${postBurn}
     fi
-    ${postBurn}
   '';
 
   burnInstall = pkgs.writers.writeBashBin "fire" ''
