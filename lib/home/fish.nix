@@ -45,10 +45,10 @@ in
 
         gitignore = "curl -sL https://www.gitignore.io/api/$argv";
 
+        # or: direnv edit
         envrc = ''
           if test -f .envrc
             cat .envrc
-            return
           end
 
           set -f env $argv[1]

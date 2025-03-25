@@ -36,6 +36,8 @@ in
             { package = dash-to-dock; }
             { package = customize-ibus; }
             { package = tray-icons-reloaded; }
+            { package = mouse-follows-focus; }
+            { package = hide-cursor; }
           ];
         };
 
