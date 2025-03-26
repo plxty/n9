@@ -1,5 +1,5 @@
 diff --git a/extension.js b/extension.js
-index 8dfc884..acbea67 100644
+index 8dfc884..24dbba5 100644
 --- a/extension.js
 +++ b/extension.js
 @@ -564,7 +564,6 @@ const IBusAutoSwitch = GObject.registerClass(
@@ -10,43 +10,31 @@ index 8dfc884..acbea67 100644
        this._overviewHiddenID = Main.overview.connect(
          "hidden",
          this._onWindowChanged.bind(this),
-@@ -577,6 +576,12 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -577,6 +576,10 @@ const IBusAutoSwitch = GObject.registerClass(
          "notify::focus-window",
          this._onWindowChanged.bind(this),
        );
-+
-+      // only current window, when focus in, enable states update
-+      this._current = null;
-+      this._focusInID = null;
-+      this._focusOutID = null;
++      this._updatePropertyID = null;
 +      this._timeoutID = null;
++      this._prevState = null;
++      this._prevWindow = null;
      }
  
      get _state() {
-@@ -587,42 +592,61 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -587,43 +590,52 @@ const IBusAutoSwitch = GObject.registerClass(
        return ASCIIMODES.includes(text);
      }
  
 -    get _toggle() {
 -      let win = InputSourceManager._getCurrentWindow();
 -      if (!win) return false;
-+    set remember(remember) {
-+      this._remember = remember;
-+    }
-+
-+    _onFocusIn() {
-+      const win = InputSourceManager._getCurrentWindow();
-+      if (!(this._remember && win && win.wm_class))
-+        return;
- 
+-
 -      let state = this._state;
 -      let stateConf = false;
 -      if (this._remember) {
 -        let store = this._states.get(this._tmpWindow);
 -        if (state !== store) this._states.set(this._tmpWindow, state);
-+      if (this._timeoutID)
-+        clearTimeout(this._timeoutID);
- 
+-
 -        this._tmpWindow = win.wm_class ? win.wm_class.toLowerCase() : "";
 -        if (!this._states.has(this._tmpWindow)) {
 -          let unknown =
@@ -54,18 +42,7 @@ index 8dfc884..acbea67 100644
 -              ? state
 -              : this.unknown === UNKNOWN.ON;
 -          this._states.set(this._tmpWindow, unknown);
-+      const wmClass = win.wm_class.toLowerCase();
-+      if (this._current == wmClass)
-+        return;
-+      this._current = wmClass;
-+
-+      // workaround for the timing issue of ibus-rime...
-+      const state = this._states.get(wmClass);
-+      this._timeoutID = setTimeout(() => {
-+        if (state != undefined && state != this._state) {
-+          IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+          console.log("auto switch! state", state, "->", this._state, wmClass);
-         }
+-        }
 -        stateConf = this._states.get(this._tmpWindow);
 -      } else {
 -        stateConf =
@@ -73,57 +50,68 @@ index 8dfc884..acbea67 100644
 -            ? state
 -            : this.unknown === UNKNOWN.ON;
 -      }
-+        this._timeoutID = null;
-+      }, 64);
-+    };
- 
+-
 -      return state ^ stateConf;
 -    }
-+    _onFocusOut() {
-+      const win = InputSourceManager._getCurrentWindow();
-+      if (!(this._remember && win && win.wm_class))
-+        return;
- 
--    set remember(remember) {
--      this._remember = remember;
-+      const wmClass = win.wm_class.toLowerCase();
-+      if (this._current != wmClass)
-+        return;
-+
-+      this._states.set(wmClass, this._state);
-+      // console.log("set state", this._state, wmClass)
+-
+     set remember(remember) {
+       this._remember = remember;
      }
  
      _onWindowChanged() {
 -      if (this._toggle && IBusManager._panelService) {
 -        IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+      if (!IBusManager._panelService)
++      const win = InputSourceManager._getCurrentWindow();
++      if (!(this._remember && IBusManager._panelService && win))
 +        return;
 +
-+      if (!this._focusInID) {
-+        this._focusInID = IBusManager._panelService.connect("focus-in", () => {
-+          this._onFocusIn();
-+        });
-+      }
-+
-+      if (!this._focusOutID) {
-+        this._focusOutID = IBusManager._panelService.connect("focus-out", () => {
-+          this._onFocusOut();
++      if (!this._updatePropertyID) {
++        this._updatePropertyID = IBusManager._panelService.connect("update-property", (engineName, prop) => {
++          if (prop.get_key() === INPUTMODE) {
++            this._prevState = this._state;
++            // console.log("update state", this._state);
++          }
 +        });
        }
++
++      if (this._timeoutID)
++        clearTimeout(this._timeoutID);
++
++      // focus out
++      if (this._prevWindow != null && this._prevState != null) {
++        this._states.set(this._prevWindow, this._prevState);
++        // console.log("set state", this._prevState, this._prevWindow);
++      }
++
++      // focus in
++      const wmClass = win.wm_class ? win.wm_class.toLowerCase() : "";
++      this._timeoutID = setTimeout(() => {
++        const state = this._states.get(wmClass);
++        let target = this.unknown == UNKNOWN.ON;
++        if (this.unknown == UNKNOWN.DEFAULT)
++          target = this._state;
++
++        if (state != undefined && state != target) {
++          IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
++          // console.log("auto switch! state", state, "->", target, wmClass);
++        }
++
++        // TODO: handle via ibus-rime? to avoid such delay...
++        this._timeoutID = null;
++      }, 100);
++
++      // previous
++      this._prevWindow = wmClass;
      }
  
-@@ -658,6 +682,18 @@ const IBusAutoSwitch = GObject.registerClass(
+     _bindSettings() {
+@@ -658,6 +670,14 @@ const IBusAutoSwitch = GObject.registerClass(
        if (this._overviewHiddenID)
          Main.overview.disconnect(this._overviewHiddenID),
            (this._overviewHiddenID = 0);
-+      if (this._focusInID) {
-+        IBusManager._panelService.disconnect(this._focusInID);
-+        this._focusInID = null;
-+      }
-+      if (this._focusOutID) {
-+        IBusManager._panelService.disconnect(this._focusOutID);
-+        this._focusOutID = null;
++      if (this._updatePropertyID) {
++        IBusManager._panelService.disconnect(this._updatePropertyID);
++        this._updatePropertyID = null;
 +      }
 +      if (this._timeoutID) {
 +        clearTimeout(this._timeoutID);

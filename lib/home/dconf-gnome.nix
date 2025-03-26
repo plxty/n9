@@ -190,7 +190,7 @@ with lib.hm.gvariant;
       input-indicator-right-close = true;
       input-indicator-use-scroll = false;
       menu-ibus-restart = true;
-      unkown-ascii-state = mkUint32 2;
+      unkown-ascii-state = mkUint32 1;
       use-candidate-box-right-click = false;
       use-candidate-scroll = false;
       use-candidate-still = false;
