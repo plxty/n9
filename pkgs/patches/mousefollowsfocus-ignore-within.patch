@@ -1,0 +1,73 @@
+diff --git a/extension.js b/extension.js
+index aa0e054..7d51533 100644
+--- a/extension.js
++++ b/extension.js
+@@ -83,28 +83,16 @@ function get_window_actor(window) {
+     return undefined;
+ }
+ 
+-function cursor_within_window(mouse_x, mouse_y, win) {
+-    // use get_buffer_rect instead of get_frame_rect here, because the frame_rect may
+-    // exclude shadows, which might already cause a focus-on-hover event, therefore causing
+-    // the pointer to jump around eratically.
+-    let rect = win.get_buffer_rect();
+-
+-    dbg_log(`window rect: ${rect.x}:${rect.y} - ${rect.width}:${rect.height}`);
+-
+-    return (
+-        mouse_x >= rect.x &&
+-        mouse_x <= rect.x + rect.width &&
+-        mouse_y >= rect.y &&
+-        mouse_y <= rect.y + rect.height
+-    );
+-}
+-
+ function dbg_log(message) {
+     if (DEBUGGING) {
+         console.log(EXT_NAME, message);
+     }
+ }
+ 
++function log(message) {
++    console.log(EXT_NAME, message);
++}
++
+ function focus_changed(win) {
+     const actor = get_window_actor(win);
+     dbg_log("window focus event received");
+@@ -114,14 +102,12 @@ function focus_changed(win) {
+ 
+         let [mouse_x, mouse_y, _] = global.get_pointer();
+ 
+-        if (cursor_within_window(mouse_x, mouse_y, win)) {
+-            dbg_log("pointer within window, discarding event");
+-        } else if (overview.visible) {
+-            dbg_log("overview visible, discarding event");
++        if (overview.visible) {
++            log("overview visible, discarding event");
+         } else if (rect.width < 10 && rect.height < 10) {
+             // xdg-copy creates a 1x1 pixel window to capture mouse events.
+             // Ignore this and similar windows.
+-            dbg_log("window too small, discarding event");
++            log("window too small, discarding event");
+         } else {
+             dbg_log("targeting new window");
+             let seat = Clutter.get_default_backend().get_default_seat();
+@@ -131,7 +117,7 @@ function focus_changed(win) {
+                     rect.y + rect.height / 2,
+                 );
+             } else {
+-                dbg_log("seat is null!");
++                log("seat is null!");
+             }
+         }
+     }
+@@ -140,7 +126,7 @@ function focus_changed(win) {
+ function connect_to_window(win) {
+     const type = win.get_window_type();
+     if (type !== Meta.WindowType.NORMAL) {
+-        dbg_log(`ignoring window, window type: ${type}`);
++        log(`ignoring window, window type: ${type}`);
+         return;
+     }
+ 

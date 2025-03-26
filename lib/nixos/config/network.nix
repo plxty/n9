@@ -83,9 +83,9 @@ in
     }) cfg.router.lan;
 
     # Don't try to resolve the LAN if NetworkManager is enabled:
-    networking.networkmanager.unmanaged = lib.mkIf config.networking.networkmanager.enable [
-      "interface-name:${cfg.router.lan}"
-    ];
+    networking.networkmanager.unmanaged = lib.mkIf config.networking.networkmanager.enable (
+      lib.mapAttrsToList (n: _: "interface-name:${n}") cfg.router.lan
+    );
 
     # And don't try to wake online if NetworkManager is enabled:
     systemd.network.wait-online.enable = !config.networking.networkmanager.enable;
