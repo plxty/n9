@@ -12,6 +12,7 @@ final: prev: {
   ppp = n9.patch prev.ppp ./patches/ppp-run-resolv.patch;
   gnomeExtensions = prev.gnomeExtensions // {
     paperwm = n9.patch prev.gnomeExtensions.paperwm ./patches/paperwm-focus.patch;
+    customize-ibus = n9.patch prev.gnomeExtensions.customize-ibus ./patches/customize-ibus-keep.patch;
   };
 
   brave = prev.brave.override (prev: {

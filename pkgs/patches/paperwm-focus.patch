@@ -1,18 +1,19 @@
 diff --git a/tiling.js b/tiling.js
-index 4e98ed7..0a408f4 100644
+index 4e98ed7..c288571 100644
 --- a/tiling.js
 +++ b/tiling.js
-@@ -1181,6 +1181,9 @@ export class Space extends Array {
-         let metaWindow = space.getWindow(index, row);
-         ensureViewport(metaWindow, space);
+@@ -1179,7 +1179,9 @@ export class Space extends Array {
+         }
  
-+        const monitor = focusMonitor();
-+        Utils.warpPointerToMonitor(monitor, { window: metaWindow, ripple: false });
-+
+         let metaWindow = space.getWindow(index, row);
+-        ensureViewport(metaWindow, space);
++        ensureViewport(metaWindow, space, { callback: () => {            
++            Utils.warpPointerToMonitor(null, { window: this.selectedWindow, ripple: false });
++        }, });
+ 
          return true;
      }
- 
-@@ -2544,9 +2547,6 @@ export const Spaces = class Spaces extends Map {
+@@ -2544,9 +2546,6 @@ export const Spaces = class Spaces extends Map {
          if (i === -1)
              return;
          let newMonitor = Main.layoutManager.monitors[i];
@@ -22,7 +23,7 @@ index 4e98ed7..0a408f4 100644
          let space = this.monitors.get(newMonitor);
  
          if (move && focus) {
-@@ -2575,6 +2575,10 @@ export const Spaces = class Spaces extends Map {
+@@ -2575,6 +2574,10 @@ export const Spaces = class Spaces extends Map {
          } else {
              space.activate(false, false);
          }
@@ -33,7 +34,7 @@ index 4e98ed7..0a408f4 100644
      }
  
      moveToMonitor(direction, backDirection) {
-@@ -4594,6 +4598,7 @@ export function focus_handler(metaWindow) {
+@@ -4594,6 +4597,7 @@ export function focus_handler(metaWindow) {
      // if window is on another monitor then warp pointer there
      if (!Main.overview.visible &&
          Utils.monitorAtCurrentPoint() !== space.monitor) {
@@ -42,10 +43,10 @@ index 4e98ed7..0a408f4 100644
      }
  
 diff --git a/utils.js b/utils.js
-index 15bb86a..7b9a967 100644
+index 15bb86a..37fe29b 100644
 --- a/utils.js
 +++ b/utils.js
-@@ -234,11 +234,23 @@ export function monitorAtCurrentPoint() {
+@@ -234,14 +234,26 @@ export function monitorAtCurrentPoint() {
  
  /**
   * Warps pointer to the center of a monitor.
@@ -68,4 +69,8 @@ index 15bb86a..7b9a967 100644
 +
      // no need to warp if already on this monitor
      let currMonitor = monitorAtCurrentPoint();
-     if (currMonitor === monitor) {
+-    if (currMonitor === monitor) {
++    if (!monitor || currMonitor === monitor) {
+         return;
+     }
+ 

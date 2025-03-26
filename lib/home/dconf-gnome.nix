@@ -5,6 +5,10 @@ with lib.hm.gvariant;
 
 {
   dconf.settings = {
+    "desktop/ibus/panel" = {
+      show-icon-on-systray = true;
+    };
+
     "org/gnome/Ptyxis" = {
       audible-bell = false;
       cursor-shape = "underline";
@@ -176,13 +180,22 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/shell/extensions/customize-ibus" = {
-      enable-auto-switch = false;
+      candidate-popup-animation = mkUint32 2;
+      candidate-scroll-mode = mkUint32 1;
+      enable-auto-switch = true;
       input-indicator-hide-time = mkUint32 2;
       input-indicator-not-on-single-ime = true;
       input-indicator-only-on-toggle = false;
       input-indicator-only-use-ascii = false;
       input-indicator-right-close = true;
+      input-indicator-use-scroll = false;
       menu-ibus-restart = true;
+      unkown-ascii-state = mkUint32 2;
+      use-candidate-box-right-click = false;
+      use-candidate-scroll = false;
+      use-candidate-still = false;
+      use-popup-animation = false;
+      use-tray = true;
     };
 
     "org/gnome/shell/extensions/dash-to-dock" = {
