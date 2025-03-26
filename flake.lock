@@ -100,23 +100,6 @@
         "type": "github"
       }
     },
-    "flake-utils_2": {
-      "inputs": {
-        "systems": "systems"
-      },
-      "locked": {
-        "lastModified": 1710146030,
-        "narHash": "sha256-SZ5L6eA7HJ/nmkzGG7/ISclqe6oZdOZTNoesiInkXPQ=",
-        "owner": "numtide",
-        "repo": "flake-utils",
-        "rev": "b1d9ab70662946ef0850d488da1c9019f3a9752a",
-        "type": "github"
-      },
-      "original": {
-        "id": "flake-utils",
-        "type": "indirect"
-      }
-    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -199,27 +182,6 @@
         "type": "github"
       }
     },
-    "paperwm": {
-      "inputs": {
-        "flake-utils": "flake-utils_2",
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1742677754,
-        "narHash": "sha256-OnBiBi1RWZhMsbCqm37/sSe3VAxlu285NvP9Ba5TyTM=",
-        "owner": "paperwm",
-        "repo": "PaperWM",
-        "rev": "a85f8df8bb6086abb4411e5cafaf4934e8267b97",
-        "type": "github"
-      },
-      "original": {
-        "owner": "paperwm",
-        "repo": "PaperWM",
-        "type": "github"
-      }
-    },
     "root": {
       "inputs": {
         "chinese-fonts": "chinese-fonts",
@@ -229,7 +191,6 @@
         "nixos-anywhere": "nixos-anywhere",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
-        "paperwm": "paperwm",
         "rust-overlay": "rust-overlay"
       }
     },
@@ -250,21 +211,6 @@
       "original": {
         "owner": "oxalica",
         "repo": "rust-overlay",
-        "type": "github"
-      }
-    },
-    "systems": {
-      "locked": {
-        "lastModified": 1681028828,
-        "narHash": "sha256-Vy1rq5AaRuLzOxct8nz4T6wlgyUR7zLU309k9mBC768=",
-        "owner": "nix-systems",
-        "repo": "default",
-        "rev": "da67096a3b9bf56a91d16901293e51ba5b49a27e",
-        "type": "github"
-      },
-      "original": {
-        "owner": "nix-systems",
-        "repo": "default",
         "type": "github"
       }
     }

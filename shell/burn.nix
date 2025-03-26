@@ -64,7 +64,9 @@ let
   '';
 
   postBurn = ''
-    touch .last
+    if $B_UP; then
+      touch .last
+    fi
   '';
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''

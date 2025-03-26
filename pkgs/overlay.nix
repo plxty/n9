@@ -11,7 +11,7 @@ final: prev: {
   librime = n9.patch prev.librime ./patches/librime-temp-ascii.patch;
   ppp = n9.patch prev.ppp ./patches/ppp-run-resolv.patch;
   gnomeExtensions = prev.gnomeExtensions // {
-    mouse-follows-focus = n9.patch prev.gnomeExtensions.mouse-follows-focus ./patches/mousefollowsfocus-ignore-within.patch;
+    paperwm = n9.patch prev.gnomeExtensions.paperwm ./patches/paperwm-focus.patch;
   };
 
   brave = prev.brave.override (prev: {

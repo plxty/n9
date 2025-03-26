@@ -36,9 +36,12 @@ with lib.hm.gvariant;
 
     "org/gnome/desktop/interface" = {
       color-scheme = "prefer-dark";
+      document-font-name = "Noto Sans CJK SC 11 @wght=400";
       enable-hot-corners = false;
-      font-antialiasing = "grayscale";
+      font-antialiasing = "rgba";
       font-hinting = "slight";
+      font-name = "Noto Sans CJK SC 11 @wght=400";
+      monospace-font-name = "Noto Sans Mono CJK SC 10";
       toolkit-accessibility = false;
     };
 
@@ -100,6 +103,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/desktop/wm/preferences" = {
+      mouse-button-modifier = "disabled";
       workspace-names = [ "Workspace 1" "Workspace 2" "Workspace 3" "Workspace 4" ];
     };
 

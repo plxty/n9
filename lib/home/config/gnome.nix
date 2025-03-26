@@ -32,11 +32,10 @@ in
           extensions = with pkgs.gnomeExtensions; [
             { package = brightness-control-using-ddcutil; }
             { package = switcher; }
-            { package = inputs.paperwm.packages.${pkgs.system}.default; }
+            { package = paperwm; }
             { package = dash-to-dock; }
             { package = customize-ibus; }
             { package = tray-icons-reloaded; }
-            { package = mouse-follows-focus; }
             { package = hide-cursor; }
           ];
         };

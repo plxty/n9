@@ -1,0 +1,71 @@
+diff --git a/tiling.js b/tiling.js
+index 4e98ed7..0a408f4 100644
+--- a/tiling.js
++++ b/tiling.js
+@@ -1181,6 +1181,9 @@ export class Space extends Array {
+         let metaWindow = space.getWindow(index, row);
+         ensureViewport(metaWindow, space);
+ 
++        const monitor = focusMonitor();
++        Utils.warpPointerToMonitor(monitor, { window: metaWindow, ripple: false });
++
+         return true;
+     }
+ 
+@@ -2544,9 +2547,6 @@ export const Spaces = class Spaces extends Map {
+         if (i === -1)
+             return;
+         let newMonitor = Main.layoutManager.monitors[i];
+-        if (warp) {
+-            Utils.warpPointerToMonitor(newMonitor);
+-        }
+         let space = this.monitors.get(newMonitor);
+ 
+         if (move && focus) {
+@@ -2575,6 +2575,10 @@ export const Spaces = class Spaces extends Map {
+         } else {
+             space.activate(false, false);
+         }
++
++        if (warp) {
++            Utils.warpPointerToMonitor(newMonitor);
++        }
+     }
+ 
+     moveToMonitor(direction, backDirection) {
+@@ -4594,6 +4598,7 @@ export function focus_handler(metaWindow) {
+     // if window is on another monitor then warp pointer there
+     if (!Main.overview.visible &&
+         Utils.monitorAtCurrentPoint() !== space.monitor) {
++        // don't know what it will cause?
+         Utils.warpPointerToMonitor(space.monitor);
+     }
+ 
+diff --git a/utils.js b/utils.js
+index 15bb86a..7b9a967 100644
+--- a/utils.js
++++ b/utils.js
+@@ -234,11 +234,23 @@ export function monitorAtCurrentPoint() {
+ 
+ /**
+  * Warps pointer to the center of a monitor.
++ * Nope, we're warpping pointer to the focues window.
+  */
+ export function warpPointerToMonitor(monitor, params = { center: false, ripple: true }) {
+     const center = params?.center ?? false;
+     const ripple = params?.ripple ?? true;
+ 
++    // force to wrap even if we're on the same monitor:
++    const window = params?.window ?? Display.get_focus_window();
++    if (window) {
++        const rect = window.get_buffer_rect();
++        warpPointer(
++            rect.x + rect.width / 2,
++            rect.y + rect.height / 2,
++            ripple);
++        return;
++    }
++
+     // no need to warp if already on this monitor
+     let currMonitor = monitorAtCurrentPoint();
+     if (currMonitor === monitor) {
