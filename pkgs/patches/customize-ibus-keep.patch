@@ -1,16 +1,7 @@
 diff --git a/extension.js b/extension.js
-index 8dfc884..0bc5b55 100644
+index 8dfc884..acbea67 100644
 --- a/extension.js
 +++ b/extension.js
-@@ -50,7 +50,7 @@ let gsettings = null;
- import { Fields } from "./fields.js";
- const IBUS_SYSTEMD_SERVICE = "org.freedesktop.IBus.session.GNOME.service";
- const UNKNOWN = { ON: 0, OFF: 1, DEFAULT: 2 };
--const ASCIIMODES = ["en", "A", "英"];
-+const ASCIIMODES = ["en", "A", "I", "英"];
- const INDICATORANI = ["NONE", "SLIDE", "FADE", "FULL"];
- const INPUTMODE = "InputMode";
- const BGMODES = ["Centered", "Repeated", "Zoom"];
 @@ -564,7 +564,6 @@ const IBusAutoSwitch = GObject.registerClass(
      constructor() {
        super();
@@ -19,29 +10,43 @@ index 8dfc884..0bc5b55 100644
        this._overviewHiddenID = Main.overview.connect(
          "hidden",
          this._onWindowChanged.bind(this),
-@@ -577,6 +576,8 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -577,6 +576,12 @@ const IBusAutoSwitch = GObject.registerClass(
          "notify::focus-window",
          this._onWindowChanged.bind(this),
        );
-+      this._updatePropertyID = null;
++
++      // only current window, when focus in, enable states update
++      this._current = null;
++      this._focusInID = null;
++      this._focusOutID = null;
 +      this._timeoutID = null;
      }
  
      get _state() {
-@@ -587,42 +588,40 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -587,42 +592,61 @@ const IBusAutoSwitch = GObject.registerClass(
        return ASCIIMODES.includes(text);
      }
  
 -    get _toggle() {
 -      let win = InputSourceManager._getCurrentWindow();
 -      if (!win) return false;
--
++    set remember(remember) {
++      this._remember = remember;
++    }
++
++    _onFocusIn() {
++      const win = InputSourceManager._getCurrentWindow();
++      if (!(this._remember && win && win.wm_class))
++        return;
+ 
 -      let state = this._state;
 -      let stateConf = false;
 -      if (this._remember) {
 -        let store = this._states.get(this._tmpWindow);
 -        if (state !== store) this._states.set(this._tmpWindow, state);
--
++      if (this._timeoutID)
++        clearTimeout(this._timeoutID);
+ 
 -        this._tmpWindow = win.wm_class ? win.wm_class.toLowerCase() : "";
 -        if (!this._states.has(this._tmpWindow)) {
 -          let unknown =
@@ -49,7 +54,18 @@ index 8dfc884..0bc5b55 100644
 -              ? state
 -              : this.unknown === UNKNOWN.ON;
 -          this._states.set(this._tmpWindow, unknown);
--        }
++      const wmClass = win.wm_class.toLowerCase();
++      if (this._current == wmClass)
++        return;
++      this._current = wmClass;
++
++      // workaround for the timing issue of ibus-rime...
++      const state = this._states.get(wmClass);
++      this._timeoutID = setTimeout(() => {
++        if (state != undefined && state != this._state) {
++          IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
++          console.log("auto switch! state", state, "->", this._state, wmClass);
+         }
 -        stateConf = this._states.get(this._tmpWindow);
 -      } else {
 -        stateConf =
@@ -57,60 +73,61 @@ index 8dfc884..0bc5b55 100644
 -            ? state
 -            : this.unknown === UNKNOWN.ON;
 -      }
--
++        this._timeoutID = null;
++      }, 64);
++    };
+ 
 -      return state ^ stateConf;
 -    }
--
-     set remember(remember) {
-       this._remember = remember;
++    _onFocusOut() {
++      const win = InputSourceManager._getCurrentWindow();
++      if (!(this._remember && win && win.wm_class))
++        return;
+ 
+-    set remember(remember) {
+-      this._remember = remember;
++      const wmClass = win.wm_class.toLowerCase();
++      if (this._current != wmClass)
++        return;
++
++      this._states.set(wmClass, this._state);
++      // console.log("set state", this._state, wmClass)
      }
  
      _onWindowChanged() {
 -      if (this._toggle && IBusManager._panelService) {
 -        IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+      if (!this._remember || !IBusManager._panelService)
++      if (!IBusManager._panelService)
 +        return;
 +
-+      if (!this._updatePropertyID) {
-+        this._updatePropertyID = IBusManager._panelService.connect(
-+          "update-property",
-+          (engineName, prop) => {
-+            if (prop.get_key() !== INPUTMODE)
-+              return;
-+            const win = InputSourceManager._getCurrentWindow();
-+            if (win && win.wm_class)
-+              this._states.set(win.wm_class.toLowerCase(), this._state);
-+          },
-+        );
++      if (!this._focusInID) {
++        this._focusInID = IBusManager._panelService.connect("focus-in", () => {
++          this._onFocusIn();
++        });
 +      }
 +
-+      if (this._timeoutID) {
-+        clearTimeout(this._timeoutID);
-+        this._timeoutID = null;
-+      }
-+
-+      const win = InputSourceManager._getCurrentWindow();
-+      if (win && win.wm_class && this._states.get(win.wm_class.toLowerCase()) != this._state) {
-+        // workaround for the timing issue of ibus-rime...
-+        this._timeoutID = setTimeout(() => {
-+          IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+          this._timeoutID = null;
-+          console.log("auto switch! state", stats, "->", this._state);
-+        }, 64);
++      if (!this._focusOutID) {
++        this._focusOutID = IBusManager._panelService.connect("focus-out", () => {
++          this._onFocusOut();
++        });
        }
      }
  
-@@ -658,6 +657,14 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -658,6 +682,18 @@ const IBusAutoSwitch = GObject.registerClass(
        if (this._overviewHiddenID)
          Main.overview.disconnect(this._overviewHiddenID),
            (this._overviewHiddenID = 0);
++      if (this._focusInID) {
++        IBusManager._panelService.disconnect(this._focusInID);
++        this._focusInID = null;
++      }
++      if (this._focusOutID) {
++        IBusManager._panelService.disconnect(this._focusOutID);
++        this._focusOutID = null;
++      }
 +      if (this._timeoutID) {
 +        clearTimeout(this._timeoutID);
 +        this._timeoutID = null;
-+      }
-+      if (this._updatePropertyID) {
-+        IBusManager._panelService.disconnect(this._updatePropertyID);
-+        this._updatePropertyID = null;
 +      }
      }
    },
