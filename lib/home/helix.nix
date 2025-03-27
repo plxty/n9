@@ -66,6 +66,7 @@
             "paste_before"
           ];
           ";" = "goto_word_definition";
+          "#" = "select_references_to_symbol_under_cursor";
           # A-[1-7] is occupied by ptyxis, and C-[1-7] seems not working?
           C-h = "jump_view_left";
           C-j = "jump_view_down";

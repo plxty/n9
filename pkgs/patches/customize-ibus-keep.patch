@@ -1,5 +1,5 @@
 diff --git a/extension.js b/extension.js
-index 8dfc884..24dbba5 100644
+index 8dfc884..da28c3b 100644
 --- a/extension.js
 +++ b/extension.js
 @@ -564,7 +564,6 @@ const IBusAutoSwitch = GObject.registerClass(
@@ -21,7 +21,7 @@ index 8dfc884..24dbba5 100644
      }
  
      get _state() {
-@@ -587,43 +590,52 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -587,43 +590,44 @@ const IBusAutoSwitch = GObject.registerClass(
        return ASCIIMODES.includes(text);
      }
  
@@ -67,10 +67,8 @@ index 8dfc884..24dbba5 100644
 +
 +      if (!this._updatePropertyID) {
 +        this._updatePropertyID = IBusManager._panelService.connect("update-property", (engineName, prop) => {
-+          if (prop.get_key() === INPUTMODE) {
++          if (prop.get_key() === INPUTMODE)
 +            this._prevState = this._state;
-+            // console.log("update state", this._state);
-+          }
 +        });
        }
 +
@@ -78,25 +76,19 @@ index 8dfc884..24dbba5 100644
 +        clearTimeout(this._timeoutID);
 +
 +      // focus out
-+      if (this._prevWindow != null && this._prevState != null) {
++      if (this._prevWindow != null && this._prevState != null)
 +        this._states.set(this._prevWindow, this._prevState);
-+        // console.log("set state", this._prevState, this._prevWindow);
-+      }
 +
-+      // focus in
++      // focus in, TODO: handle via ibus-rime? to avoid such delay...
 +      const wmClass = win.wm_class ? win.wm_class.toLowerCase() : "";
 +      this._timeoutID = setTimeout(() => {
-+        const state = this._states.get(wmClass);
-+        let target = this.unknown == UNKNOWN.ON;
++        let state = this.unknown == UNKNOWN.ON;
 +        if (this.unknown == UNKNOWN.DEFAULT)
-+          target = this._state;
++          state = this._state;
 +
-+        if (state != undefined && state != target) {
++        const target = this._states.get(wmClass);
++        if (target != undefined && state != target)
 +          IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+          // console.log("auto switch! state", state, "->", target, wmClass);
-+        }
-+
-+        // TODO: handle via ibus-rime? to avoid such delay...
 +        this._timeoutID = null;
 +      }, 100);
 +
@@ -105,7 +97,7 @@ index 8dfc884..24dbba5 100644
      }
  
      _bindSettings() {
-@@ -658,6 +670,14 @@ const IBusAutoSwitch = GObject.registerClass(
+@@ -658,6 +662,14 @@ const IBusAutoSwitch = GObject.registerClass(
        if (this._overviewHiddenID)
          Main.overview.disconnect(this._overviewHiddenID),
            (this._overviewHiddenID = 0);

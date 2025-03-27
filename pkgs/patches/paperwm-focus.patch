@@ -1,5 +1,5 @@
 diff --git a/tiling.js b/tiling.js
-index 4e98ed7..c288571 100644
+index 4e98ed7..4cf9089 100644
 --- a/tiling.js
 +++ b/tiling.js
 @@ -1179,7 +1179,9 @@ export class Space extends Array {
@@ -7,7 +7,7 @@ index 4e98ed7..c288571 100644
  
          let metaWindow = space.getWindow(index, row);
 -        ensureViewport(metaWindow, space);
-+        ensureViewport(metaWindow, space, { callback: () => {            
++        ensureViewport(metaWindow, space, { callback: () => {
 +            Utils.warpPointerToMonitor(null, { window: this.selectedWindow, ripple: false });
 +        }, });
  
@@ -43,7 +43,7 @@ index 4e98ed7..c288571 100644
      }
  
 diff --git a/utils.js b/utils.js
-index 15bb86a..37fe29b 100644
+index 15bb86a..759f9bc 100644
 --- a/utils.js
 +++ b/utils.js
 @@ -234,14 +234,26 @@ export function monitorAtCurrentPoint() {
@@ -55,9 +55,9 @@ index 15bb86a..37fe29b 100644
  export function warpPointerToMonitor(monitor, params = { center: false, ripple: true }) {
      const center = params?.center ?? false;
      const ripple = params?.ripple ?? true;
- 
-+    // force to wrap even if we're on the same monitor:
 +    const window = params?.window ?? Display.get_focus_window();
++
++    // force to wrap even if we're on the same monitor:
 +    if (window) {
 +        const rect = window.get_buffer_rect();
 +        warpPointer(
@@ -66,7 +66,7 @@ index 15bb86a..37fe29b 100644
 +            ripple);
 +        return;
 +    }
-+
+ 
      // no need to warp if already on this monitor
      let currMonitor = monitorAtCurrentPoint();
 -    if (currMonitor === monitor) {
