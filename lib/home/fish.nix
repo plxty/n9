@@ -134,20 +134,6 @@ in
       };
     };
 
-    # zellij:
-    zellij = {
-      enable = true;
-      settings = {
-        simplified_ui = true;
-        default_shell = "fish";
-      };
-
-      # don't replace the default shell, change ptyxis or other terminals to
-      # invoke zellij:
-      enableBashIntegration = false;
-      enableFishIntegration = false;
-    };
-
     # other deps:
     direnv = {
       enable = true;

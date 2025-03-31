@@ -3,6 +3,7 @@
 {
   imports = [
     ./fish.nix
+    ./zellij.nix
     ./helix.nix
   ];
 
@@ -14,6 +15,7 @@
     yq
     python3
     cached-nix-shell
+    nix-tree
     pstree
     binutils
     file

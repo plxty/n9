@@ -65,9 +65,11 @@
       ] mkShells;
     };
 
-  # Test inputs are removed:
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Stick to a version for a little while, don't be so aggrassive as it rebuilds a lot :/
+    # TODO: Introduce some dependency bots?
+    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    nixpkgs.url = "github:NixOS/nixpkgs/698214a32beb4f4c8e3942372c694f40848b360d";
 
     colmena = {
       url = "github:zhaofengli/colmena";
