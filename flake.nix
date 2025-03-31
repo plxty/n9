@@ -67,9 +67,10 @@
 
   inputs = {
     # Stick to a version for a little while, don't be so aggrassive as it rebuilds a lot :/
-    # TODO: Introduce some dependency bots?
-    # nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs.url = "github:NixOS/nixpkgs/698214a32beb4f4c8e3942372c694f40848b360d";
+    # @see https://github.com/NixOS/nixpkgs/commits/master/pkgs/development/libraries/webkitgtk/default.nix
+    # @see pkgs/overlay.nix: webkitgtk
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    snapshot.url = "github:NixOS/nixpkgs/6c57ac8b3090d7022bd5ac1a072f297bdbdd6311";
 
     colmena = {
       url = "github:zhaofengli/colmena";

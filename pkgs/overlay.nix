@@ -1,4 +1,4 @@
-{ n9, ... }:
+{ n9, inputs, ... }:
 
 final: prev: {
   helix = n9.patch prev.helix ./patches/helix-taste.patch;
@@ -24,4 +24,11 @@ final: prev: {
   });
 
   wechat = final.callPackage ./wechat.nix { };
+
+  # @see flake.nix, to prevent from long-time compiling, it might break the system :(
+  inherit (inputs.snapshot.legacyPackages.${final.system})
+    webkitgtk_6_0
+    webkitgtk_4_0
+    webkitgtk_4_1
+    ;
 }
