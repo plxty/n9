@@ -14,6 +14,7 @@
 
         # https://github.com/zellij-org/zellij/blob/main/zellij-utils/assets/config/default.kdl
         # https://github.com/nix-community/home-manager/blob/master/tests/lib/generators/tokdl.nix
+        default_mode = "locked";
         "keybinds clear-defaults=true" =
           let
             keys = lib.concatMapAttrs (
@@ -21,10 +22,10 @@
                 "bind \"${key}\"" = actions;
               }
             );
-            p = key: value: { ${key} = if value == null then [ ] else value; };
+            p = key: value: { ${key} = value; };
           in
           {
-            normal = keys {
+            locked = keys {
               # Default keys:
               "Alt h" = p "MoveFocus" "Left";
               "Alt j" = p "MoveFocus" "Down";
@@ -41,37 +42,47 @@
               "Alt 5" = p "GoToTab" 5;
               "Alt 6" = p "GoToTab" 6;
               "Alt 7" = p "GoToTab" 7;
-              "Alt Tab" = p "SwitchFocus" null;
+              "Alt Tab" = p "SwitchFocus" [ ];
 
               # Tmux-like prefix (why not alt?):
-              "Ctrl g" = p "SwitchToMode" "Locked";
+              "Ctrl g" = p "SwitchToMode" "Normal";
             };
 
-            locked = keys {
-              # Escape:
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "SwitchToMode" "Normal";
+            # Escape:
+            "shared_except \"locked\"" = keys {
+              "Ctrl g" = p "SwitchToMode" "Locked";
+              Esc = p "SwitchToMode" "Locked";
+            };
 
+            normal = keys {
               # Session:
-              d = p "Detach" null;
-              m = p "SwitchToMode" "Normal" // {
+              d = p "Detach" [ ];
+              m = p "SwitchToMode" "Locked" // {
                 "LaunchOrFocusPlugin \"session-manager\"" = {
                   floating = true;
                   move_to_focused_tab = true;
                 };
               };
-              c = p "SwitchToMode" "Normal" // {
+              c = p "SwitchToMode" "Locked" // {
                 "LaunchOrFocusPlugin \"configuration\"" = {
                   floating = true;
                   move_to_focused_tab = true;
                 };
               };
-              p = p "SwitchToMode" "Normal" // {
+              p = p "SwitchToMode" "Locked" // {
                 "LaunchOrFocusPlugin \"plugin-manager\"" = {
                   floating = true;
                   move_to_focused_tab = true;
                 };
               };
+
+              # Pane
+              s = p "NewPane" "Down" // p "SwitchToMode" "Locked";
+              v = p "NewPane" "Right" // p "SwitchToMode" "Locked";
+              q = p "CloseFocus" [ ] // p "SwitchToMode" "Locked";
+
+              # Tab
+              n = p "NewTab" [ ] // p "SwitchToMode" "Locked";
 
               # To other modes, from default.kdl:
               r = p "SwitchToMode" "Resize";
@@ -79,15 +90,9 @@
               t = p "SwitchToMode" "Tab";
               Space = p "SwitchToMode" "Scroll";
               "/" = p "SwitchToMode" "Search";
-              s = p "SwitchToMode" "Session";
             };
 
             resize = keys {
-              # Escape:
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "SwitchToMode" "Normal";
-
-              # default.kdl:
               h = p "Resize" "Increase Left";
               j = p "Resize" "Increase Down";
               k = p "Resize" "Increase Up";
@@ -101,77 +106,47 @@
             };
 
             pane = keys {
-              # Escape:
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "SwitchToMode" "Normal";
-
-              # default.kdl:
-              n = p "NewPane" null // p "SwitchToMode" "Normal";
-              s = p "NewPane" "Down" // p "SwitchToMode" "Normal";
-              v = p "NewPane" "Right" // p "SwitchToMode" "Normal";
-              q = p "CloseFocus" null // p "SwitchToMode" "Normal";
-              z = p "TogglePaneFrames" null // p "SwitchToMode" "Normal";
-              Space = p "TogglePaneEmbedOrFloating" null // p "SwitchToMode" "Normal";
+              n = p "NewPane" [ ] // p "SwitchToMode" "Locked";
+              z = p "TogglePaneFrames" [ ] // p "SwitchToMode" "Locked";
+              Space = p "TogglePaneEmbedOrFloating" [ ] // p "SwitchToMode" "Locked";
               r = p "SwitchToMode" "RenamePane" // p "PaneNameInput" 0;
-              p = p "TogglePanePinned" null // p "SwitchToMode" "Normal";
+              p = p "TogglePanePinned" [ ] // p "SwitchToMode" "Locked";
             };
             renamepane = keys {
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "UndoRenamePane" null // p "SwitchToMode" "Normal";
+              # Override:
+              Esc = p "UndoRenamePane" [ ] // p "SwitchToMode" "Locked";
             };
 
             tab = keys {
-              # Escape:
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "SwitchToMode" "Normal";
-
-              # default.kdl:
-              h = p "GoToPreviousTab" null;
-              l = p "GoToNextTab" null;
-              n = p "Newtab" null // p "SwitchToMode" "Normal";
-              q = p "CloseTab" null // p "SwitchToMode" "Normal";
-              s = p "ToggleActiveSyncTab" null // p "SwitchToMode" "Normal";
-              b = p "BreakPane" null // p "SwitchToMode" "Normal";
-              "]" = p "BreakPaneRight" null // p "SwitchToMode" "Normal";
-              "[" = p "BreakPaneLeft" null // p "SwitchToMode" "Normal";
+              h = p "GoToPreviousTab" [ ] // p "SwitchToMode" "Locked";
+              l = p "GoToNextTab" [ ] // p "SwitchToMode" "Locked";
+              q = p "CloseTab" [ ] // p "SwitchToMode" "Locked";
+              s = p "ToggleActiveSyncTab" [ ] // p "SwitchToMode" "Locked";
+              b = p "BreakPane" [ ] // p "SwitchToMode" "Locked";
+              "]" = p "BreakPaneRight" [ ] // p "SwitchToMode" "Locked";
+              "[" = p "BreakPaneLeft" [ ] // p "SwitchToMode" "Locked";
               r = p "SwitchToMode" "RenameTab" // p "TabNameInput" 0;
-              Tab = p "ToggleTab" null;
+              Tab = p "ToggleTab" [ ];
             };
             renametab = keys {
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "UndoRenameTab" null // p "SwitchToMode" "Normal";
+              # Override:
+              Esc = p "UndoRenameTab" [ ] // p "SwitchToMode" "Locked";
             };
 
             scroll = keys {
-              # Escape:
-              "Ctrl g" = p "SwitchToMode" "Normal";
-              Esc = p "SwitchToMode" "Normal";
-
-              # default.kdl:
-              i = p "EditScrollback" null // p "SwitchToMode" "Normal";
+              i = p "EditScrollback" [ ] // p "SwitchToMode" "Locked";
               "/" = p "SwitchToMode" "EnterSearch" // p "SearchInput" 0;
-              j = p "ScrollDown" null;
-              k = p "ScrollUp" null;
-              G = p "ScrollToBottom" null;
-              "Ctrl f" = p "PageScrollDown" null;
-              "Ctrl b" = p "PageScrollUp" null;
-              "Ctrl d" = p "HalfPageScrollDown" null;
-              "Ctrl u" = p "HalfPageScrollUp" null;
-              f = p "PageScrollDown" null;
-              b = p "PageScrollUp" null;
-              d = p "HalfPageScrollDown" null;
-              u = p "HalfPageScrollUp" null;
             };
             entersearch = keys {
+              # Override:
               "Ctrl g" = p "SwitchToMode" "Scroll";
               Esc = p "SwitchToMode" "Scroll";
               Enter = p "SwitchToMode" "Search";
             };
 
             search = keys {
-              # Escape:
-              "Ctrl g" = p "ScrollToBottom" null // p "SwitchToMode" "Normal";
-              Esc = p "SwitchToMode" "Normal";
+              # Override:
+              "Ctrl g" = p "ScrollToBottom" [ ] // p "SwitchToMode" "Locked";
 
               # default.kdl:
               n = p "Search" "down";
@@ -179,17 +154,20 @@
               "?" = p "SearchToggleOption" "CaseSensitivity";
               a = p "SearchToggleOption" "Wrap";
               w = p "SearchToggleOption" "WholeWord";
-              j = p "ScrollDown" null;
-              k = p "ScrollUp" null;
-              G = p "ScrollToBottom" null;
-              "Ctrl f" = p "PageScrollDown" null;
-              "Ctrl b" = p "PageScrollUp" null;
-              "Ctrl d" = p "HalfPageScrollDown" null;
-              "Ctrl u" = p "HalfPageScrollUp" null;
-              f = p "PageScrollDown" null;
-              b = p "PageScrollUp" null;
-              d = p "HalfPageScrollDown" null;
-              u = p "HalfPageScrollUp" null;
+            };
+
+            "shared_among \"scroll\" \"search\"" = keys {
+              j = p "ScrollDown" [ ];
+              k = p "ScrollUp" [ ];
+              G = p "ScrollToBottom" [ ];
+              "Ctrl f" = p "PageScrollDown" [ ];
+              "Ctrl b" = p "PageScrollUp" [ ];
+              "Ctrl d" = p "HalfPageScrollDown" [ ];
+              "Ctrl u" = p "HalfPageScrollUp" [ ];
+              f = p "PageScrollDown" [ ];
+              b = p "PageScrollUp" [ ];
+              d = p "HalfPageScrollDown" [ ];
+              u = p "HalfPageScrollUp" [ ];
             };
           };
       };
@@ -200,7 +178,7 @@
 
       # Make all SSH share one `w` session, for side monitor or else:
       initExtra = ''
-        if [[ "$(ps -o comm= -p $$)" == "systemd" && "$SSH_CONNECTION" != "" ]]; then
+        if [[ "$(ps -o comm= -p $PPID)" == "sshd-session" && "$SSH_CONNECTION" != "" ]]; then
           exec zellij attach -c w
         fi
       '';

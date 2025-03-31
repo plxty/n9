@@ -243,6 +243,7 @@ with lib.hm.gvariant;
       edge-preview-scale = 0.5;
       gesture-enabled = false;
       horizontal-margin = 7;
+      minimap-scale = 0.0;
       only-scratch-in-overview = false;
       overview-ensure-viewport-animation = 1;
       selection-border-radius-bottom = 0;
