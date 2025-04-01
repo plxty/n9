@@ -11,6 +11,7 @@
 #              ^^^^^^^^^^^  gcc,clang
 # Note: x86 only supports 64 bit.
 # TODO: Generic way to do the cross compiling...
+# TODO: Declarative? Currently this file acts like a "template" of my build envs...
 let
   inherit (pkgs) system;
   inherit (inputs.nixpkgs) lib;
@@ -71,7 +72,6 @@ let
     pkgsCross.mkShellNoCC {
       name = "linux";
 
-      # Setup the customized stdenv (the nix sets CC, LD, ... by default):
       shellHook =
         ''
           export ARCH="${arch}"
@@ -91,7 +91,6 @@ let
       depsBuildBuild =
         with pkgs;
         [
-          # own
           makeWrapper
           # rust-for-linux
           (pkgsRust.rust-bin.stable.latest.default.override {
@@ -104,12 +103,13 @@ let
           ncurses
           bc
           openssl
-          # debug, still flavor of gdb instead of lldb:
+          elfutils
+          gdb
           pkgsCross.buildPackages.gdb
         ]
         ++ lib.optionals (toolchain == "gcc") [
           gcc
-          pkgsCross.stdenv.cc
+          pkgsCross.stdenv.cc # eq to gcc if target == system
         ]
         ++ lib.optionals (toolchain == "clang") [
           clangWrapper
