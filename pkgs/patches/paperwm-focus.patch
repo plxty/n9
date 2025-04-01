@@ -1,19 +1,28 @@
 diff --git a/tiling.js b/tiling.js
-index 4e98ed7..4cf9089 100644
+index 4e98ed7..2a5c199 100644
 --- a/tiling.js
 +++ b/tiling.js
-@@ -1179,7 +1179,9 @@ export class Space extends Array {
-         }
- 
+@@ -1181,6 +1181,19 @@ export class Space extends Array {
          let metaWindow = space.getWindow(index, row);
--        ensureViewport(metaWindow, space);
-+        ensureViewport(metaWindow, space, { callback: () => {
-+            Utils.warpPointerToMonitor(null, { window: this.selectedWindow, ripple: false });
-+        }, });
+         ensureViewport(metaWindow, space);
  
++        // Not using ensureViewport({callback}) because the navigator will invoke minimap,
++        // and the final focus is determined via the minimap, instead of here.
++        signals.connectOneShot(Navigator.getNavigator(), 'destroy', () => {
++            // Wait the animation, otherwise the selected window will report a wrong rect:
++            const timeout = Settings.prefs.animation_time * 1000;
++            if (this.warpPointerTimeout)
++                clearTimeout(this.warpPointerTimeout);
++            this.warpPointerTimeout = setTimeout(() => {
++                Utils.warpPointerToMonitor(null, display.focus_window);
++                this.warpPointerTimeout = null;
++            }, timeout);
++        });
++
          return true;
      }
-@@ -2544,9 +2546,6 @@ export const Spaces = class Spaces extends Map {
+ 
+@@ -2544,9 +2557,6 @@ export const Spaces = class Spaces extends Map {
          if (i === -1)
              return;
          let newMonitor = Main.layoutManager.monitors[i];
@@ -23,40 +32,36 @@ index 4e98ed7..4cf9089 100644
          let space = this.monitors.get(newMonitor);
  
          if (move && focus) {
-@@ -2575,6 +2574,10 @@ export const Spaces = class Spaces extends Map {
+@@ -2575,6 +2585,10 @@ export const Spaces = class Spaces extends Map {
          } else {
              space.activate(false, false);
          }
 +
 +        if (warp) {
-+            Utils.warpPointerToMonitor(newMonitor);
++            Utils.warpPointerToMonitor(newMonitor, display.focus_window);
 +        }
      }
  
      moveToMonitor(direction, backDirection) {
-@@ -4594,6 +4597,7 @@ export function focus_handler(metaWindow) {
-     // if window is on another monitor then warp pointer there
-     if (!Main.overview.visible &&
-         Utils.monitorAtCurrentPoint() !== space.monitor) {
-+        // don't know what it will cause?
-         Utils.warpPointerToMonitor(space.monitor);
-     }
- 
 diff --git a/utils.js b/utils.js
-index 15bb86a..759f9bc 100644
+index 15bb86a..2ec0109 100644
 --- a/utils.js
 +++ b/utils.js
-@@ -234,14 +234,26 @@ export function monitorAtCurrentPoint() {
+@@ -234,28 +234,28 @@ export function monitorAtCurrentPoint() {
  
  /**
   * Warps pointer to the center of a monitor.
 + * Nope, we're warpping pointer to the focues window.
   */
- export function warpPointerToMonitor(monitor, params = { center: false, ripple: true }) {
-     const center = params?.center ?? false;
-     const ripple = params?.ripple ?? true;
-+    const window = params?.window ?? Display.get_focus_window();
-+
+-export function warpPointerToMonitor(monitor, params = { center: false, ripple: true }) {
+-    const center = params?.center ?? false;
+-    const ripple = params?.ripple ?? true;
++export function warpPointerToMonitor(monitor = null, window = null) {
++    const ripple = monitor != null;
+ 
+-    // no need to warp if already on this monitor
+-    let currMonitor = monitorAtCurrentPoint();
+-    if (currMonitor === monitor) {
 +    // force to wrap even if we're on the same monitor:
 +    if (window) {
 +        const rect = window.get_buffer_rect();
@@ -64,13 +69,24 @@ index 15bb86a..759f9bc 100644
 +            rect.x + rect.width / 2,
 +            rect.y + rect.height / 2,
 +            ripple);
-+        return;
-+    }
+         return;
+     }
  
-     // no need to warp if already on this monitor
-     let currMonitor = monitorAtCurrentPoint();
--    if (currMonitor === monitor) {
+-    let [x, y] = global.get_pointer();
+-    if (center) {
+-        x -= monitor.x;
+-        y -= monitor.y;
+-        warpPointer(
+-            monitor.x + Math.floor(monitor.width / 2),
+-            monitor.y + Math.floor(monitor.height / 2),
+-            ripple);
++    // no need to warp if already on this monitor
++    let currMonitor = monitorAtCurrentPoint();
 +    if (!monitor || currMonitor === monitor) {
          return;
      }
  
++    let [x, y] = global.get_pointer();
+     let proportionalX = (x - currMonitor.x) / currMonitor.width;
+     let proportionalY = (y - currMonitor.y) / currMonitor.height;
+     warpPointer(
