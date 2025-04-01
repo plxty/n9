@@ -22,7 +22,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/Ptyxis/Profiles/8b11dd3e6b265e6a5fd6ce60678873ea" = {
-      bold-is-bright = true;
+      bold-is-bright = false;
       cjk-ambiguous-width = "narrow";
       custom-command = "fish";
       exit-action = "close";
@@ -31,6 +31,13 @@ with lib.hm.gvariant;
       preserve-directory = "never";
       scrollback-lines = 99999;
       use-custom-command = true;
+    };
+
+    "org/gnome/Ptyxis/Shortcuts" = {
+      move-next-tab = "<Alt>l";
+      move-previous-tab = "<Alt>h";
+      move-tab-left = "<Shift><Alt>h";
+      move-tab-right = "<Shift><Alt>l";
     };
 
     "org/gnome/desktop/input-sources" = {

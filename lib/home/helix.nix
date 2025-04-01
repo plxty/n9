@@ -161,5 +161,6 @@
         - -mcpu=*
         - -fno-allow-store-data-races
         - -fconserve-stack
+        - --no-sysroot-suffix
   '';
 }
