@@ -1,4 +1,9 @@
-{ pkgs, lib, ... }:
+{
+  osConfig,
+  pkgs,
+  lib,
+  ...
+}:
 
 {
   imports = [
@@ -24,6 +29,7 @@
     lm_sensors
     bcc
     bpftrace
+    osConfig.boot.kernelPackages.perf
     binwalk
     smartmontools
   ];
