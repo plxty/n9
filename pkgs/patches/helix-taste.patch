@@ -321,15 +321,12 @@ index 52efcf22..eec8247a 100644
 +    jump_to_label(cx, words, behaviour, do_next)
  }
 diff --git a/helix-term/src/commands/lsp.rs b/helix-term/src/commands/lsp.rs
-index fcc0333e..ef7ec4a6 100644
+index fcc0333e..e8357c9a 100644
 --- a/helix-term/src/commands/lsp.rs
 +++ b/helix-term/src/commands/lsp.rs
-@@ -3,9 +3,9 @@
-     block_on,
-     lsp::{
+@@ -5,7 +5,7 @@
          self, CodeAction, CodeActionOrCommand, CodeActionTriggerKind, DiagnosticSeverity,
--        NumberOrString,
-+        DocumentHighlightOptions, NumberOrString,
+         NumberOrString,
      },
 -    util::{diagnostic_to_lsp_diagnostic, lsp_range_to_range, range_to_lsp_range},
 +    util::{diagnostic_to_lsp_diagnostic, lsp_pos_to_line, lsp_range_to_range, range_to_lsp_range},
@@ -362,7 +359,7 @@ index fcc0333e..ef7ec4a6 100644
  }
  
  fn lsp_location_to_location(location: lsp::Location) -> Option<Location> {
-@@ -79,12 +83,21 @@ fn lsp_location_to_location(location: lsp::Location) -> Option<Location> {
+@@ -79,12 +83,22 @@ fn lsp_location_to_location(location: lsp::Location) -> Option<Location> {
      Some(Location {
          uri,
          range: location.range,
@@ -371,6 +368,7 @@ index fcc0333e..ef7ec4a6 100644
  }
  
 +type LocationKind = (lsp::Location, Option<lsp::DocumentHighlightKind>);
++
 +fn lsp_location_to_location_with_kind(location_and_kind: LocationKind) -> Option<Location> {
 +    let mut location = lsp_location_to_location(location_and_kind.0)?;
 +    location.kind = location_and_kind.1;
@@ -384,7 +382,7 @@ index fcc0333e..ef7ec4a6 100644
      offset_encoding: OffsetEncoding,
  }
  
-@@ -220,6 +233,7 @@ fn diag_picker(
+@@ -220,6 +234,7 @@ fn diag_picker(
                      location: Location {
                          uri: uri.clone(),
                          range: diag.range,
@@ -392,7 +390,7 @@ index fcc0333e..ef7ec4a6 100644
                      },
                      diag,
                      offset_encoding: ls.offset_encoding(),
-@@ -303,25 +317,35 @@ fn nested_to_flat(
+@@ -303,25 +318,35 @@ fn nested_to_flat(
          uri: &Uri,
          symbol: lsp::DocumentSymbol,
          offset_encoding: OffsetEncoding,
@@ -430,7 +428,7 @@ index fcc0333e..ef7ec4a6 100644
          }
      }
      let doc = doc!(cx.editor);
-@@ -355,11 +379,14 @@ fn nested_to_flat(
+@@ -355,11 +380,14 @@ fn nested_to_flat(
                              location: Location {
                                  uri: doc_uri.clone(),
                                  range: symbol.location.range,
@@ -445,7 +443,7 @@ index fcc0333e..ef7ec4a6 100644
                      lsp::DocumentSymbolResponse::Nested(symbols) => {
                          let mut flat_symbols = Vec::new();
                          for symbol in symbols {
-@@ -369,6 +396,7 @@ fn nested_to_flat(
+@@ -369,6 +397,7 @@ fn nested_to_flat(
                                  &doc_uri,
                                  symbol,
                                  offset_encoding,
@@ -453,7 +451,7 @@ index fcc0333e..ef7ec4a6 100644
                              )
                          }
                          flat_symbols
-@@ -402,6 +430,14 @@ fn nested_to_flat(
+@@ -402,6 +431,14 @@ fn nested_to_flat(
                  ui::PickerColumn::new("name", |item: &SymbolInformationItem, _| {
                      item.symbol.name.as_str().into()
                  }),
@@ -468,7 +466,7 @@ index fcc0333e..ef7ec4a6 100644
              ];
  
              let picker = Picker::new(
-@@ -467,8 +503,10 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
+@@ -467,8 +504,10 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
                                      location: Location {
                                          uri,
                                          range: symbol.location.range,
@@ -479,7 +477,7 @@ index fcc0333e..ef7ec4a6 100644
                                      offset_encoding,
                                  })
                              })
-@@ -858,6 +896,7 @@ fn goto_impl(
+@@ -858,6 +897,7 @@ fn goto_impl(
      compositor: &mut Compositor,
      locations: Vec<Location>,
      offset_encoding: OffsetEncoding,
@@ -487,7 +485,7 @@ index fcc0333e..ef7ec4a6 100644
  ) {
      let cwdir = helix_stdx::env::current_working_dir();
  
-@@ -867,9 +906,37 @@ fn goto_impl(
+@@ -867,9 +907,37 @@ fn goto_impl(
          }
          [] => unreachable!("`locations` should be non-empty for `goto_impl`"),
          _locations => {
@@ -508,7 +506,6 @@ index fcc0333e..ef7ec4a6 100644
 +
 +                        // Extract symbol name from better displaying, any of it is fine:
 +                        if symbol_name.is_none() {
-+                            let doc = preview.document()?;
 +                            let range = lsp_range_to_range(doc.text(), loc.range, offset_encoding)?;
 +                            symbol_name =
 +                                Some(doc.text().get_slice(range.anchor..range.head)?.to_string());
@@ -520,20 +517,23 @@ index fcc0333e..ef7ec4a6 100644
 +                    });
 +                    (loc.clone(), line)
 +                })
-+                .collect::<Vec<_>>(); // TODO: Avoid collecting, just the iterator?
++                .collect::<Vec<_>>();
 +
-+            let mut columns = vec![ui::PickerColumn::new(
++            let mut columns = Vec::with_capacity(3);
++            columns.push(ui::PickerColumn::new(
 +                "path",
 +                |(item, _): &(Location, Option<String>), cwdir: &std::path::PathBuf| {
                      let path = if let Some(path) = item.uri.as_path() {
                          path.strip_prefix(cwdir).unwrap_or(path).to_string_lossy()
                      } else {
-@@ -879,11 +946,42 @@ fn goto_impl(
+@@ -878,12 +946,40 @@ fn goto_impl(
+ 
                      format!("{path}:{}", item.range.start.line + 1).into()
                  },
-             )];
-+            columns.push(match show_kind {
-+                true => ui::PickerColumn::new(
+-            )];
++            ));
++            if show_kind {
++                columns.push(ui::PickerColumn::new(
 +                    "kind",
 +                    |(item, _): &(Location, Option<String>), _: &std::path::PathBuf| {
 +                        match item.kind {
@@ -545,17 +545,14 @@ index fcc0333e..ef7ec4a6 100644
 +                        }
 +                        .into()
 +                    },
-+                ),
-+                _ => {
-+                    ui::PickerColumn::new(
-+                        format!("line {}", symbol_name.unwrap_or_default()),
-+                        |(_, line): &(Location, Option<String>), _: &std::path::PathBuf| {
-+                            // TODO: Avoid deep copy... Seems hard:
-+                            line.clone().unwrap_or_default().into()
-+                        },
-+                    )
-+                }
-+            });
++                ))
++            }
++            columns.push(ui::PickerColumn::new(
++                format!("line {}", symbol_name.unwrap_or_default()),
++                |(_, line): &(Location, Option<String>), _: &std::path::PathBuf| {
++                    line.clone().unwrap_or_default().into()
++                },
++            ));
  
 -            let picker = Picker::new(columns, 0, locations, cwdir, move |cx, location, action| {
 -                jump_to_location(cx.editor, location, offset_encoding, action)
@@ -575,7 +572,7 @@ index fcc0333e..ef7ec4a6 100644
              compositor.push(Box::new(overlaid(picker)));
          }
      }
-@@ -928,7 +1026,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
+@@ -928,7 +1024,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
              if items.is_empty() {
                  editor.set_error("No definition found.");
              } else {
@@ -584,7 +581,7 @@ index fcc0333e..ef7ec4a6 100644
              }
          },
      );
-@@ -985,18 +1083,62 @@ pub fn goto_reference(cx: &mut Context) {
+@@ -985,18 +1081,69 @@ pub fn goto_reference(cx: &mut Context) {
          )
          .unwrap();
  
@@ -620,11 +617,18 @@ index fcc0333e..ef7ec4a6 100644
 +                    )
 +                    .unwrap()
 +                    .await;
-+                let result: Option<Vec<lsp::DocumentHighlight>> = serde_json::from_value(result?)?;
-+                for hl in result.unwrap_or_default() {
-+                    highlights.insert((loc.uri.clone(), hl.range.start), hl.kind);
++                // clangd requries a `DidOpen` for DocumentHighlight, but opening all files in
++                // reference may be way slower, and we now ignores it... TODO: solution!
++                if let Ok(result) = result {
++                    let result =
++                        serde_json::from_value::<Option<Vec<lsp::DocumentHighlight>>>(result)?;
++                    for hl in result.unwrap_or_default() {
++                        highlights.insert((loc.uri.clone(), hl.range.start), hl.kind);
++                    }
++                    *highlights.get(&highlight).unwrap_or(&None)
++                } else {
++                    None
 +                }
-+                *highlights.get(&highlight).unwrap_or(&None)
 +            };
 +
 +            result.push((loc, hl_result));
@@ -1669,46 +1673,21 @@ index 151b2653..2ccef199 100644
          let doc = doc_mut!(self, &doc_id);
          let old_path = doc.path();
 diff --git a/helix-view/src/tree.rs b/helix-view/src/tree.rs
-index aba947a2..cb968213 100644
+index aba947a2..54382384 100644
 --- a/helix-view/src/tree.rs
 +++ b/helix-view/src/tree.rs
-@@ -1,3 +1,5 @@
-+use std::{cmp::Ordering, collections::BinaryHeap, convert::identity, iter};
-+
+@@ -1,5 +1,6 @@
  use crate::{graphics::Rect, View, ViewId};
  use slotmap::HopSlotMap;
++use std::{collections::BinaryHeap, convert::identity, iter};
  
-@@ -280,6 +282,38 @@ pub fn views(&self) -> impl Iterator<Item = (&View, bool)> {
+ // the dimensions are recomputed on window resize/tree change.
+ //
+@@ -280,6 +281,12 @@ pub fn views(&self) -> impl Iterator<Item = (&View, bool)> {
          })
      }
  
-+    // TODO: generic `sorted_by`
 +    pub fn views_sorted_by_position(&self) -> impl Iterator<Item = &View> {
-+        impl Eq for View {}
-+
-+        impl PartialEq for View {
-+            fn eq(&self, other: &Self) -> bool {
-+                self.area.x == other.area.x && self.area.y == other.area.y
-+            }
-+        }
-+
-+        // The binary heap is reversed...
-+        impl Ord for View {
-+            fn cmp(&self, other: &Self) -> Ordering {
-+                other
-+                    .area
-+                    .x
-+                    .cmp(&self.area.x)
-+                    .then_with(|| other.area.y.cmp(&self.area.y))
-+            }
-+        }
-+
-+        impl PartialOrd for View {
-+            fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-+                Some(self.cmp(other))
-+            }
-+        }
-+
 +        // TODO: the `into_iter_sorted` of BinaryHeap is unstable...
 +        let mut heap = self.views().map(|(v, _)| v).collect::<BinaryHeap<_>>();
 +        iter::repeat_with(move || heap.pop()).map_while(identity)
@@ -1717,6 +1696,51 @@ index aba947a2..cb968213 100644
      pub fn views_mut(&mut self) -> impl Iterator<Item = (&mut View, bool)> {
          let focus = self.focus;
          self.nodes
+diff --git a/helix-view/src/view.rs b/helix-view/src/view.rs
+index a229f01e..a61100a1 100644
+--- a/helix-view/src/view.rs
++++ b/helix-view/src/view.rs
+@@ -19,6 +19,7 @@
+ };
+ 
+ use std::{
++    cmp::Ordering,
+     collections::{HashMap, VecDeque},
+     fmt,
+ };
+@@ -167,6 +168,32 @@ fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+     }
+ }
+ 
++impl Eq for View {}
++
++// TODO: This sorts the view by x/y axis...
++impl PartialEq for View {
++    fn eq(&self, other: &Self) -> bool {
++        self.area.x == other.area.x && self.area.y == other.area.y
++    }
++}
++
++// The binary heap is reversed...
++impl Ord for View {
++    fn cmp(&self, other: &Self) -> Ordering {
++        other
++            .area
++            .x
++            .cmp(&self.area.x)
++            .then_with(|| other.area.y.cmp(&self.area.y))
++    }
++}
++
++impl PartialOrd for View {
++    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
++        Some(self.cmp(other))
++    }
++}
++
+ impl View {
+     pub fn new(doc: DocumentId, gutters: GutterConfig) -> Self {
+         Self {
 diff --git a/runtime/queries/c/textobjects.scm b/runtime/queries/c/textobjects.scm
 index 63ec4a56..26fd35d9 100644
 --- a/runtime/queries/c/textobjects.scm
