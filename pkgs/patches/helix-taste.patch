@@ -321,7 +321,7 @@ index 52efcf22..eec8247a 100644
 +    jump_to_label(cx, words, behaviour, do_next)
  }
 diff --git a/helix-term/src/commands/lsp.rs b/helix-term/src/commands/lsp.rs
-index fcc0333e..e8357c9a 100644
+index fcc0333e..24025ca0 100644
 --- a/helix-term/src/commands/lsp.rs
 +++ b/helix-term/src/commands/lsp.rs
 @@ -5,7 +5,7 @@
@@ -526,7 +526,7 @@ index fcc0333e..e8357c9a 100644
                      let path = if let Some(path) = item.uri.as_path() {
                          path.strip_prefix(cwdir).unwrap_or(path).to_string_lossy()
                      } else {
-@@ -878,12 +946,40 @@ fn goto_impl(
+@@ -878,12 +946,41 @@ fn goto_impl(
  
                      format!("{path}:{}", item.range.start.line + 1).into()
                  },
@@ -548,7 +548,7 @@ index fcc0333e..e8357c9a 100644
 +                ))
 +            }
 +            columns.push(ui::PickerColumn::new(
-+                format!("line {}", symbol_name.unwrap_or_default()),
++                "line",
 +                |(_, line): &(Location, Option<String>), _: &std::path::PathBuf| {
 +                    line.clone().unwrap_or_default().into()
 +                },
@@ -567,12 +567,13 @@ index fcc0333e..e8357c9a 100644
 +                    jump_to_location(cx.editor, location, offset_encoding, action)
 +                },
 +            )
++            .with_prefix(symbol_name.unwrap_or_default())
 +            .with_cached_previews(preview_cache)
 +            .with_preview(move |_editor, (location, _)| location_to_file_location(location));
              compositor.push(Box::new(overlaid(picker)));
          }
      }
-@@ -928,7 +1024,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
+@@ -928,7 +1025,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
              if items.is_empty() {
                  editor.set_error("No definition found.");
              } else {
@@ -581,7 +582,7 @@ index fcc0333e..e8357c9a 100644
              }
          },
      );
-@@ -985,18 +1081,69 @@ pub fn goto_reference(cx: &mut Context) {
+@@ -985,18 +1082,69 @@ pub fn goto_reference(cx: &mut Context) {
          )
          .unwrap();
  
@@ -1153,9 +1154,18 @@ index 6ee49fa5..337d969a 100644
          editor: &Editor,
          input: &str,
 diff --git a/helix-term/src/ui/picker.rs b/helix-term/src/ui/picker.rs
-index df8d52eb..6879de47 100644
+index df8d52eb..203a3227 100644
 --- a/helix-term/src/ui/picker.rs
 +++ b/helix-term/src/ui/picker.rs
+@@ -56,7 +56,7 @@
+ 
+ pub const ID: &str = "picker";
+ 
+-pub const MIN_AREA_WIDTH_FOR_PREVIEW: u16 = 72;
++pub const MIN_AREA_WIDTH_FOR_PREVIEW: u16 = 144;
+ /// Biggest file size to preview in bytes
+ pub const MAX_FILE_SIZE_FOR_PREVIEW: u64 = 10 * 1024 * 1024;
+ 
 @@ -98,7 +98,7 @@ pub enum Preview<'picker, 'editor> {
  }
  
@@ -1209,7 +1219,7 @@ index df8d52eb..6879de47 100644
              filter: false,
              hidden: true,
          }
-@@ -224,6 +225,74 @@ fn format_text<'a>(&self, item: &'a T, data: &'a D) -> Cow<'a, str> {
+@@ -224,11 +225,85 @@ fn format_text<'a>(&self, item: &'a T, data: &'a D) -> Cow<'a, str> {
      }
  }
  
@@ -1284,7 +1294,28 @@ index df8d52eb..6879de47 100644
  /// Returns a new list of options to replace the contents of the picker
  /// when called with the current picker query,
  type DynQueryCallback<T, D> =
-@@ -251,9 +320,7 @@ pub struct Picker<T: 'static + Send + Sync, D: 'static> {
+     fn(&str, &mut Editor, Arc<D>, &Injector<T, D>) -> BoxFuture<'static, anyhow::Result<()>>;
+ 
++enum PreviewDirection {
++    None,
++    Right,
++    Down,
++}
++
+ pub struct Picker<T: 'static + Send + Sync, D: 'static> {
+     columns: Arc<[Column<T, D>]>,
+     primary_column: usize,
+@@ -243,17 +318,15 @@ pub struct Picker<T: 'static + Send + Sync, D: 'static> {
+     prompt: Prompt,
+     query: PickerQuery,
+ 
+-    /// Whether to show the preview panel (default true)
+-    show_preview: bool,
++    /// Preview direction, defaults to right
++    preview_direction: PreviewDirection,
+     /// Constraints for tabular formatting
+     widths: Vec<Constraint>,
+ 
      callback_fn: PickerCallback<T>,
  
      pub truncate_start: bool,
@@ -1295,7 +1326,7 @@ index df8d52eb..6879de47 100644
      /// Given an item in the picker, return the file path and line number to display.
      file_fn: Option<FileCallback<T>>,
      /// An event handler for syntax highlighting the currently previewed file.
-@@ -356,7 +423,7 @@ fn with(
+@@ -356,7 +429,7 @@ fn with(
  
          let widths = columns
              .iter()
@@ -1304,7 +1335,12 @@ index df8d52eb..6879de47 100644
              .collect();
  
          let query = PickerQuery::new(columns.iter().map(|col| &col.name).cloned(), default_column);
-@@ -375,8 +442,7 @@ fn with(
+@@ -371,12 +444,11 @@ fn with(
+             prompt,
+             query,
+             truncate_start: true,
+-            show_preview: true,
++            preview_direction: PreviewDirection::Right,
              callback_fn: Box::new(callback_fn),
              completion_height: 0,
              widths,
@@ -1314,13 +1350,20 @@ index df8d52eb..6879de47 100644
              file_fn: None,
              preview_highlight_handler: PreviewHighlightHandler::<T, D>::default().spawn(),
              dynamic_query_handler: None,
-@@ -410,8 +476,28 @@ pub fn with_preview(
+@@ -410,8 +482,35 @@ pub fn with_preview(
          self
      }
  
 -    pub fn with_history_register(mut self, history_register: Option<char>) -> Self {
 +    pub fn with_cached_previews(mut self, preview_cache: DocumentPreviewCache) -> Self {
 +        self.preview_cache = preview_cache;
++        self
++    }
++
++    pub fn with_prefix(mut self, mut prefix: String) -> Self {
++        // Add a space to the end:
++        prefix.push(' ');
++        self.prompt.set_prefix(prefix);
 +        self
 +    }
 +
@@ -1344,7 +1387,20 @@ index df8d52eb..6879de47 100644
          self
      }
  
-@@ -565,61 +651,29 @@ fn get_preview<'picker, 'editor>(
+@@ -497,7 +596,11 @@ fn header_height(&self) -> u16 {
+     }
+ 
+     pub fn toggle_preview(&mut self) {
+-        self.show_preview = !self.show_preview;
++        self.preview_direction = match self.preview_direction {
++            PreviewDirection::None => PreviewDirection::Right,
++            PreviewDirection::Right => PreviewDirection::Down,
++            PreviewDirection::Down => PreviewDirection::None,
++        };
+     }
+ 
+     fn prompt_handle_event(&mut self, event: &Event, cx: &mut Context) -> EventResult {
+@@ -565,61 +668,29 @@ fn get_preview<'picker, 'editor>(
          let current = self.selection()?;
          let (path_or_id, range) = (self.file_fn.as_ref()?)(editor, current)?;
  
@@ -1423,7 +1479,7 @@ index df8d52eb..6879de47 100644
      }
  
      fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
-@@ -780,8 +834,8 @@ fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context)
+@@ -780,8 +851,8 @@ fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context)
              .column_spacing(1)
              .widths(&self.widths);
  
@@ -1434,7 +1490,7 @@ index df8d52eb..6879de47 100644
              let active_column = self.query.active_column(self.prompt.position());
              let header_style = cx.editor.theme.get("ui.picker.header");
              let header_column_style = cx.editor.theme.get("ui.picker.header.column");
-@@ -798,7 +852,9 @@ fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context)
+@@ -798,7 +869,9 @@ fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context)
                                  header_column_style
                              };
  
@@ -1445,7 +1501,41 @@ index df8d52eb..6879de47 100644
                      }
                  }))
                  .style(header_style),
-@@ -1018,17 +1074,7 @@ fn handle_event(&mut self, event: &Event, ctx: &mut Context) -> EventResult {
+@@ -941,21 +1014,18 @@ fn render(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
+         // |         | |         |
+         // +---------+ +---------+
+ 
+-        let render_preview =
+-            self.show_preview && self.file_fn.is_some() && area.width > MIN_AREA_WIDTH_FOR_PREVIEW;
+-
+-        let picker_width = if render_preview {
+-            area.width / 2
+-        } else {
+-            area.width
+-        };
+-
+-        let picker_area = area.with_width(picker_width);
+-        self.render_picker(picker_area, surface, cx);
+-
+-        if render_preview {
+-            let preview_area = area.clip_left(picker_width);
+-            self.render_preview(preview_area, surface, cx);
++        match (&self.file_fn, &self.preview_direction) {
++            (None, _) | (_, PreviewDirection::None) => self.render_picker(area, surface, cx),
++            (_, PreviewDirection::Right) if area.width > MIN_AREA_WIDTH_FOR_PREVIEW => {
++                let width = area.width / 2;
++                self.render_picker(area.with_width(width), surface, cx);
++                self.render_preview(area.clip_left(width), surface, cx);
++            }
++            (_, _) => {
++                let height = area.height / 2;
++                self.render_picker(area.with_height(height), surface, cx);
++                self.render_preview(area.clip_top(height), surface, cx);
++            }
+         }
+     }
+ 
+@@ -1018,17 +1088,7 @@ fn handle_event(&mut self, event: &Event, ctx: &mut Context) -> EventResult {
                  }
              }
              key!(Enter) => {
@@ -1465,10 +1555,37 @@ index df8d52eb..6879de47 100644
                          (self.callback_fn)(ctx, option, Action::Replace);
                      }
 diff --git a/helix-term/src/ui/prompt.rs b/helix-term/src/ui/prompt.rs
-index f44020c5..53ac6f50 100644
+index f44020c5..b7d01ce8 100644
 --- a/helix-term/src/ui/prompt.rs
 +++ b/helix-term/src/ui/prompt.rs
-@@ -320,6 +320,13 @@ pub fn kill_to_end_of_line(&mut self, editor: &Editor) {
+@@ -29,6 +29,7 @@
+ pub struct Prompt {
+     prompt: Cow<'static, str>,
+     line: String,
++    prefix: String,
+     cursor: usize,
+     completion: Vec<Completion>,
+     selection: Option<usize>,
+@@ -81,6 +82,7 @@ pub fn new(
+         Self {
+             prompt,
+             line: String::new(),
++            prefix: String::new(),
+             cursor: 0,
+             completion: Vec::new(),
+             selection: None,
+@@ -112,6 +114,10 @@ pub fn set_line(&mut self, line: String, editor: &Editor) {
+         self.recalculate_completion(editor);
+     }
+ 
++    pub fn set_prefix(&mut self, prefix: String) {
++        self.prefix = prefix;
++    }
++
+     pub fn with_language(
+         mut self,
+         language: &'static str,
+@@ -320,6 +326,13 @@ pub fn kill_to_end_of_line(&mut self, editor: &Editor) {
          self.recalculate_completion(editor);
      }
  
@@ -1482,7 +1599,21 @@ index f44020c5..53ac6f50 100644
      pub fn clear(&mut self, editor: &Editor) {
          self.line.clear();
          self.cursor = 0;
-@@ -566,6 +573,10 @@ fn handle_event(&mut self, event: &Event, cx: &mut Context) -> EventResult {
+@@ -497,9 +510,11 @@ pub fn render_prompt(&self, area: Rect, surface: &mut Surface, cx: &mut Context)
+         let line = area.height - 1;
+         surface.clear_with(area.clip_top(line), background);
+         // render buffer text
+-        surface.set_string(area.x, area.y + line, &self.prompt, prompt_color);
++        let prompt_text = format!("{}{}", self.prefix, self.prompt);
++        let prompt_len = self.prefix.len() + self.prompt.len();
++        surface.set_string(area.x, area.y + line, &prompt_text, prompt_color);
+ 
+-        let line_area = area.clip_left(self.prompt.len() as u16).clip_top(line);
++        let line_area = area.clip_left(prompt_len as u16).clip_top(line);
+         if self.line.is_empty() {
+             // Show the most recently entered value as a suggestion.
+             if let Some(suggestion) = self.first_history_completion(cx.editor) {
+@@ -566,6 +581,10 @@ fn handle_event(&mut self, event: &Event, cx: &mut Context) -> EventResult {
                  self.kill_to_start_of_line(cx.editor);
                  (self.callback_fn)(cx, &self.line, PromptEvent::Update);
              }
@@ -1493,6 +1624,14 @@ index f44020c5..53ac6f50 100644
              ctrl!('h') | key!(Backspace) | shift!(Backspace) => {
                  self.delete_char_backwards(cx.editor);
                  (self.callback_fn)(cx, &self.line, PromptEvent::Update);
+@@ -691,6 +710,7 @@ fn cursor(&self, area: Rect, editor: &Editor) -> (Option<Position>, CursorKind)
+             Some(Position::new(
+                 area.y as usize + line,
+                 area.x as usize
++                    + self.prefix.len()
+                     + self.prompt.len()
+                     + UnicodeWidthStr::width(&self.line[..self.cursor]),
+             )),
 diff --git a/helix-term/src/ui/statusline.rs b/helix-term/src/ui/statusline.rs
 index 7437cbd0..8630a578 100644
 --- a/helix-term/src/ui/statusline.rs
