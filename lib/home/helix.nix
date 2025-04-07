@@ -119,7 +119,6 @@
         };
 
         insert = {
-          "S-tab" = "insert_raw_tab";
           # Emacs navigator
           C-p = "move_line_up";
           C-n = "move_line_down";
@@ -142,6 +141,13 @@
     };
 
     languages.language = [
+      {
+        name = "c";
+        indent = {
+          tab-width = 8;
+          unit = "\\t";
+        };
+      }
       {
         name = "nix";
         formatter = {

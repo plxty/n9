@@ -1,111 +1,22 @@
-From 16bff48d998d01d87f41821451b852eb2a8cf627 Mon Sep 17 00:00:00 2001
-From: Zigit Zo <ptr@ffi.fyi>
-Date: Sat, 14 Dec 2024 00:40:57 +0800
-Subject: [PATCH] feat(helix): hack
-
----
- README.md                              |  63 ++++++++
- helix-core/src/selection.rs            |   6 +
- helix-loader/src/config.rs             |   3 +-
- helix-loader/src/lib.rs                |  18 ++-
- helix-lsp/src/client.rs                |   4 +
- helix-lsp/src/lib.rs                   |  25 ++-
- helix-term/src/commands.rs             | 116 +++++++++++---
- helix-term/src/commands/lsp.rs         | 115 +++++++++++---
- helix-term/src/commands/typed.rs       | 154 +++++++++++++++++--
- helix-term/src/keymap.rs               |  23 ++-
- helix-term/src/keymap/default.rs       |   6 +-
- helix-term/src/ui/editor.rs            |   7 +-
- helix-term/src/ui/mod.rs               |  61 +++++++-
- helix-term/src/ui/picker.rs            | 204 +++++++++++++++----------
- helix-term/src/ui/prompt.rs            |  11 ++
- helix-term/src/ui/statusline.rs        |  42 +++++
- helix-view/src/editor.rs               |  24 +++
- helix-view/src/tree.rs                 |  34 +++++
- runtime/queries/c/textobjects.scm      |   3 +
- runtime/queries/python/textobjects.scm |   1 +
- runtime/queries/rust/textobjects.scm   |   1 +
- 21 files changed, 758 insertions(+), 163 deletions(-)
-
-diff --git a/README.md b/README.md
-index 11a909b2616f..e0d883e53073 100644
---- a/README.md
-+++ b/README.md
-@@ -30,6 +30,69 @@ All shortcuts/keymaps can be found [in the documentation on the website](https:/
- 
- [Troubleshooting](https://github.com/helix-editor/helix/wiki/Troubleshooting)
- 
-+# Mad Mod
-+
-+```bash
-+HELIX_DEFAULT_RUNTIME=$PWD/runtime cargo install --profile opt --locked --path helix-term
-+```
-+
-+* add: goto_word_definition
-+  - goto_definition with goto_word jumps
-+  - it will now save the jumps, C-o works
-+
-+* add: goto_word_reference
-+  - goto_reference with goto_word jumps (two word for whole buffer)
-+
-+* mod: goto_reference
-+  - now it shows a symbole name in it within the column's name section, a little bit ugly, but works
-+  - now it shows a line as well, it might be way slower... and there's no option to turn off :!
-+  - not very fast now :(
-+
-+* add: goto_next/prev_function_name
-+  - bind to key `[n` and `]n`, to navigate to the function's name, suitable for faster `goto_reference` next
-+  - TODO: textobjects.scm shall be modified for extra language, so there's lots of missing languages
-+  - can use `tree-sitter parse ...` cli tools for finding the real node of the function name, and place it into textobjects
-+
-+* mod: global_search
-+  - for register '/', the global_search will shows up the result immediatly
-+  - using `Alt-k` to kill the whole string of the global_search prompt (or other prompts as well)
-+  - TODO: make argument filter general for file picker as well?
-+
-+* fix: status message overflow issue, this will trigger by selecting a long enough sentence, and press '*' or else, seems openSUSE only
-+
-+* mod: symbol_picker
-+  - make LSP support `hierarchicalDocumentSymbolSupport`, and shows the full name with signature
-+  - TODO: the `workspace/symbol` request seems has no hierarchical symbols
-+
-+* add: focus_N
-+  - inspired by ace-window, can now use `:focus X` to focus the window numbered by X
-+  - each window (or view in helix term), has a little sign about it's number at bottom left status line
-+  - the window is always sorted by the position (x then y)
-+  - alternative functions `:focus_insert X` to focus the window, and then enter the insert state
-+
-+* add: search
-+  - three options `search.case_sensitive`, `search.whole_word` and `search.regex`
-+  - add the statusline for the search_config, `r` for regex, `c` for case sensitive, and `w` for whole word search
-+  - if you add `:toggle-option` to your config file for quick toggling, now it will shows the current's value
-+
-+* mod: search_selection
-+  - now it selects a whole word in the beginning
-+  - if you want to keep the original behavior, use `1*` (or any other number)
-+
-+* add: format-write
-+  - use `:m` and `:m!` to format then write (mrite)
-+
-+* add: global config file
-+  - support `/etc/helix/config.toml` and `/etc/helix/languages.toml`
-+
-+* add: insert_raw_tab
-+  - it inserts a real tab now!
-+
-+* add: command `E` and `O`
-+  - they will now edit or open file in the current buffer's directory
-+
-+Many of the changes is commited arbitrarily, so I squashed them into just single commit.
-+
- # Features
- 
- - Vim-like modal editing
+diff --git a/flake.nix b/flake.nix
+index 1fda3fa9..6466cd51 100644
+--- a/flake.nix
++++ b/flake.nix
+@@ -187,9 +187,4 @@
+         inherit (self.packages.${final.system}) helix;
+       };
+     };
+-
+-  nixConfig = {
+-    extra-substituters = ["https://helix.cachix.org"];
+-    extra-trusted-public-keys = ["helix.cachix.org-1:ejp9KQpR1FBI2onstMQ34yogDm4OgU2ru6lIwPvuCVs="];
+-  };
+ }
 diff --git a/helix-core/src/selection.rs b/helix-core/src/selection.rs
-index 76de63628d1e..846fa46a02c9 100644
+index 76de6362..846fa46a 100644
 --- a/helix-core/src/selection.rs
 +++ b/helix-core/src/selection.rs
-@@ -527,6 +527,12 @@ impl Selection {
+@@ -527,6 +527,12 @@ pub fn range_bounds(&self) -> impl Iterator<Item = helix_stdx::Range> + '_ {
          self.ranges.iter().map(|&range| range.into())
      }
  
@@ -118,72 +29,11 @@ index 76de63628d1e..846fa46a02c9 100644
      pub fn primary_index(&self) -> usize {
          self.primary_index
      }
-diff --git a/helix-loader/src/config.rs b/helix-loader/src/config.rs
-index d092d20f73a8..832c3b193512 100644
---- a/helix-loader/src/config.rs
-+++ b/helix-loader/src/config.rs
-@@ -1,4 +1,4 @@
--use std::str::from_utf8;
-+use std::{path::PathBuf, str::from_utf8};
- 
- /// Default built-in languages.toml.
- pub fn default_lang_config() -> toml::Value {
-@@ -10,6 +10,7 @@ pub fn default_lang_config() -> toml::Value {
- /// User configured languages.toml file, merged with the default config.
- pub fn user_lang_config() -> Result<toml::Value, toml::de::Error> {
-     let config = [
-+        PathBuf::from("/etc/helix"),
-         crate::config_dir(),
-         crate::find_workspace().0.join(".helix"),
-     ]
-diff --git a/helix-loader/src/lib.rs b/helix-loader/src/lib.rs
-index 0e7c134d013e..d83b1a4c1f80 100644
---- a/helix-loader/src/lib.rs
-+++ b/helix-loader/src/lib.rs
-@@ -16,6 +16,10 @@ static CONFIG_FILE: once_cell::sync::OnceCell<PathBuf> = once_cell::sync::OnceCe
- static LOG_FILE: once_cell::sync::OnceCell<PathBuf> = once_cell::sync::OnceCell::new();
- 
- pub fn initialize_config_file(specified_file: Option<PathBuf>) {
-+    // Order:
-+    // 1. Argument config file,
-+    // 2. Global config file in /etc/helix,
-+    // 3. Local config file.
-     let config_file = specified_file.unwrap_or_else(default_config_file);
-     ensure_parent_dir(&config_file);
-     CONFIG_FILE.set(config_file).ok();
-@@ -145,7 +149,12 @@ pub fn workspace_config_file() -> PathBuf {
- }
- 
- pub fn lang_config_file() -> PathBuf {
--    config_dir().join("languages.toml")
-+    let system_config = PathBuf::from("/etc/helix/languages.toml");
-+    if system_config.exists() {
-+        system_config
-+    } else {
-+        config_dir().join("languages.toml")
-+    }
- }
- 
- pub fn default_log_file() -> PathBuf {
-@@ -244,7 +253,12 @@ pub fn find_workspace() -> (PathBuf, bool) {
- }
- 
- fn default_config_file() -> PathBuf {
--    config_dir().join("config.toml")
-+    let system_config = PathBuf::from("/etc/helix/config.toml");
-+    if system_config.exists() {
-+        system_config
-+    } else {
-+        config_dir().join("config.toml")
-+    }
- }
- 
- fn ensure_parent_dir(path: &Path) {
 diff --git a/helix-lsp/src/client.rs b/helix-lsp/src/client.rs
-index cc1c4ce8fe67..4b750c746252 100644
+index cc1c4ce8..4b750c74 100644
 --- a/helix-lsp/src/client.rs
 +++ b/helix-lsp/src/client.rs
-@@ -661,6 +661,10 @@ impl Client {
+@@ -661,6 +661,10 @@ pub(crate) async fn initialize(&self, enable_snippets: bool) -> Result<lsp::Init
                          dynamic_registration: Some(false),
                          resolve_support: None,
                      }),
@@ -195,10 +45,10 @@ index cc1c4ce8fe67..4b750c746252 100644
                  }),
                  window: Some(lsp::WindowClientCapabilities {
 diff --git a/helix-lsp/src/lib.rs b/helix-lsp/src/lib.rs
-index fd5cdb8b37ff..0fcc03e1e4f8 100644
+index fd5cdb8b..0fcc03e1 100644
 --- a/helix-lsp/src/lib.rs
 +++ b/helix-lsp/src/lib.rs
-@@ -126,21 +126,18 @@ pub mod util {
+@@ -126,21 +126,18 @@ pub fn diagnostic_to_lsp_diagnostic(
          }
      }
  
@@ -223,7 +73,7 @@ index fd5cdb8b37ff..0fcc03e1e4f8 100644
          }
  
          // We need to be careful here to fully comply ith the LSP spec.
-@@ -189,6 +186,22 @@ pub mod util {
+@@ -189,6 +186,22 @@ pub fn lsp_pos_to_pos(
              }
          };
  
@@ -247,10 +97,10 @@ index fd5cdb8b37ff..0fcc03e1e4f8 100644
          let pos = line
              .start
 diff --git a/helix-term/src/commands.rs b/helix-term/src/commands.rs
-index a93fa445ee80..e0e0c5d9429d 100644
+index 52efcf22..eec8247a 100644
 --- a/helix-term/src/commands.rs
 +++ b/helix-term/src/commands.rs
-@@ -59,7 +59,10 @@ use crate::{
+@@ -59,7 +59,10 @@
      compositor::{self, Component, Compositor},
      filter_picker_entry,
      job::Callback,
@@ -262,15 +112,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
  };
  
  use crate::job::{self, Jobs};
-@@ -452,6 +455,7 @@ impl MappableCommand {
-         signature_help, "Show signature help",
-         smart_tab, "Insert tab if all cursors have all whitespace to their left; otherwise, run a separate command.",
-         insert_tab, "Insert tab char",
-+        insert_raw_tab, "Insert the real tab char",
-         insert_newline, "Insert newline char",
-         delete_char_backward, "Delete previous char",
-         delete_char_forward, "Delete next char",
-@@ -543,6 +547,8 @@ impl MappableCommand {
+@@ -543,6 +546,8 @@ pub fn doc(&self) -> &str {
          select_textobject_inner, "Select inside object",
          goto_next_function, "Goto next function",
          goto_prev_function, "Goto previous function",
@@ -279,7 +121,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
          goto_next_class, "Goto next type definition",
          goto_prev_class, "Goto previous type definition",
          goto_next_parameter, "Goto next parameter",
-@@ -587,6 +593,8 @@ impl MappableCommand {
+@@ -587,6 +592,8 @@ pub fn doc(&self) -> &str {
          extend_to_word, "Extend to a two-character label",
          goto_next_tabstop, "goto next snippet placeholder",
          goto_prev_tabstop, "goto next snippet placeholder",
@@ -288,25 +130,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
      );
  }
  
-@@ -1175,7 +1183,16 @@ fn move_prev_word_end(cx: &mut Context) {
- }
- 
- fn move_next_word_end(cx: &mut Context) {
--    move_word_impl(cx, movement::move_next_word_end)
-+    // https://github.com/helix-editor/helix/discussions/10266
-+    // FIXME: Boundary issue? Workaround currently:
-+    let mode = cx.editor.mode;
-+    move_word_impl(cx, |text, range, count| {
-+        let mut selection = movement::move_next_word_end(text, range, count);
-+        if mode == Mode::Insert {
-+            selection.head += 1
-+        }
-+        selection
-+    })
- }
- 
- fn move_next_long_word_start(cx: &mut Context) {
-@@ -2214,11 +2231,8 @@ fn search_next_or_prev_impl(cx: &mut Context, movement: Movement, direction: Dir
+@@ -2214,11 +2221,8 @@ fn search_next_or_prev_impl(cx: &mut Context, movement: Movement, direction: Dir
      let scrolloff = config.scrolloff;
      if let Some(query) = cx.editor.registers.first(register, cx.editor) {
          let search_config = &config.search;
@@ -320,7 +144,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
          let wrap_around = search_config.wrap_around;
          if let Ok(regex) = rope::RegexBuilder::new()
              .syntax(
-@@ -2270,6 +2284,10 @@ fn search_selection_detect_word_boundaries(cx: &mut Context) {
+@@ -2270,6 +2274,10 @@ fn search_selection_detect_word_boundaries(cx: &mut Context) {
  }
  
  fn search_selection_impl(cx: &mut Context, detect_word_boundaries: bool) {
@@ -331,7 +155,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
      fn is_at_word_start(text: RopeSlice, index: usize) -> bool {
          let ch = text.char(index);
          if index == 0 {
-@@ -2382,13 +2400,14 @@ fn global_search(cx: &mut Context) {
+@@ -2382,13 +2390,14 @@ fn new(path: &Path, line_num: usize) -> Self {
      }
  
      struct GlobalSearchConfig {
@@ -348,7 +172,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
          file_picker_config: config.file_picker.clone(),
      };
  
-@@ -2419,9 +2438,11 @@ fn global_search(cx: &mut Context) {
+@@ -2419,9 +2428,11 @@ struct GlobalSearchConfig {
              .map(|doc| (doc.path().cloned(), doc.text().to_owned()))
              .collect();
  
@@ -362,7 +186,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
          {
              Ok(matcher) => {
                  // Clear any "Failed to compile regex" errors out of the statusline.
-@@ -2564,7 +2585,7 @@ fn global_search(cx: &mut Context) {
+@@ -2564,7 +2575,7 @@ struct GlobalSearchConfig {
      .with_preview(|_editor, FileResult { path, line_num, .. }| {
          Some((path.as_path().into(), Some((*line_num, *line_num))))
      })
@@ -371,7 +195,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
      .with_dynamic_query(get_files, Some(275));
  
      cx.push_layer(Box::new(overlaid(picker)));
-@@ -2959,11 +2980,7 @@ fn file_picker(cx: &mut Context) {
+@@ -2959,11 +2970,7 @@ fn file_picker(cx: &mut Context) {
  }
  
  fn file_picker_in_current_buffer_directory(cx: &mut Context) {
@@ -384,26 +208,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
          Some(path) => path,
          None => {
              cx.editor.set_error("current buffer has no path or parent");
-@@ -3976,6 +3993,18 @@ pub mod insert {
-         doc.apply(&transaction, view.id);
-     }
- 
-+    pub fn insert_raw_tab(cx: &mut Context) {
-+        let (view, doc) = current!(cx.editor);
-+
-+        // Force to be a real tab:
-+        let transaction = Transaction::insert(
-+            doc.text(),
-+            &doc.selection(view.id).clone().cursors(doc.text().slice(..)),
-+            Tendril::from("\t"),
-+        );
-+        doc.apply(&transaction, view.id);
-+    }
-+
-     pub fn insert_newline(cx: &mut Context) {
-         let (view, doc) = current_ref!(cx.editor);
-         let text = doc.text().slice(..);
-@@ -5123,14 +5152,18 @@ fn reverse_selection_contents(cx: &mut Context) {
+@@ -5151,14 +5158,18 @@ fn reverse_selection_contents(cx: &mut Context) {
  
  // tree sitter node selection
  
@@ -424,7 +229,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
              let selection = object::expand_selection(syntax, text, current_selection.clone());
  
              // check if selection is different from the last one
-@@ -5142,7 +5175,11 @@ fn expand_selection(cx: &mut Context) {
+@@ -5170,7 +5181,11 @@ fn expand_selection(cx: &mut Context) {
              }
          }
      };
@@ -437,7 +242,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
  }
  
  fn shrink_selection(cx: &mut Context) {
-@@ -5565,6 +5602,14 @@ fn goto_prev_function(cx: &mut Context) {
+@@ -5593,6 +5608,14 @@ fn goto_prev_function(cx: &mut Context) {
      goto_ts_object_impl(cx, "function", Direction::Backward)
  }
  
@@ -452,7 +257,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
  fn goto_next_class(cx: &mut Context) {
      goto_ts_object_impl(cx, "class", Direction::Forward)
  }
-@@ -6343,14 +6388,27 @@ fn replay_macro(cx: &mut Context) {
+@@ -6371,14 +6394,27 @@ fn replay_macro(cx: &mut Context) {
  }
  
  fn goto_word(cx: &mut Context) {
@@ -467,13 +272,13 @@ index a93fa445ee80..e0e0c5d9429d 100644
 +
 +fn goto_word_reference(cx: &mut Context) {
 +    jump_to_word(cx, Movement::Move, Some(goto_reference))
-+}
-+
-+fn goto_word_definition(cx: &mut Context) {
-+    jump_to_word(cx, Movement::Move, Some(goto_definition))
  }
  
 -fn jump_to_label(cx: &mut Context, labels: Vec<Range>, behaviour: Movement) {
++fn goto_word_definition(cx: &mut Context) {
++    jump_to_word(cx, Movement::Move, Some(goto_definition))
++}
++
 +fn jump_to_label(
 +    cx: &mut Context,
 +    labels: Vec<Range>,
@@ -483,7 +288,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
      let doc = doc!(cx.editor);
      let alphabet = &cx.editor.config().jump_label_alphabet;
      if labels.is_empty() {
-@@ -6429,15 +6487,23 @@ fn jump_to_label(cx: &mut Context, labels: Vec<Range>, behaviour: Movement) {
+@@ -6457,15 +6493,23 @@ fn jump_to_label(cx: &mut Context, labels: Vec<Range>, behaviour: Movement) {
                      };
                      Range::new(anchor, range.head)
                  } else {
@@ -508,7 +313,7 @@ index a93fa445ee80..e0e0c5d9429d 100644
      // Calculate the jump candidates: ranges for any visible words with two or
      // more characters.
      let alphabet = &cx.editor.config().jump_label_alphabet;
-@@ -6524,5 +6590,5 @@ fn jump_to_word(cx: &mut Context, behaviour: Movement) {
+@@ -6552,5 +6596,5 @@ fn jump_to_word(cx: &mut Context, behaviour: Movement) {
              break;
          }
      }
@@ -516,19 +321,22 @@ index a93fa445ee80..e0e0c5d9429d 100644
 +    jump_to_label(cx, words, behaviour, do_next)
  }
 diff --git a/helix-term/src/commands/lsp.rs b/helix-term/src/commands/lsp.rs
-index fcc0333e8cd8..1cd53cfb894c 100644
+index fcc0333e..ef7ec4a6 100644
 --- a/helix-term/src/commands/lsp.rs
 +++ b/helix-term/src/commands/lsp.rs
-@@ -5,7 +5,7 @@ use helix_lsp::{
+@@ -3,9 +3,9 @@
+     block_on,
+     lsp::{
          self, CodeAction, CodeActionOrCommand, CodeActionTriggerKind, DiagnosticSeverity,
-         NumberOrString,
+-        NumberOrString,
++        DocumentHighlightOptions, NumberOrString,
      },
 -    util::{diagnostic_to_lsp_diagnostic, lsp_range_to_range, range_to_lsp_range},
 +    util::{diagnostic_to_lsp_diagnostic, lsp_pos_to_line, lsp_range_to_range, range_to_lsp_range},
      Client, LanguageServerId, OffsetEncoding,
  };
  use tokio_stream::StreamExt;
-@@ -28,7 +28,10 @@ use helix_view::{
+@@ -28,12 +28,15 @@
  use crate::{
      compositor::{self, Compositor},
      job::Callback,
@@ -540,7 +348,35 @@ index fcc0333e8cd8..1cd53cfb894c 100644
  };
  
  use std::{
-@@ -85,6 +88,7 @@ fn lsp_location_to_location(location: lsp::Location) -> Option<Location> {
+     cmp::Ordering,
+-    collections::{BTreeMap, HashSet},
++    collections::{BTreeMap, HashMap, HashSet},
+     fmt::Display,
+     future::Future,
+     path::Path,
+@@ -66,6 +69,7 @@ macro_rules! language_server_with_feature {
+ struct Location {
+     uri: Uri,
+     range: lsp::Range,
++    kind: Option<lsp::DocumentHighlightKind>,
+ }
+ 
+ fn lsp_location_to_location(location: lsp::Location) -> Option<Location> {
+@@ -79,12 +83,21 @@ fn lsp_location_to_location(location: lsp::Location) -> Option<Location> {
+     Some(Location {
+         uri,
+         range: location.range,
++        kind: None,
+     })
+ }
+ 
++type LocationKind = (lsp::Location, Option<lsp::DocumentHighlightKind>);
++fn lsp_location_to_location_with_kind(location_and_kind: LocationKind) -> Option<Location> {
++    let mut location = lsp_location_to_location(location_and_kind.0)?;
++    location.kind = location_and_kind.1;
++    Some(location)
++}
++
  struct SymbolInformationItem {
      location: Location,
      symbol: lsp::SymbolInformation,
@@ -548,7 +384,15 @@ index fcc0333e8cd8..1cd53cfb894c 100644
      offset_encoding: OffsetEncoding,
  }
  
-@@ -303,17 +307,26 @@ pub fn symbol_picker(cx: &mut Context) {
+@@ -220,6 +233,7 @@ fn diag_picker(
+                     location: Location {
+                         uri: uri.clone(),
+                         range: diag.range,
++                        kind: None,
+                     },
+                     diag,
+                     offset_encoding: ls.offset_encoding(),
+@@ -303,25 +317,35 @@ fn nested_to_flat(
          uri: &Uri,
          symbol: lsp::DocumentSymbol,
          offset_encoding: OffsetEncoding,
@@ -576,7 +420,8 @@ index fcc0333e8cd8..1cd53cfb894c 100644
              offset_encoding,
              location: Location {
                  uri: uri.clone(),
-@@ -321,7 +334,7 @@ pub fn symbol_picker(cx: &mut Context) {
+                 range: symbol.selection_range,
++                kind: None,
              },
          });
          for child in symbol.children.into_iter().flatten() {
@@ -585,8 +430,11 @@ index fcc0333e8cd8..1cd53cfb894c 100644
          }
      }
      let doc = doc!(cx.editor);
-@@ -357,9 +370,11 @@ pub fn symbol_picker(cx: &mut Context) {
+@@ -355,11 +379,14 @@ fn nested_to_flat(
+                             location: Location {
+                                 uri: doc_uri.clone(),
                                  range: symbol.location.range,
++                                kind: None,
                              },
                              symbol,
 +                            signature: None,
@@ -597,7 +445,7 @@ index fcc0333e8cd8..1cd53cfb894c 100644
                      lsp::DocumentSymbolResponse::Nested(symbols) => {
                          let mut flat_symbols = Vec::new();
                          for symbol in symbols {
-@@ -369,6 +384,7 @@ pub fn symbol_picker(cx: &mut Context) {
+@@ -369,6 +396,7 @@ fn nested_to_flat(
                                  &doc_uri,
                                  symbol,
                                  offset_encoding,
@@ -605,7 +453,7 @@ index fcc0333e8cd8..1cd53cfb894c 100644
                              )
                          }
                          flat_symbols
-@@ -402,6 +418,14 @@ pub fn symbol_picker(cx: &mut Context) {
+@@ -402,6 +430,14 @@ fn nested_to_flat(
                  ui::PickerColumn::new("name", |item: &SymbolInformationItem, _| {
                      item.symbol.name.as_str().into()
                  }),
@@ -620,33 +468,37 @@ index fcc0333e8cd8..1cd53cfb894c 100644
              ];
  
              let picker = Picker::new(
-@@ -469,6 +493,7 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
+@@ -467,8 +503,10 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
+                                     location: Location {
+                                         uri,
                                          range: symbol.location.range,
++                                        kind: None,
                                      },
                                      symbol,
 +                                    signature: None,
                                      offset_encoding,
                                  })
                              })
-@@ -867,23 +892,75 @@ fn goto_impl(
+@@ -858,6 +896,7 @@ fn goto_impl(
+     compositor: &mut Compositor,
+     locations: Vec<Location>,
+     offset_encoding: OffsetEncoding,
++    show_kind: bool,
+ ) {
+     let cwdir = helix_stdx::env::current_working_dir();
+ 
+@@ -867,9 +906,37 @@ fn goto_impl(
          }
          [] => unreachable!("`locations` should be non-empty for `goto_impl`"),
          _locations => {
 -            let columns = [ui::PickerColumn::new(
 -                "location",
 -                |item: &Location, cwdir: &std::path::PathBuf| {
--                    let path = if let Some(path) = item.uri.as_path() {
--                        path.strip_prefix(cwdir).unwrap_or(path).to_string_lossy()
--                    } else {
--                        item.uri.to_string().into()
--                    };
 +            // Manage the preview cache ourselves to speed up a little:
 +            let mut preview_cache = DocumentPreviewCache::new();
- 
--                    format!("{path}:{}", item.range.start.line + 1).into()
--                },
--            )];
++
 +            // [Location] -> [(Location, Line?)]
++            let mut symbol_name: Option<String> = None;
 +            let locations = locations
 +                .iter()
 +                .map(|loc| {
@@ -654,57 +506,61 @@ index fcc0333e8cd8..1cd53cfb894c 100644
 +                        let preview = preview_cache.get_preview(path, editor);
 +                        let doc = preview.document()?;
 +
-+                        // Extract all the relative lines, we do it here for avoiding Sync:
-+                        let range = lsp_pos_to_line(doc.text(), loc.range.start, offset_encoding)?;
-+                        Some(doc.text().get_slice(range)?.to_string())
-+                    });
++                        // Extract symbol name from better displaying, any of it is fine:
++                        if symbol_name.is_none() {
++                            let doc = preview.document()?;
++                            let range = lsp_range_to_range(doc.text(), loc.range, offset_encoding)?;
++                            symbol_name =
++                                Some(doc.text().get_slice(range.anchor..range.head)?.to_string());
++                        }
 +
-+                    // TODO: Avoid clone?
++                        // Extract all the relative lines, we do it here to avoid Sync:
++                        let range = lsp_pos_to_line(doc.text(), loc.range.start, offset_encoding)?;
++                        Some(doc.text().get_slice(range)?.as_str()?.trim().to_string())
++                    });
 +                    (loc.clone(), line)
 +                })
 +                .collect::<Vec<_>>(); // TODO: Avoid collecting, just the iterator?
++
++            let mut columns = vec![ui::PickerColumn::new(
++                "path",
++                |(item, _): &(Location, Option<String>), cwdir: &std::path::PathBuf| {
+                     let path = if let Some(path) = item.uri.as_path() {
+                         path.strip_prefix(cwdir).unwrap_or(path).to_string_lossy()
+                     } else {
+@@ -879,11 +946,42 @@ fn goto_impl(
+                     format!("{path}:{}", item.range.start.line + 1).into()
+                 },
+             )];
++            columns.push(match show_kind {
++                true => ui::PickerColumn::new(
++                    "kind",
++                    |(item, _): &(Location, Option<String>), _: &std::path::PathBuf| {
++                        match item.kind {
++                            None => "",
++                            Some(k) if k == lsp::DocumentHighlightKind::TEXT => "text",
++                            Some(k) if k == lsp::DocumentHighlightKind::READ => "read",
++                            Some(k) if k == lsp::DocumentHighlightKind::WRITE => "write",
++                            Some(_) => "unknown",
++                        }
++                        .into()
++                    },
++                ),
++                _ => {
++                    ui::PickerColumn::new(
++                        format!("line {}", symbol_name.unwrap_or_default()),
++                        |(_, line): &(Location, Option<String>), _: &std::path::PathBuf| {
++                            // TODO: Avoid deep copy... Seems hard:
++                            line.clone().unwrap_or_default().into()
++                        },
++                    )
++                }
++            });
  
 -            let picker = Picker::new(columns, 0, locations, cwdir, move |cx, location, action| {
 -                jump_to_location(cx.editor, location, offset_encoding, action)
 -            })
 -            .with_preview(move |_editor, location| location_to_file_location(location));
-+            // Extract symbol name from better displaying, any of it is fine:
-+            let symbol_name = locations.iter().find_map(|(loc, _)| {
-+                // TODO: Reuse range and line:
-+                let path = loc.uri.as_path()?;
-+                let preview = preview_cache.get_preview(path, editor);
-+                let doc = preview.document()?;
-+
-+                let range = lsp_range_to_range(doc.text(), loc.range, offset_encoding)?;
-+                Some(doc.text().get_slice(range.anchor..range.head)?.to_string())
-+            });
-+
-+            let columns = [
-+                ui::PickerColumn::new(
-+                    symbol_name.unwrap_or_else(|| "location".to_string()),
-+                    |(item, _): &(Location, Option<String>), cwdir: &std::path::PathBuf| {
-+                        let path = if let Some(path) = item.uri.as_path() {
-+                            path.strip_prefix(cwdir).unwrap_or(path).to_string_lossy()
-+                        } else {
-+                            item.uri.to_string().into()
-+                        };
-+
-+                        format!("{path}:{}", item.range.start.line + 1).into()
-+                    },
-+                ),
-+                ui::PickerColumn::new(
-+                    "l1n3",
-+                    |(_, line): &(Location, Option<String>), _: &std::path::PathBuf| {
-+                        // TODO: Avoid deep copy... Seems hard:
-+                        if let Some(line) = line {
-+                            line.trim().into()
-+                        } else {
-+                            String::new().into()
-+                        }
-+                    },
-+                ),
-+            ];
-+
 +            let picker = Picker::new(
 +                columns,
 +                0,
@@ -719,8 +575,83 @@ index fcc0333e8cd8..1cd53cfb894c 100644
              compositor.push(Box::new(overlaid(picker)));
          }
      }
+@@ -928,7 +1026,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
+             if items.is_empty() {
+                 editor.set_error("No definition found.");
+             } else {
+-                goto_impl(editor, compositor, items, offset_encoding);
++                goto_impl(editor, compositor, items, offset_encoding, false);
+             }
+         },
+     );
+@@ -985,18 +1083,62 @@ pub fn goto_reference(cx: &mut Context) {
+         )
+         .unwrap();
+ 
++    // For marking read/write:
++    let hl_language_server = doc
++        .arc_language_servers_with_feature(LanguageServerFeature::DocumentHighlight)
++        .next();
++
++    // TODO: Make document an injector (update later)
++    let future = async move {
++        if hl_language_server.is_none() {
++            return future.await;
++        }
++        let hl_language_server = hl_language_server.unwrap();
++        let gr_result = serde_json::from_value::<Option<Vec<lsp::Location>>>(future.await?)?
++            .unwrap_or_default();
++
++        // TODO: Simplify...
++        let mut highlights =
++            HashMap::<(url::Url, lsp::Position), Option<lsp::DocumentHighlightKind>>::new();
++        let mut result = Vec::<LocationKind>::new();
++
++        for loc in gr_result {
++            let highlight = (loc.uri.clone(), loc.range.start);
++            let hl_result = if let Some(r) = highlights.get(&highlight) {
++                *r
++            } else {
++                let result = hl_language_server
++                    .text_document_document_highlight(
++                        lsp::TextDocumentIdentifier::new(loc.uri.clone()),
++                        loc.range.start,
++                        None,
++                    )
++                    .unwrap()
++                    .await;
++                let result: Option<Vec<lsp::DocumentHighlight>> = serde_json::from_value(result?)?;
++                for hl in result.unwrap_or_default() {
++                    highlights.insert((loc.uri.clone(), hl.range.start), hl.kind);
++                }
++                *highlights.get(&highlight).unwrap_or(&None)
++            };
++
++            result.push((loc, hl_result));
++        }
++        Ok(serde_json::to_value(result)?)
++    };
++
+     cx.callback(
+         future,
+-        move |editor, compositor, response: Option<Vec<lsp::Location>>| {
++        move |editor, compositor, response: Option<Vec<LocationKind>>| {
+             let items: Vec<Location> = response
+                 .into_iter()
+                 .flatten()
+-                .flat_map(lsp_location_to_location)
++                .flat_map(lsp_location_to_location_with_kind)
+                 .collect();
+             if items.is_empty() {
+                 editor.set_error("No references found.");
+             } else {
+-                goto_impl(editor, compositor, items, offset_encoding);
++                goto_impl(editor, compositor, items, offset_encoding, true);
+             }
+         },
+     );
 diff --git a/helix-term/src/commands/typed.rs b/helix-term/src/commands/typed.rs
-index c21743d0823a..a11f7ba5f0cb 100644
+index 4a2546d7..54a8fc0d 100644
 --- a/helix-term/src/commands/typed.rs
 +++ b/helix-term/src/commands/typed.rs
 @@ -139,6 +139,32 @@ fn open(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
@@ -756,7 +687,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  fn buffer_close_by_ids_impl(
      cx: &mut compositor::Context,
      doc_ids: &[DocumentId],
-@@ -333,12 +359,14 @@ fn write_impl(
+@@ -331,12 +357,14 @@ fn write_impl(
      cx: &mut compositor::Context,
      path: Option<&Cow<str>>,
      force: bool,
@@ -771,7 +702,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
      if config.insert_final_newline {
          insert_final_newline(doc, view.id);
      }
-@@ -346,8 +374,16 @@ fn write_impl(
+@@ -344,8 +372,16 @@ fn write_impl(
      // Save an undo checkpoint for any outstanding changes.
      doc.append_changes_to_history(view);
  
@@ -790,7 +721,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
              let callback = make_format_callback(
                  doc.id(),
                  doc.version(),
-@@ -357,12 +393,8 @@ fn write_impl(
+@@ -355,12 +391,8 @@ fn write_impl(
              );
  
              jobs.add(Job::with_callback(callback).wait_before_exiting());
@@ -804,7 +735,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
          let id = doc.id();
          cx.editor.save(id, path, force)?;
      }
-@@ -388,7 +420,7 @@ fn write(
+@@ -386,7 +418,7 @@ fn write(
          return Ok(());
      }
  
@@ -813,7 +744,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  }
  
  fn force_write(
-@@ -400,7 +432,7 @@ fn force_write(
+@@ -398,7 +430,7 @@ fn force_write(
          return Ok(());
      }
  
@@ -822,7 +753,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  }
  
  fn write_buffer_close(
-@@ -412,7 +444,7 @@ fn write_buffer_close(
+@@ -410,7 +442,7 @@ fn write_buffer_close(
          return Ok(());
      }
  
@@ -831,7 +762,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  
      let document_ids = buffer_gather_paths_impl(cx.editor, args);
      buffer_close_by_ids_impl(cx, &document_ids, false)
-@@ -427,7 +459,7 @@ fn force_write_buffer_close(
+@@ -425,7 +457,7 @@ fn force_write_buffer_close(
          return Ok(());
      }
  
@@ -840,7 +771,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  
      let document_ids = buffer_gather_paths_impl(cx.editor, args);
      buffer_close_by_ids_impl(cx, &document_ids, false)
-@@ -466,6 +498,30 @@ fn format(
+@@ -464,6 +496,30 @@ fn format(
      Ok(())
  }
  
@@ -871,7 +802,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  fn set_indent_style(
      cx: &mut compositor::Context,
      args: &[Cow<str>],
-@@ -628,7 +684,7 @@ fn write_quit(
+@@ -626,7 +682,7 @@ fn write_quit(
          return Ok(());
      }
  
@@ -880,7 +811,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
      cx.block_try_flush_writes()?;
      quit(cx, &[], event)
  }
-@@ -642,7 +698,7 @@ fn force_write_quit(
+@@ -640,7 +696,7 @@ fn force_write_quit(
          return Ok(());
      }
  
@@ -889,7 +820,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
      cx.block_try_flush_writes()?;
      force_quit(cx, &[], event)
  }
-@@ -1721,6 +1777,43 @@ fn hsplit_new(
+@@ -1731,6 +1787,43 @@ fn hsplit_new(
      Ok(())
  }
  
@@ -933,7 +864,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
  fn debug_eval(
      cx: &mut compositor::Context,
      args: &[Cow<str>],
-@@ -2551,6 +2644,13 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
+@@ -2561,6 +2654,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: open,
          signature: CommandSignature::all(completers::filename),
      },
@@ -947,7 +878,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
      TypableCommand {
          name: "buffer-close",
          aliases: &["bc", "bclose"],
-@@ -2649,6 +2749,20 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
+@@ -2659,6 +2759,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: format,
          signature: CommandSignature::none(),
      },
@@ -968,7 +899,7 @@ index c21743d0823a..a11f7ba5f0cb 100644
      TypableCommand {
          name: "indent-style",
          aliases: &[],
-@@ -2974,6 +3088,20 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
+@@ -2984,6 +3098,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: hsplit_new,
          signature: CommandSignature::none(),
      },
@@ -990,10 +921,10 @@ index c21743d0823a..a11f7ba5f0cb 100644
          name: "tutor",
          aliases: &[],
 diff --git a/helix-term/src/keymap.rs b/helix-term/src/keymap.rs
-index 020ecaf40f0f..2e1743d4ea3d 100644
+index 020ecaf4..2e1743d4 100644
 --- a/helix-term/src/keymap.rs
 +++ b/helix-term/src/keymap.rs
-@@ -72,18 +72,31 @@ impl KeyTrieNode {
+@@ -72,18 +72,31 @@ pub fn merge(&mut self, mut other: Self) {
          }
      }
  
@@ -1031,7 +962,7 @@ index 020ecaf40f0f..2e1743d4ea3d 100644
              match body.iter().position(|(_, d)| d == &desc) {
                  Some(pos) => {
 diff --git a/helix-term/src/keymap/default.rs b/helix-term/src/keymap/default.rs
-index c6cefd927574..1ebb8529920a 100644
+index c6cefd92..1ebb8529 100644
 --- a/helix-term/src/keymap/default.rs
 +++ b/helix-term/src/keymap/default.rs
 @@ -17,7 +17,8 @@ pub fn default() -> HashMap<Mode, KeyTrie> {
@@ -1069,10 +1000,10 @@ index c6cefd927574..1ebb8529920a 100644
              "a" => goto_next_parameter,
              "c" => goto_next_comment,
 diff --git a/helix-term/src/ui/editor.rs b/helix-term/src/ui/editor.rs
-index 5d028415e85f..814d1070306a 100644
+index 5d028415..814d1070 100644
 --- a/helix-term/src/ui/editor.rs
 +++ b/helix-term/src/ui/editor.rs
-@@ -887,7 +887,7 @@ impl EditorView {
+@@ -887,7 +887,7 @@ fn handle_keymap_event(
          let mut last_mode = mode;
          self.pseudo_pending.extend(self.keymaps.pending());
          let key_result = self.keymaps.get(mode, event);
@@ -1081,7 +1012,7 @@ index 5d028415e85f..814d1070306a 100644
  
          let mut execute_command = |command: &commands::MappableCommand| {
              command.execute(cxt);
-@@ -918,7 +918,7 @@ impl EditorView {
+@@ -918,7 +918,7 @@ fn handle_keymap_event(
              KeymapResult::Matched(command) => {
                  execute_command(command);
              }
@@ -1090,7 +1021,7 @@ index 5d028415e85f..814d1070306a 100644
              KeymapResult::MatchedSequence(commands) => {
                  for command in commands {
                      execute_command(command);
-@@ -1582,10 +1582,11 @@ impl Component for EditorView {
+@@ -1582,10 +1582,11 @@ fn render(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
                  cx.editor.theme.get("ui.text")
              };
  
@@ -1104,10 +1035,10 @@ index 5d028415e85f..814d1070306a 100644
              );
          }
 diff --git a/helix-term/src/ui/mod.rs b/helix-term/src/ui/mod.rs
-index 6ee49fa57ddd..337d969a36f7 100644
+index 6ee49fa5..337d969a 100644
 --- a/helix-term/src/ui/mod.rs
 +++ b/helix-term/src/ui/mod.rs
-@@ -19,7 +19,9 @@ use crate::filter_picker_entry;
+@@ -19,7 +19,9 @@
  use crate::job::{self, Callback};
  pub use completion::Completion;
  pub use editor::EditorView;
@@ -1189,7 +1120,7 @@ index 6ee49fa57ddd..337d969a36f7 100644
  
                              let (view, doc) = current!(cx.editor);
                              view.ensure_cursor_in_view(doc, config.scrolloff);
-@@ -357,6 +381,27 @@ pub mod completers {
+@@ -357,6 +381,27 @@ pub fn filename(editor: &Editor, input: &str) -> Vec<Completion> {
          filename_with_git_ignore(editor, input, true)
      }
  
@@ -1218,7 +1149,7 @@ index 6ee49fa57ddd..337d969a36f7 100644
          editor: &Editor,
          input: &str,
 diff --git a/helix-term/src/ui/picker.rs b/helix-term/src/ui/picker.rs
-index df8d52ebd2f8..6879de47600a 100644
+index df8d52eb..6879de47 100644
 --- a/helix-term/src/ui/picker.rs
 +++ b/helix-term/src/ui/picker.rs
 @@ -98,7 +98,7 @@ pub enum Preview<'picker, 'editor> {
@@ -1230,7 +1161,7 @@ index df8d52ebd2f8..6879de47600a 100644
          match self {
              Preview::EditorDocument(doc) => Some(doc),
              Preview::Cached(CachedPreview::Document(doc)) => Some(doc),
-@@ -175,11 +175,10 @@ impl<T, D> Injector<T, D> {
+@@ -175,11 +175,10 @@ pub fn push(&self, item: T) -> Result<(), InjectorShutdown> {
      }
  }
  
@@ -1261,7 +1192,7 @@ index df8d52ebd2f8..6879de47600a 100644
              filter: true,
              hidden: false,
          }
-@@ -199,11 +202,9 @@ impl<T, D> Column<T, D> {
+@@ -199,11 +202,9 @@ pub fn new(name: impl Into<Arc<str>>, format: ColumnFormatFn<T, D>) -> Self {
  
      /// A column which does not display any contents
      pub fn hidden(name: impl Into<Arc<str>>) -> Self {
@@ -1274,7 +1205,7 @@ index df8d52ebd2f8..6879de47600a 100644
              filter: false,
              hidden: true,
          }
-@@ -224,6 +225,74 @@ impl<T, D> Column<T, D> {
+@@ -224,6 +225,74 @@ fn format_text<'a>(&self, item: &'a T, data: &'a D) -> Cow<'a, str> {
      }
  }
  
@@ -1360,7 +1291,7 @@ index df8d52ebd2f8..6879de47600a 100644
      /// Given an item in the picker, return the file path and line number to display.
      file_fn: Option<FileCallback<T>>,
      /// An event handler for syntax highlighting the currently previewed file.
-@@ -356,7 +423,7 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+@@ -356,7 +423,7 @@ fn with(
  
          let widths = columns
              .iter()
@@ -1369,7 +1300,7 @@ index df8d52ebd2f8..6879de47600a 100644
              .collect();
  
          let query = PickerQuery::new(columns.iter().map(|col| &col.name).cloned(), default_column);
-@@ -375,8 +442,7 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+@@ -375,8 +442,7 @@ fn with(
              callback_fn: Box::new(callback_fn),
              completion_height: 0,
              widths,
@@ -1379,7 +1310,7 @@ index df8d52ebd2f8..6879de47600a 100644
              file_fn: None,
              preview_highlight_handler: PreviewHighlightHandler::<T, D>::default().spawn(),
              dynamic_query_handler: None,
-@@ -410,8 +476,28 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+@@ -410,8 +476,28 @@ pub fn with_preview(
          self
      }
  
@@ -1409,7 +1340,7 @@ index df8d52ebd2f8..6879de47600a 100644
          self
      }
  
-@@ -565,61 +651,29 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+@@ -565,61 +651,29 @@ fn get_preview<'picker, 'editor>(
          let current = self.selection()?;
          let (path_or_id, range) = (self.file_fn.as_ref()?)(editor, current)?;
  
@@ -1488,7 +1419,7 @@ index df8d52ebd2f8..6879de47600a 100644
      }
  
      fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context) {
-@@ -780,8 +834,8 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+@@ -780,8 +834,8 @@ fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context)
              .column_spacing(1)
              .widths(&self.widths);
  
@@ -1499,7 +1430,7 @@ index df8d52ebd2f8..6879de47600a 100644
              let active_column = self.query.active_column(self.prompt.position());
              let header_style = cx.editor.theme.get("ui.picker.header");
              let header_column_style = cx.editor.theme.get("ui.picker.header.column");
-@@ -798,7 +852,9 @@ impl<T: 'static + Send + Sync, D: 'static + Send + Sync> Picker<T, D> {
+@@ -798,7 +852,9 @@ fn render_picker(&mut self, area: Rect, surface: &mut Surface, cx: &mut Context)
                                  header_column_style
                              };
  
@@ -1510,7 +1441,7 @@ index df8d52ebd2f8..6879de47600a 100644
                      }
                  }))
                  .style(header_style),
-@@ -1018,17 +1074,7 @@ impl<I: 'static + Send + Sync, D: 'static + Send + Sync> Component for Picker<I,
+@@ -1018,17 +1074,7 @@ fn handle_event(&mut self, event: &Event, ctx: &mut Context) -> EventResult {
                  }
              }
              key!(Enter) => {
@@ -1530,10 +1461,10 @@ index df8d52ebd2f8..6879de47600a 100644
                          (self.callback_fn)(ctx, option, Action::Replace);
                      }
 diff --git a/helix-term/src/ui/prompt.rs b/helix-term/src/ui/prompt.rs
-index f44020c584d9..53ac6f509cfa 100644
+index f44020c5..53ac6f50 100644
 --- a/helix-term/src/ui/prompt.rs
 +++ b/helix-term/src/ui/prompt.rs
-@@ -320,6 +320,13 @@ impl Prompt {
+@@ -320,6 +320,13 @@ pub fn kill_to_end_of_line(&mut self, editor: &Editor) {
          self.recalculate_completion(editor);
      }
  
@@ -1547,7 +1478,7 @@ index f44020c584d9..53ac6f509cfa 100644
      pub fn clear(&mut self, editor: &Editor) {
          self.line.clear();
          self.cursor = 0;
-@@ -566,6 +573,10 @@ impl Component for Prompt {
+@@ -566,6 +573,10 @@ fn handle_event(&mut self, event: &Event, cx: &mut Context) -> EventResult {
                  self.kill_to_start_of_line(cx.editor);
                  (self.callback_fn)(cx, &self.line, PromptEvent::Update);
              }
@@ -1559,10 +1490,10 @@ index f44020c584d9..53ac6f509cfa 100644
                  self.delete_char_backwards(cx.editor);
                  (self.callback_fn)(cx, &self.line, PromptEvent::Update);
 diff --git a/helix-term/src/ui/statusline.rs b/helix-term/src/ui/statusline.rs
-index 7437cbd074e5..8630a578a30c 100644
+index 7437cbd0..8630a578 100644
 --- a/helix-term/src/ui/statusline.rs
 +++ b/helix-term/src/ui/statusline.rs
-@@ -139,6 +139,7 @@ where
+@@ -139,6 +139,7 @@ fn get_render_function<F>(element_id: StatusLineElementID) -> impl Fn(&mut Rende
  {
      match element_id {
          helix_view::editor::StatusLineElement::Mode => render_mode,
@@ -1570,7 +1501,7 @@ index 7437cbd074e5..8630a578a30c 100644
          helix_view::editor::StatusLineElement::Spinner => render_lsp_spinner,
          helix_view::editor::StatusLineElement::FileBaseName => render_file_base_name,
          helix_view::editor::StatusLineElement::FileName => render_file_name,
-@@ -163,6 +164,7 @@ where
+@@ -163,6 +164,7 @@ fn get_render_function<F>(element_id: StatusLineElementID) -> impl Fn(&mut Rende
          helix_view::editor::StatusLineElement::Spacer => render_spacer,
          helix_view::editor::StatusLineElement::VersionControl => render_version_control,
          helix_view::editor::StatusLineElement::Register => render_register,
@@ -1578,7 +1509,7 @@ index 7437cbd074e5..8630a578a30c 100644
      }
  }
  
-@@ -200,6 +202,27 @@ where
+@@ -200,6 +202,27 @@ fn render_mode<F>(context: &mut RenderContext, write: F)
      );
  }
  
@@ -1606,7 +1537,7 @@ index 7437cbd074e5..8630a578a30c 100644
  // TODO think about handling multiple language servers
  fn render_lsp_spinner<F>(context: &mut RenderContext, write: F)
  where
-@@ -531,3 +554,22 @@ where
+@@ -531,3 +554,22 @@ fn render_register<F>(context: &mut RenderContext, write: F)
          write(context, format!(" reg={} ", reg), None)
      }
  }
@@ -1629,8 +1560,39 @@ index 7437cbd074e5..8630a578a30c 100644
 +        None,
 +    )
 +}
+diff --git a/helix-view/src/document.rs b/helix-view/src/document.rs
+index 14628988..942c2153 100644
+--- a/helix-view/src/document.rs
++++ b/helix-view/src/document.rs
+@@ -1768,6 +1768,26 @@ pub fn remove_language_server_by_name(&mut self, name: &str) -> Option<Arc<Clien
+         self.language_servers.remove(name)
+     }
+ 
++    // TODO: Merge with language_servers_with_feature:
++    pub fn arc_language_servers_with_feature(
++        &self,
++        feature: LanguageServerFeature,
++    ) -> impl Iterator<Item = Arc<helix_lsp::Client>> + '_ {
++        self.language_config().into_iter().flat_map(move |config| {
++            config.language_servers.iter().filter_map(move |features| {
++                let ls = self.language_servers.get(&features.name)?.clone();
++                if ls.is_initialized()
++                    && ls.supports_feature(feature)
++                    && features.has_feature(feature)
++                {
++                    Some(ls)
++                } else {
++                    None
++                }
++            })
++        })
++    }
++
+     pub fn language_servers_with_feature(
+         &self,
+         feature: LanguageServerFeature,
 diff --git a/helix-view/src/editor.rs b/helix-view/src/editor.rs
-index 6c585a8a7f2c..452175b80b02 100644
+index 151b2653..2ccef199 100644
 --- a/helix-view/src/editor.rs
 +++ b/helix-view/src/editor.rs
 @@ -474,6 +474,12 @@ pub struct SearchConfig {
@@ -1646,7 +1608,7 @@ index 6c585a8a7f2c..452175b80b02 100644
  }
  
  #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-@@ -493,6 +499,7 @@ impl Default for StatusLineConfig {
+@@ -493,6 +499,7 @@ fn default() -> Self {
          Self {
              left: vec![
                  E::Mode,
@@ -1654,7 +1616,7 @@ index 6c585a8a7f2c..452175b80b02 100644
                  E::Spinner,
                  E::FileName,
                  E::ReadOnlyIndicator,
-@@ -503,6 +510,7 @@ impl Default for StatusLineConfig {
+@@ -503,6 +510,7 @@ fn default() -> Self {
                  E::Diagnostics,
                  E::Selections,
                  E::Register,
@@ -1682,7 +1644,7 @@ index 6c585a8a7f2c..452175b80b02 100644
  }
  
  // Cursor shape is read and used on every rendered frame and so needs
-@@ -1010,6 +1024,9 @@ impl Default for SearchConfig {
+@@ -1010,6 +1024,9 @@ fn default() -> Self {
          Self {
              wrap_around: true,
              smart_case: true,
@@ -1692,7 +1654,7 @@ index 6c585a8a7f2c..452175b80b02 100644
          }
      }
  }
-@@ -1429,6 +1446,13 @@ impl Editor {
+@@ -1429,6 +1446,13 @@ pub fn move_path(&mut self, old_path: &Path, new_path: &Path) -> io::Result<()>
          Ok(())
      }
  
@@ -1707,7 +1669,7 @@ index 6c585a8a7f2c..452175b80b02 100644
          let doc = doc_mut!(self, &doc_id);
          let old_path = doc.path();
 diff --git a/helix-view/src/tree.rs b/helix-view/src/tree.rs
-index aba947a218cc..cb9682131fcb 100644
+index aba947a2..cb968213 100644
 --- a/helix-view/src/tree.rs
 +++ b/helix-view/src/tree.rs
 @@ -1,3 +1,5 @@
@@ -1716,7 +1678,7 @@ index aba947a218cc..cb9682131fcb 100644
  use crate::{graphics::Rect, View, ViewId};
  use slotmap::HopSlotMap;
  
-@@ -280,6 +282,38 @@ impl Tree {
+@@ -280,6 +282,38 @@ pub fn views(&self) -> impl Iterator<Item = (&View, bool)> {
          })
      }
  
@@ -1756,7 +1718,7 @@ index aba947a218cc..cb9682131fcb 100644
          let focus = self.focus;
          self.nodes
 diff --git a/runtime/queries/c/textobjects.scm b/runtime/queries/c/textobjects.scm
-index 63ec4a5677f2..26fd35d9563e 100644
+index 63ec4a56..26fd35d9 100644
 --- a/runtime/queries/c/textobjects.scm
 +++ b/runtime/queries/c/textobjects.scm
 @@ -1,3 +1,6 @@
@@ -1767,7 +1729,7 @@ index 63ec4a5677f2..26fd35d9563e 100644
    body: (_) @function.inside) @function.around
  
 diff --git a/runtime/queries/python/textobjects.scm b/runtime/queries/python/textobjects.scm
-index 2b9556fca7bc..85cb1241e5d5 100644
+index 2b9556fc..85cb1241 100644
 --- a/runtime/queries/python/textobjects.scm
 +++ b/runtime/queries/python/textobjects.scm
 @@ -1,4 +1,5 @@
@@ -1777,7 +1739,7 @@ index 2b9556fca7bc..85cb1241e5d5 100644
  
  (class_definition
 diff --git a/runtime/queries/rust/textobjects.scm b/runtime/queries/rust/textobjects.scm
-index de517d362408..d3b77e230488 100644
+index de517d36..d3b77e23 100644
 --- a/runtime/queries/rust/textobjects.scm
 +++ b/runtime/queries/rust/textobjects.scm
 @@ -1,4 +1,5 @@

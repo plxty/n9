@@ -103,6 +103,7 @@ EXCLUDIND = [
             "width",  # 1250
         ],
     ),
+    ("org/gnome/gedit/state/file-chooser", ["open-recent"]),
     (
         "org/gnome/nautilus/preferences",
         [
