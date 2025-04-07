@@ -321,7 +321,7 @@ index 52efcf22..eec8247a 100644
 +    jump_to_label(cx, words, behaviour, do_next)
  }
 diff --git a/helix-term/src/commands/lsp.rs b/helix-term/src/commands/lsp.rs
-index fcc0333e..24025ca0 100644
+index fcc0333e..56132725 100644
 --- a/helix-term/src/commands/lsp.rs
 +++ b/helix-term/src/commands/lsp.rs
 @@ -5,7 +5,7 @@
@@ -390,15 +390,14 @@ index fcc0333e..24025ca0 100644
                      },
                      diag,
                      offset_encoding: ls.offset_encoding(),
-@@ -303,25 +318,35 @@ fn nested_to_flat(
+@@ -303,26 +318,37 @@ fn nested_to_flat(
          uri: &Uri,
          symbol: lsp::DocumentSymbol,
          offset_encoding: OffsetEncoding,
-+        prefix: &str,
++        name: &mut String,
      ) {
-+        // TODO: &mut String for performance? with push/pop
-+        let mut name = prefix.to_string();
-+        if !name.is_empty() {
++        let old_len = name.len();
++        if old_len != 0 {
 +            name.push_str("::"); // cpp style
 +        }
 +        name.push_str(symbol.name.as_str());
@@ -424,11 +423,14 @@ index fcc0333e..24025ca0 100644
          });
          for child in symbol.children.into_iter().flatten() {
 -            nested_to_flat(list, file, uri, child, offset_encoding);
-+            nested_to_flat(list, file, uri, child, offset_encoding, name.as_str());
++            nested_to_flat(list, file, uri, child, offset_encoding, name);
          }
++
++        name.truncate(old_len);
      }
      let doc = doc!(cx.editor);
-@@ -355,11 +380,14 @@ fn nested_to_flat(
+ 
+@@ -355,11 +381,14 @@ fn nested_to_flat(
                              location: Location {
                                  uri: doc_uri.clone(),
                                  range: symbol.location.range,
@@ -443,15 +445,15 @@ index fcc0333e..24025ca0 100644
                      lsp::DocumentSymbolResponse::Nested(symbols) => {
                          let mut flat_symbols = Vec::new();
                          for symbol in symbols {
-@@ -369,6 +397,7 @@ fn nested_to_flat(
+@@ -369,6 +398,7 @@ fn nested_to_flat(
                                  &doc_uri,
                                  symbol,
                                  offset_encoding,
-+                                "",
++                                &mut String::new(),
                              )
                          }
                          flat_symbols
-@@ -402,6 +431,14 @@ fn nested_to_flat(
+@@ -402,6 +432,14 @@ fn nested_to_flat(
                  ui::PickerColumn::new("name", |item: &SymbolInformationItem, _| {
                      item.symbol.name.as_str().into()
                  }),
@@ -466,7 +468,7 @@ index fcc0333e..24025ca0 100644
              ];
  
              let picker = Picker::new(
-@@ -467,8 +504,10 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
+@@ -467,8 +505,10 @@ pub fn workspace_symbol_picker(cx: &mut Context) {
                                      location: Location {
                                          uri,
                                          range: symbol.location.range,
@@ -477,7 +479,7 @@ index fcc0333e..24025ca0 100644
                                      offset_encoding,
                                  })
                              })
-@@ -858,6 +897,7 @@ fn goto_impl(
+@@ -858,6 +898,7 @@ fn goto_impl(
      compositor: &mut Compositor,
      locations: Vec<Location>,
      offset_encoding: OffsetEncoding,
@@ -485,7 +487,7 @@ index fcc0333e..24025ca0 100644
  ) {
      let cwdir = helix_stdx::env::current_working_dir();
  
-@@ -867,9 +907,37 @@ fn goto_impl(
+@@ -867,9 +908,37 @@ fn goto_impl(
          }
          [] => unreachable!("`locations` should be non-empty for `goto_impl`"),
          _locations => {
@@ -498,7 +500,7 @@ index fcc0333e..24025ca0 100644
 +            // [Location] -> [(Location, Line?)]
 +            let mut symbol_name: Option<String> = None;
 +            let locations = locations
-+                .iter()
++                .into_iter()
 +                .map(|loc| {
 +                    let line = loc.uri.as_path().and_then(|path| {
 +                        let preview = preview_cache.get_preview(path, editor);
@@ -515,7 +517,7 @@ index fcc0333e..24025ca0 100644
 +                        let range = lsp_pos_to_line(doc.text(), loc.range.start, offset_encoding)?;
 +                        Some(doc.text().get_slice(range)?.as_str()?.trim().to_string())
 +                    });
-+                    (loc.clone(), line)
++                    (loc, line)
 +                })
 +                .collect::<Vec<_>>();
 +
@@ -526,7 +528,7 @@ index fcc0333e..24025ca0 100644
                      let path = if let Some(path) = item.uri.as_path() {
                          path.strip_prefix(cwdir).unwrap_or(path).to_string_lossy()
                      } else {
-@@ -878,12 +946,41 @@ fn goto_impl(
+@@ -878,12 +947,41 @@ fn goto_impl(
  
                      format!("{path}:{}", item.range.start.line + 1).into()
                  },
@@ -573,7 +575,7 @@ index fcc0333e..24025ca0 100644
              compositor.push(Box::new(overlaid(picker)));
          }
      }
-@@ -928,7 +1025,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
+@@ -928,7 +1026,7 @@ fn goto_single_impl<P, F>(cx: &mut Context, feature: LanguageServerFeature, requ
              if items.is_empty() {
                  editor.set_error("No definition found.");
              } else {
@@ -582,7 +584,7 @@ index fcc0333e..24025ca0 100644
              }
          },
      );
-@@ -985,18 +1082,69 @@ pub fn goto_reference(cx: &mut Context) {
+@@ -985,18 +1083,69 @@ pub fn goto_reference(cx: &mut Context) {
          )
          .unwrap();
  
@@ -656,7 +658,7 @@ index fcc0333e..24025ca0 100644
          },
      );
 diff --git a/helix-term/src/commands/typed.rs b/helix-term/src/commands/typed.rs
-index 4a2546d7..54a8fc0d 100644
+index 4a2546d7..c3a762eb 100644
 --- a/helix-term/src/commands/typed.rs
 +++ b/helix-term/src/commands/typed.rs
 @@ -139,6 +139,32 @@ fn open(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
@@ -825,7 +827,7 @@ index 4a2546d7..54a8fc0d 100644
      cx.block_try_flush_writes()?;
      force_quit(cx, &[], event)
  }
-@@ -1731,6 +1787,43 @@ fn hsplit_new(
+@@ -1731,6 +1787,29 @@ fn hsplit_new(
      Ok(())
  }
  
@@ -852,24 +854,10 @@ index 4a2546d7..54a8fc0d 100644
 +    Ok(())
 +}
 +
-+fn focus_insert(
-+    cx: &mut compositor::Context,
-+    args: &[Cow<str>],
-+    event: PromptEvent,
-+) -> anyhow::Result<()> {
-+    // Focus firstly:
-+    focus(cx, args, event)?;
-+
-+    // Then enter the insert mode:
-+    cx.editor.mode = Mode::Insert;
-+
-+    Ok(())
-+}
-+
  fn debug_eval(
      cx: &mut compositor::Context,
      args: &[Cow<str>],
-@@ -2561,6 +2654,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
+@@ -2561,6 +2640,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: open,
          signature: CommandSignature::all(completers::filename),
      },
@@ -883,7 +871,7 @@ index 4a2546d7..54a8fc0d 100644
      TypableCommand {
          name: "buffer-close",
          aliases: &["bc", "bclose"],
-@@ -2659,6 +2759,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
+@@ -2659,6 +2745,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: format,
          signature: CommandSignature::none(),
      },
@@ -904,7 +892,7 @@ index 4a2546d7..54a8fc0d 100644
      TypableCommand {
          name: "indent-style",
          aliases: &[],
-@@ -2984,6 +3098,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
+@@ -2984,6 +3084,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: hsplit_new,
          signature: CommandSignature::none(),
      },
@@ -913,13 +901,6 @@ index 4a2546d7..54a8fc0d 100644
 +        aliases: &[],
 +        doc: "Focus a window by number.",
 +        fun: focus,
-+        signature: CommandSignature::none(),
-+    },
-+    TypableCommand {
-+        name: "focus_insert",
-+        aliases: &[],
-+        doc: "Focus a window by number, then enter insert mode.",
-+        fun: focus_insert,
 +        signature: CommandSignature::none(),
 +    },
      TypableCommand {
