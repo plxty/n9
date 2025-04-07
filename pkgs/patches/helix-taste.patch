@@ -658,7 +658,7 @@ index fcc0333e..56132725 100644
          },
      );
 diff --git a/helix-term/src/commands/typed.rs b/helix-term/src/commands/typed.rs
-index 4a2546d7..c3a762eb 100644
+index 4a2546d7..f2d32c8a 100644
 --- a/helix-term/src/commands/typed.rs
 +++ b/helix-term/src/commands/typed.rs
 @@ -139,6 +139,32 @@ fn open(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
@@ -827,37 +827,7 @@ index 4a2546d7..c3a762eb 100644
      cx.block_try_flush_writes()?;
      force_quit(cx, &[], event)
  }
-@@ -1731,6 +1787,29 @@ fn hsplit_new(
-     Ok(())
- }
- 
-+fn focus(
-+    cx: &mut compositor::Context,
-+    args: &[Cow<str>],
-+    event: PromptEvent,
-+) -> anyhow::Result<()> {
-+    if event != PromptEvent::Validate {
-+        return Ok(());
-+    }
-+
-+    ensure!(!args.is_empty(), "Window number is required");
-+    let num: usize = args.first().unwrap().parse()?;
-+    let view = cx.editor.tree.views_sorted_by_position().nth(num - 1);
-+
-+    if let Some(view) = view {
-+        cx.editor.focus(view.id)
-+    } else {
-+        cx.editor
-+            .set_error(format!("Window {} doesn't exist!", num))
-+    }
-+
-+    Ok(())
-+}
-+
- fn debug_eval(
-     cx: &mut compositor::Context,
-     args: &[Cow<str>],
-@@ -2561,6 +2640,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
+@@ -2561,6 +2617,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: open,
          signature: CommandSignature::all(completers::filename),
      },
@@ -871,7 +841,7 @@ index 4a2546d7..c3a762eb 100644
      TypableCommand {
          name: "buffer-close",
          aliases: &["bc", "bclose"],
-@@ -2659,6 +2745,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
+@@ -2659,6 +2722,20 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
          fun: format,
          signature: CommandSignature::none(),
      },
@@ -891,20 +861,6 @@ index 4a2546d7..c3a762eb 100644
 +    },
      TypableCommand {
          name: "indent-style",
-         aliases: &[],
-@@ -2984,6 +3084,13 @@ fn read(cx: &mut compositor::Context, args: &[Cow<str>], event: PromptEvent) ->
-         fun: hsplit_new,
-         signature: CommandSignature::none(),
-     },
-+    TypableCommand {
-+        name: "focus",
-+        aliases: &[],
-+        doc: "Focus a window by number.",
-+        fun: focus,
-+        signature: CommandSignature::none(),
-+    },
-     TypableCommand {
-         name: "tutor",
          aliases: &[],
 diff --git a/helix-term/src/keymap.rs b/helix-term/src/keymap.rs
 index 020ecaf4..2e1743d4 100644
@@ -1614,18 +1570,10 @@ index f44020c5..b7d01ce8 100644
                      + UnicodeWidthStr::width(&self.line[..self.cursor]),
              )),
 diff --git a/helix-term/src/ui/statusline.rs b/helix-term/src/ui/statusline.rs
-index 7437cbd0..8630a578 100644
+index 7437cbd0..f9fee856 100644
 --- a/helix-term/src/ui/statusline.rs
 +++ b/helix-term/src/ui/statusline.rs
-@@ -139,6 +139,7 @@ fn get_render_function<F>(element_id: StatusLineElementID) -> impl Fn(&mut Rende
- {
-     match element_id {
-         helix_view::editor::StatusLineElement::Mode => render_mode,
-+        helix_view::editor::StatusLineElement::Window => render_window_number,
-         helix_view::editor::StatusLineElement::Spinner => render_lsp_spinner,
-         helix_view::editor::StatusLineElement::FileBaseName => render_file_base_name,
-         helix_view::editor::StatusLineElement::FileName => render_file_name,
-@@ -163,6 +164,7 @@ fn get_render_function<F>(element_id: StatusLineElementID) -> impl Fn(&mut Rende
+@@ -163,6 +163,7 @@ fn get_render_function<F>(element_id: StatusLineElementID) -> impl Fn(&mut Rende
          helix_view::editor::StatusLineElement::Spacer => render_spacer,
          helix_view::editor::StatusLineElement::VersionControl => render_version_control,
          helix_view::editor::StatusLineElement::Register => render_register,
@@ -1633,35 +1581,7 @@ index 7437cbd0..8630a578 100644
      }
  }
  
-@@ -200,6 +202,27 @@ fn render_mode<F>(context: &mut RenderContext, write: F)
-     );
- }
- 
-+fn render_window_number<F>(context: &mut RenderContext, write: F)
-+where
-+    F: Fn(&mut RenderContext, String, Option<Style>) + Copy,
-+{
-+    context.view.id;
-+    let id = 1 + context
-+        .editor
-+        .tree
-+        .views_sorted_by_position()
-+        .enumerate()
-+        .find(|(_, v)| v.id == context.view.id)
-+        .unwrap()
-+        .0;
-+    // little bit *colorful*
-+    write(
-+        context,
-+        format!(" {{{} ", id),
-+        Some(context.editor.theme.get("magenta")),
-+    );
-+}
-+
- // TODO think about handling multiple language servers
- fn render_lsp_spinner<F>(context: &mut RenderContext, write: F)
- where
-@@ -531,3 +554,22 @@ fn render_register<F>(context: &mut RenderContext, write: F)
+@@ -531,3 +532,22 @@ fn render_register<F>(context: &mut RenderContext, write: F)
          write(context, format!(" reg={} ", reg), None)
      }
  }
@@ -1716,7 +1636,7 @@ index 14628988..942c2153 100644
          &self,
          feature: LanguageServerFeature,
 diff --git a/helix-view/src/editor.rs b/helix-view/src/editor.rs
-index 151b2653..2ccef199 100644
+index 151b2653..16b15dae 100644
 --- a/helix-view/src/editor.rs
 +++ b/helix-view/src/editor.rs
 @@ -474,6 +474,12 @@ pub struct SearchConfig {
@@ -1732,15 +1652,7 @@ index 151b2653..2ccef199 100644
  }
  
  #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-@@ -493,6 +499,7 @@ fn default() -> Self {
-         Self {
-             left: vec![
-                 E::Mode,
-+                E::Window,
-                 E::Spinner,
-                 E::FileName,
-                 E::ReadOnlyIndicator,
-@@ -503,6 +510,7 @@ fn default() -> Self {
+@@ -503,6 +509,7 @@ fn default() -> Self {
                  E::Diagnostics,
                  E::Selections,
                  E::Register,
@@ -1748,17 +1660,7 @@ index 151b2653..2ccef199 100644
                  E::Position,
                  E::FileEncoding,
              ],
-@@ -536,6 +544,9 @@ pub enum StatusLineElement {
-     /// The editor mode (Normal, Insert, Visual/Selection)
-     Mode,
- 
-+    /// Window Number
-+    Window,
-+
-     /// The LSP activity spinner
-     Spinner,
- 
-@@ -595,6 +606,9 @@ pub enum StatusLineElement {
+@@ -595,6 +602,9 @@ pub enum StatusLineElement {
  
      /// Indicator for selected register
      Register,
@@ -1768,7 +1670,7 @@ index 151b2653..2ccef199 100644
  }
  
  // Cursor shape is read and used on every rendered frame and so needs
-@@ -1010,6 +1024,9 @@ fn default() -> Self {
+@@ -1010,6 +1020,9 @@ fn default() -> Self {
          Self {
              wrap_around: true,
              smart_case: true,
@@ -1778,7 +1680,7 @@ index 151b2653..2ccef199 100644
          }
      }
  }
-@@ -1429,6 +1446,13 @@ pub fn move_path(&mut self, old_path: &Path, new_path: &Path) -> io::Result<()>
+@@ -1429,6 +1442,13 @@ pub fn move_path(&mut self, old_path: &Path, new_path: &Path) -> io::Result<()>
          Ok(())
      }
  
@@ -1792,75 +1694,6 @@ index 151b2653..2ccef199 100644
      pub fn set_doc_path(&mut self, doc_id: DocumentId, path: &Path) {
          let doc = doc_mut!(self, &doc_id);
          let old_path = doc.path();
-diff --git a/helix-view/src/tree.rs b/helix-view/src/tree.rs
-index aba947a2..54382384 100644
---- a/helix-view/src/tree.rs
-+++ b/helix-view/src/tree.rs
-@@ -1,5 +1,6 @@
- use crate::{graphics::Rect, View, ViewId};
- use slotmap::HopSlotMap;
-+use std::{collections::BinaryHeap, convert::identity, iter};
- 
- // the dimensions are recomputed on window resize/tree change.
- //
-@@ -280,6 +281,12 @@ pub fn views(&self) -> impl Iterator<Item = (&View, bool)> {
-         })
-     }
- 
-+    pub fn views_sorted_by_position(&self) -> impl Iterator<Item = &View> {
-+        // TODO: the `into_iter_sorted` of BinaryHeap is unstable...
-+        let mut heap = self.views().map(|(v, _)| v).collect::<BinaryHeap<_>>();
-+        iter::repeat_with(move || heap.pop()).map_while(identity)
-+    }
-+
-     pub fn views_mut(&mut self) -> impl Iterator<Item = (&mut View, bool)> {
-         let focus = self.focus;
-         self.nodes
-diff --git a/helix-view/src/view.rs b/helix-view/src/view.rs
-index a229f01e..a61100a1 100644
---- a/helix-view/src/view.rs
-+++ b/helix-view/src/view.rs
-@@ -19,6 +19,7 @@
- };
- 
- use std::{
-+    cmp::Ordering,
-     collections::{HashMap, VecDeque},
-     fmt,
- };
-@@ -167,6 +168,32 @@ fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-     }
- }
- 
-+impl Eq for View {}
-+
-+// TODO: This sorts the view by x/y axis...
-+impl PartialEq for View {
-+    fn eq(&self, other: &Self) -> bool {
-+        self.area.x == other.area.x && self.area.y == other.area.y
-+    }
-+}
-+
-+// The binary heap is reversed...
-+impl Ord for View {
-+    fn cmp(&self, other: &Self) -> Ordering {
-+        other
-+            .area
-+            .x
-+            .cmp(&self.area.x)
-+            .then_with(|| other.area.y.cmp(&self.area.y))
-+    }
-+}
-+
-+impl PartialOrd for View {
-+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-+        Some(self.cmp(other))
-+    }
-+}
-+
- impl View {
-     pub fn new(doc: DocumentId, gutters: GutterConfig) -> Self {
-         Self {
 diff --git a/runtime/queries/c/textobjects.scm b/runtime/queries/c/textobjects.scm
 index 63ec4a56..26fd35d9 100644
 --- a/runtime/queries/c/textobjects.scm

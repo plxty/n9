@@ -68,6 +68,7 @@
           ";" = "goto_word_definition";
           "#" = "select_references_to_symbol_under_cursor";
           # A-[1-7] is occupied by ptyxis, and C-[1-7] seems not working?
+          # https://unix.stackexchange.com/questions/226327/what-does-ctrl4-and-ctrl-do-in-bash
           C-h = "jump_view_left";
           C-j = "jump_view_down";
           C-k = "jump_view_up";
@@ -75,13 +76,6 @@
         };
 
         normal.space = {
-          "1" = ":focus 1";
-          "2" = ":focus 2";
-          "3" = ":focus 3";
-          "4" = ":focus 4";
-          "5" = ":focus 5";
-          "6" = ":focus 6";
-          "7" = ":focus 7";
           F = "file_picker_in_current_buffer_directory";
         };
 
