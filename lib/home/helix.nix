@@ -1,5 +1,23 @@
 { pkgs, ... }:
 
+let
+  kconfig-ts-src = pkgs.fetchFromGitHub {
+    owner = "tree-sitter-grammars";
+    repo = "tree-sitter-kconfig";
+    rev = "9ac99fe4c0c27a35dc6f757cef534c646e944881";
+    hash = "sha256-8gZZLGL7giVHQIirjUIfsx3scP1L1VTFIZX7QOyjWvk=";
+  };
+
+  kconfig-ts-pkg = pkgs.callPackage (
+    { stdenv, ... }:
+    stdenv.mkDerivation {
+      pname = kconfig-ts-src.repo;
+      version = kconfig-ts-src.rev;
+      src = kconfig-ts-src;
+      makeFlags = [ "PREFIX=$(out)" ];
+    }
+  ) { };
+in
 {
   # TODO: To shells.
   home.packages = with pkgs; [
@@ -139,28 +157,53 @@
         name = "c";
         indent = {
           tab-width = 8;
-          unit = "\\t";
+          unit = "\t";
+        };
+      }
+      {
+        name = "make";
+        indent = {
+          tab-width = 8;
+          unit = "\t";
+        };
+      }
+      {
+        name = "kconfig";
+        scope = "source.kconfig";
+        file-types = [
+          { glob = "Kconfig"; }
+          { glob = "Kconfig.*"; }
+        ];
+        comment-token = "#";
+        indent = {
+          tab-width = 8;
+          unit = "\t";
         };
       }
       {
         name = "nix";
-        formatter = {
-          command = "nixfmt";
-        };
+        formatter.command = "nixfmt";
       }
     ];
   };
 
-  home.file.".config/clangd/config.yaml".text = ''
-    CompileFlags:
-      Add:
-        - -ferror-limit=0
-      Remove:
-        - -march=*
-        - -mabi=*
-        - -mcpu=*
-        - -fno-allow-store-data-races
-        - -fconserve-stack
-        - --no-sysroot-suffix
-  '';
+  home.file = {
+    ".config/helix/runtime/queries/kconfig".source = "${kconfig-ts-src}/queries";
+
+    ".config/helix/runtime/grammars/kconfig.so".source =
+      "${kconfig-ts-pkg}/lib/libtree-sitter-kconfig.so";
+
+    ".config/clangd/config.yaml".text = ''
+      CompileFlags:
+        Add:
+          - -ferror-limit=0
+        Remove:
+          - -march=*
+          - -mabi=*
+          - -mcpu=*
+          - -fno-allow-store-data-races
+          - -fconserve-stack
+          - --no-sysroot-suffix
+    '';
+  };
 }
