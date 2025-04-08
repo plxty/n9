@@ -57,10 +57,7 @@ let
     fi
 
     # Das template:
-    sed -i -E 's!(path = )[^;]+\;$!\1"'"$PWD"'";!' \
-      lib/nixos/essential.nix
-    sed -i -E 's!(basedir = )[^;]+\;$!\1"'"$PWD/asterisk"'";!' \
-      lib/generic/config/keys.nix
+    sed -i -E 's!(dir = )[^;]+\;$!\1"'"$PWD"'";!' lib/lib.nix
   '';
 
   postBurn = ''

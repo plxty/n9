@@ -19,7 +19,13 @@ in
   options.home-manager.users = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submoduleWith {
-        specialArgs = { inherit n9 inputs hostName; };
+        specialArgs = {
+          inherit
+            n9
+            inputs
+            hostName
+            ;
+        };
         modules = [
           # special
           (

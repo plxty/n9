@@ -27,15 +27,11 @@
           in
           {
             locked = keys {
-              # Default keys:
-              "Alt h" = p "MoveFocus" "Left";
-              "Alt j" = p "MoveFocus" "Down";
-              "Alt k" = p "MoveFocus" "Up";
-              "Alt l" = p "MoveFocus" "Right"; # override `ls` shortcut in some shells
-              "Alt H" = p "MovePane" "Left";
-              "Alt J" = p "MovePane" "Down";
-              "Alt K" = p "MovePane" "Up";
-              "Alt L" = p "MovePane" "Right";
+              # Default keys, [hjklHJKL1234567]:
+              "Alt h" = p "GoToPreviousTab" [ ];
+              "Alt l" = p "GoToNextTab" [ ]; # override `ls` shortcut in some shells
+              "Alt H" = p "MoveTab" "Left";
+              "Alt L" = p "MoveTab" "Right";
               "Alt 1" = p "GoToTab" 1;
               "Alt 2" = p "GoToTab" 2;
               "Alt 3" = p "GoToTab" 3;
@@ -43,20 +39,18 @@
               "Alt 5" = p "GoToTab" 5;
               "Alt 6" = p "GoToTab" 6;
               "Alt 7" = p "GoToTab" 7;
-              "Alt Tab" = p "SwitchFocus" [ ];
 
               # Tmux-like prefix (why not alt?):
               "Ctrl g" = p "SwitchToMode" "Normal";
             };
 
-            # Escape:
             "shared_except \"locked\"" = keys {
               "Ctrl g" = p "SwitchToMode" "Locked";
               Esc = p "SwitchToMode" "Locked";
             };
 
             normal = keys {
-              # Session:
+              # Session [dmcp]:
               d = p "Detach" [ ];
               m = p "SwitchToMode" "Locked" // {
                 "LaunchOrFocusPlugin \"session-manager\"" = {
@@ -77,20 +71,35 @@
                 };
               };
 
-              # Pane
+              # Pane [svqhjklHJKL]
               s = p "NewPane" "Down" // p "SwitchToMode" "Locked";
               v = p "NewPane" "Right" // p "SwitchToMode" "Locked";
               q = p "CloseFocus" [ ] // p "SwitchToMode" "Locked";
+              h = p "MoveFocus" "Left" // p "SwitchToMode" "Locked";
+              j = p "MoveFocus" "Down" // p "SwitchToMode" "Locked";
+              k = p "MoveFocus" "Up" // p "SwitchToMode" "Locked";
+              l = p "MoveFocus" "Right" // p "SwitchToMode" "Locked";
+              H = p "MovePane" "Left" // p "SwitchToMode" "Locked";
+              J = p "MovePane" "Down" // p "SwitchToMode" "Locked";
+              K = p "MovePane" "Up" // p "SwitchToMode" "Locked";
+              L = p "MovePane" "Right" // p "SwitchToMode" "Locked";
 
-              # Tab
+              # Tab, some terminals occupied Alt-<N>, [n1234567]
               n = p "NewTab" [ ] // p "SwitchToMode" "Locked";
+              "1" = p "GoToTab" 1 // p "SwitchToMode" "Locked";
+              "2" = p "GoToTab" 2 // p "SwitchToMode" "Locked";
+              "3" = p "GoToTab" 3 // p "SwitchToMode" "Locked";
+              "4" = p "GoToTab" 4 // p "SwitchToMode" "Locked";
+              "5" = p "GoToTab" 5 // p "SwitchToMode" "Locked";
+              "6" = p "GoToTab" 6 // p "SwitchToMode" "Locked";
+              "7" = p "GoToTab" 7 // p "SwitchToMode" "Locked";
 
-              # To other modes, from default.kdl:
+              # To other modes, from default.kdl [rwt /]:
               r = p "SwitchToMode" "Resize";
               w = p "SwitchToMode" "Pane";
               t = p "SwitchToMode" "Tab";
               Space = p "SwitchToMode" "Scroll";
-              "/" = p "SwitchToMode" "Search";
+              "/" = p "SwitchToMode" "EnterSearch" // p "SearchInput" 0;
             };
 
             resize = keys {
@@ -119,8 +128,8 @@
             };
 
             tab = keys {
-              h = p "GoToPreviousTab" [ ] // p "SwitchToMode" "Locked";
-              l = p "GoToNextTab" [ ] // p "SwitchToMode" "Locked";
+              h = p "GoToPreviousTab" [ ];
+              l = p "GoToNextTab" [ ];
               q = p "CloseTab" [ ] // p "SwitchToMode" "Locked";
               s = p "ToggleActiveSyncTab" [ ] // p "SwitchToMode" "Locked";
               b = p "BreakPane" [ ] // p "SwitchToMode" "Locked";

@@ -1,5 +1,6 @@
 {
   lib,
+  n9,
   hostName,
   userName,
   osConfig,
@@ -21,11 +22,10 @@
               apply =
                 k:
                 let
-                  basedir = "/home/byte/.n9/asterisk";
-                  basedir' = "${basedir}/${hostName}";
+                  basedir = "${n9.dir}/asterisk/${hostName}";
                 in
                 assert lib.assertMsg (lib.hasPrefix "/" basedir) "wrong secret directory!";
-                if userName == null then "${basedir'}/${k}" else "${basedir'}/${userName}/${k}";
+                if userName == null then "${basedir}/${k}" else "${basedir}/${userName}/${k}";
             };
 
             target = lib.mkOption {

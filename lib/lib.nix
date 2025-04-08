@@ -16,6 +16,9 @@ rec {
   flatMap = fn: list: lib.flatten (lib.map fn list);
   flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
 
+  # Path of me:
+  dir = "/home/byte/.n9";
+
   # Like recursiveUpdate, but also handle the lists concation:
   # When using mergeAttrs, recursiveUpdate or other merging functions, you'd
   # better think twice of what you want, and what is the inner types you're

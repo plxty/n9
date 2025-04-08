@@ -1,4 +1,9 @@
-{ pkgs, hostName, ... }:
+{
+  pkgs,
+  n9,
+  hostName,
+  ...
+}:
 
 {
   nix.settings = {
@@ -18,7 +23,7 @@
     # nix develop n9#qemu
     n9.to = {
       type = "path";
-      path = "/home/byte/.n9"; # save some debug times
+      path = n9.dir; # save some debug times
     };
   };
 
@@ -44,8 +49,9 @@
     hostId = builtins.substring 63 8 (builtins.hashString "sha512" hostName);
   };
 
-  environment = {
-    sessionVariables.NIX_CRATES_INDEX = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/";
+  environment.sessionVariables = {
+    NIX_CRATES_INDEX = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/";
+    REPO_URL = "https://mirrors.tuna.tsinghua.edu.cn/git/git-repo";
   };
 
   # To catch some faults:
