@@ -11,6 +11,7 @@
         scroll_buffer_size = 99999;
         show_startup_tips = false;
         show_release_notes = false;
+        session_serialization = false;
 
         # https://github.com/zellij-org/zellij/blob/main/zellij-utils/assets/config/default.kdl
         # https://github.com/nix-community/home-manager/blob/master/tests/lib/generators/tokdl.nix
