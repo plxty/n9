@@ -185,6 +185,14 @@ in
         formatter.command = "nixfmt";
       }
     ];
+
+    languages.language-server = {
+      # https://github.com/clangd/clangd/issues/55
+      clangd = {
+        command = "clangd";
+        args = [ "--header-insertion=never" ];
+      };
+    };
   };
 
   home.file = {
