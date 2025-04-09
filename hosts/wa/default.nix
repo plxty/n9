@@ -19,6 +19,7 @@
             home.packages = with pkgs; [
               bridge-utils
               tcpdump
+              # kubeshark
               mstflint
               ethtool
               nftables

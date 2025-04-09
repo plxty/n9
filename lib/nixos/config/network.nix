@@ -141,15 +141,17 @@ in
       externalInterface = cfg.router.wan;
     };
 
-    networking.firewall.allowedUDPPorts = [
-      53 # DNS
-      67 # DHCP
-    ];
+    networking.firewall.interfaces = lib.mapAttrs (_: _: {
+      allowedUDPPorts = [
+        53 # DNS
+        67 # DHCP
+      ];
+    }) cfg.router.lan;
 
     # The `networking.firewall.filterForward = true` is conflicted, and has no
     # such customization options. TODO: How to make one?
     # https://github.com/LostAttractor/Router/blob/master/configuration/network/nftables.nix
-    networking.nftables.tables."mss-clamping" = {
+    networking.nftables.tables.mss-clamping = {
       family = "inet";
       content = ''
         chain forward {

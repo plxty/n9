@@ -21,6 +21,9 @@ let
     lan = "br-lan";
   };
 
+  gateway = "10.0.0.1";
+  miwifi = "10.254.47.113";
+
   mkJumboLanBridgeSlave =
     port: master:
     n9.mkCarrierOnlyNetwork port {
@@ -34,11 +37,11 @@ in
 {
   n9.network.router = {
     lan.${ports.lan} = {
-      address = "10.0.0.1/8";
+      address = "${gateway}/8";
       range = {
         from = "10.254.0.1";
         to = "10.254.254.254";
-        mask = "255.255.0.0";
+        mask = "255.0.0.0"; # should be the same as address
       };
       extraConfig.linkConfig.MTUBytes = "9000";
     };
@@ -144,9 +147,9 @@ in
       "119.29.29.29"
     ];
 
+    # @see /var/lib/dnsmasq/dnsmasq.leases
     dhcp-host = [
-      # @see /var/lib/dnsmasq/dnsmasq.leases
-      "24:5e:be:87:47:cc,10.254.38.179,snap"
+      "${miwifi},MiWiFi-RC06"
     ];
 
     # tftp, TODO: https://nixos.wiki/wiki/Netboot
@@ -155,4 +158,23 @@ in
   };
 
   systemd.tmpfiles.rules = [ "d /srv/tftp 0777 dnsmasq dnsmasq -" ];
+
+  # Forward some ports to the "real" wifi to make miiot work...
+  # (It may not works, as the miwifi will match the HTTP Host, it can only be
+  # override by the reverse proxy, such as Caddy or Nginx.)
+  networking.nftables.tables.miiot = {
+    family = "inet";
+    content = ''
+      chain prerouting {
+        type nat hook prerouting priority dstnat;
+        iifname ${ports.lan} ip daddr ${gateway} tcp dport { 80, 784 } mark set 404
+        meta mark 404 dnat ip to ${miwifi}
+      }
+
+      chain postrouting {
+        type nat hook postrouting priority srcnat;
+        meta mark 404 masquerade
+      }
+    '';
+  };
 }
