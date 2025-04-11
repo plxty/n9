@@ -122,10 +122,10 @@ in
         set -gx FZF_DEFAULT_OPTS --bind "alt-k:clear-query"
 
         # TODO: using home-manager?
-        abbr --command git d diff -b HEAD
-        abbr --command git a add "(git rev-parse --show-toplevel)"
-        abbr --command git r restore --staged --worktree
-        abbr --command git c commit --amend --reset-author --no-edit
+        abbr --command git d "diff -b HEAD"
+        abbr --command git a "add (git rev-parse --show-toplevel)"
+        abbr --command git r "restore --staged --worktree"
+        abbr --command git c "commit --amend --reset-author --no-edit"
       '';
 
       shellAbbrs = {

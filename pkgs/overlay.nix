@@ -1,6 +1,10 @@
 { n9, inputs, ... }:
 
-final: prev: {
+final: prev:
+let
+  snapshot = inputs.snapshot.legacyPackages.${final.system};
+in
+{
   helix = n9.patch prev.helix ./patches/helix-taste.patch;
   openssh = n9.patch prev.openssh ./patches/openssh-plainpass.patch;
   ibus-engines = prev.ibus-engines // {
@@ -15,7 +19,8 @@ final: prev: {
     customize-ibus = n9.patch prev.gnomeExtensions.customize-ibus ./patches/customize-ibus-keep.patch;
   };
 
-  brave = prev.brave.override (prev: {
+  # FIXME: https://issues.chromium.org/issues/408167436 waiting for fixes, therefore snapshot:
+  brave = snapshot.brave.override (prev: {
     commandLineArgs = builtins.concatStringsSep " " [
       (prev.commandLineArgs or "")
       "--wayland-text-input-version=3"
@@ -26,7 +31,7 @@ final: prev: {
   wechat = final.callPackage ./wechat.nix { };
 
   # @see flake.nix, to prevent from long-time compiling, it might break the system :(
-  inherit (inputs.snapshot.legacyPackages.${final.system})
+  inherit (snapshot)
     webkitgtk_6_0
     webkitgtk_4_0
     webkitgtk_4_1
