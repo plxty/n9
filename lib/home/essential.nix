@@ -44,7 +44,7 @@
   programs.git = {
     enable = true;
     userName = "Zigit Zo";
-    userEmail = "repl@z.xas.is";
+    userEmail = "byte@pen.guru";
     signing.format = "ssh";
     extraConfig = {
       user.useConfigOnly = true;

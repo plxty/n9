@@ -8,7 +8,7 @@
         "coffee.y.xas.is:f2SgLhtRkyjc9yjfW39H9hxPh0KHPMmySJjzhd2whlY="
       ];
       deployment = {
-        targetHost = "wa.y.xas.is";
+        targetHost = "wa";
         targetUser = "byte";
       };
 

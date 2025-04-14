@@ -13,7 +13,7 @@ in
   options.n9.network = {
     domain = lib.mkOption {
       type = lib.types.str;
-      default = "y.xas.is";
+      default = "island.pen.guru";
     };
 
     # networkd + nat, mostly v4, v6 may have some issues...
