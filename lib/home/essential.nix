@@ -27,6 +27,7 @@
     strace
     sysstat
     lm_sensors
+    dig
     bcc
     bpftrace
     osConfig.boot.kernelPackages.perf

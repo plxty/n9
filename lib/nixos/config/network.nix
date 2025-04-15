@@ -13,7 +13,7 @@ in
   options.n9.network = {
     domain = lib.mkOption {
       type = lib.types.str;
-      default = "island.pen.guru";
+      default = "hut.pen.guru"; # or igloo?
     };
 
     # networkd + nat, mostly v4, v6 may have some issues...
@@ -133,6 +133,7 @@ in
     # @see nixpkgs/nixos/modules/services/networking/nat-nftables.nix)
     # nix eval --raw ".#nixosConfigurations.rout.config.networking.nftables.tables"
     networking.nftables.enable = true;
+    networking.nftables.flushRuleset = true;
 
     networking.nat = {
       enable = true;

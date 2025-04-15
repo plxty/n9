@@ -18,6 +18,7 @@ in
     paperwm = n9.patch prev.gnomeExtensions.paperwm ./patches/paperwm-focus.patch;
     customize-ibus = n9.patch prev.gnomeExtensions.customize-ibus ./patches/customize-ibus-keep.patch;
   };
+  mihomo = n9.patch prev.mihomo ./patches/mihomo-taste.patch;
 
   # FIXME: https://issues.chromium.org/issues/408167436 waiting for fixes, therefore snapshot:
   brave = snapshot.brave.override (prev: {

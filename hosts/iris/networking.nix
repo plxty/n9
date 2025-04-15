@@ -1,9 +1,3 @@
-# 10.0.0.1 => Router
-# 10.254.0.0 => DHCP
-# 10.29.0.0 => PXE (later)
-# 10.42.0.0 => Proxy
-# May conflicts with?
-
 { pkgs, n9, ... }:
 
 let
@@ -21,8 +15,11 @@ let
     lan = "br-lan";
   };
 
+  # TODO: Change the gateway to match DHCP...
   gateway = "10.0.0.1";
   miwifi = "10.254.47.113";
+  fwMiIot = "0xadead404";
+  fwClash = "0xfeedc1a5";
 
   mkJumboLanBridgeSlave =
     port: master:
@@ -41,13 +38,19 @@ in
       range = {
         from = "10.254.0.1";
         to = "10.254.254.254";
-        mask = "255.0.0.0"; # should be the same as address
+        mask = "255.0.0.0";
       };
       extraConfig.linkConfig.MTUBytes = "9000";
     };
 
     wan.${ports.wan}.enable = true;
   };
+
+  boot.kernelModules = [
+    "pppoe"
+    "nft_socket"
+    "nft_tproxy"
+  ];
 
   # Netdev:
   systemd.network.netdevs = {
@@ -70,7 +73,6 @@ in
   # PPPoE (netdev), networkd managed as well:
   networking.useDHCP = false;
   networking.dhcpcd.enable = false;
-  boot.kernelModules = [ "pppoe" ];
 
   n9.security.keys."/etc/ppp/keys/wan".source = "wan";
   services.pppd = {
@@ -125,12 +127,12 @@ in
   # Relavents:
   services.networkd-dispatcher = {
     enable = true;
-    rules."restart-dnsmasq" = {
+    rules."restart-resolve" = {
       onState = [ "routable" ];
       script = ''
         #!${pkgs.runtimeShell}
         if [[ "$IFACE" == "${ports.wan}" && "$AdministrativeState" == "configured" ]]; then
-          systemctl restart dnsmasq
+          systemctl restart dnsmasq mihomo
         fi
         exit 0
       '';
@@ -143,6 +145,7 @@ in
 
     resolv-file = "/run/pppd/resolv.conf";
     server = [
+      "127.0.0.1#1053"
       "223.5.5.5"
       "119.29.29.29"
     ];
@@ -167,14 +170,65 @@ in
     content = ''
       chain prerouting {
         type nat hook prerouting priority dstnat;
-        iifname ${ports.lan} ip daddr ${gateway} tcp dport { 80, 784 } mark set 404
-        meta mark 404 dnat ip to ${miwifi}
+        iifname ${ports.lan} ip daddr ${gateway} tcp dport { 80, 784 } mark set ${fwMiIot}
+        meta mark ${fwMiIot} dnat ip to ${miwifi}
       }
 
       chain postrouting {
         type nat hook postrouting priority srcnat;
-        meta mark 404 masquerade
+        meta mark ${fwMiIot} masquerade
       }
     '';
+  };
+
+  # Old new world:
+  # TODO: Daily update configuration?
+  services.mihomo = {
+    enable = true;
+    configFile = "/etc/mihomo/clash.yaml";
+    webui = pkgs.metacubexd;
+    tunMode = true; # tproxy needs it as well
+  };
+  n9.security.keys."/etc/mihomo/clash.yaml".source = "clash.yaml";
+
+  # https://github.com/Seidko/my-linux-note/blob/master/tproxy%20with%20clash%20and%20nftables.md
+  # TODO: Redirect GeoIP to clash? TUN? Restrict to lan port only?
+  networking.nftables.tables.clash = {
+    family = "inet";
+    content = ''
+      chain prerouting {
+        type filter hook prerouting priority mangle;
+        ip daddr 198.18.0.0/15 mark set ${fwClash} # meta nftrace set 1
+        meta mark ${fwClash} meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7892 counter
+      }
+    '';
+  };
+  networking.firewall.interfaces.${ports.lan}.allowedTCPPorts = [
+    7890 # http:// proxy
+    9090 # metacubexd
+  ];
+
+  # To forward tproxy traffic to lo, nf doesn't support something like always-accept.
+  networking.firewall.extraReversePathFilterRules = "meta mark ${fwClash} accept";
+  networking.firewall.extraInputRules = "meta mark ${fwClash} accept";
+
+  # The policy route is mandatory, because tproxy won't stop nf hooks and it
+  # won't change the packet, the `ip_forward` can hard to tell where to route
+  # the packet, we need to tell it routing to lo device, and there's mihomo.
+  systemd.network.networks."50-clash" = n9.mkCarrierOnlyNetwork "lo" {
+    routes = [
+      {
+        Table = 100; # any of it, 42, 101, ...
+        Destination = "0.0.0.0/0";
+        Type = "local";
+      }
+    ];
+    routingPolicyRules = [
+      {
+        FirewallMark = fwClash;
+        Table = 100;
+        Priority = 100;
+      }
+    ];
   };
 }

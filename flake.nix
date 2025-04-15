@@ -30,7 +30,7 @@
           (
             n9.flatMap mkSystems [
               ./hosts/evil
-              ./hosts/wa
+              ./hosts/iris
               ./hosts/coffee
               ./hosts/dragon
             ]
