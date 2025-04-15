@@ -11,8 +11,8 @@ let
 
     # virtual
     vlan = "enp5s0f1.1210";
-    wan = "pppoe-wan";
     lan = "br-lan";
+    wan = "pppoe-wan";
   };
 
   # TODO: Change the gateway to match DHCP...
@@ -143,6 +143,7 @@ in
   services.dnsmasq.settings = {
     interface = [ "lo" ];
 
+    strict-order = true;
     resolv-file = "/run/pppd/resolv.conf";
     server = [
       "127.0.0.1#1053"

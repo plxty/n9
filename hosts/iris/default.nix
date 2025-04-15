@@ -8,7 +8,7 @@
         "coffee.y.xas.is:f2SgLhtRkyjc9yjfW39H9hxPh0KHPMmySJjzhd2whlY="
       ];
       deployment = {
-        targetHost = "iris";
+        targetHost = "10.0.0.1";
         targetUser = "byte";
       };
 
