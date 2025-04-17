@@ -1,4 +1,9 @@
-{ pkgs, n9, ... }:
+{
+  pkgs,
+  n9,
+  lib,
+  ...
+}:
 
 let
   ports = {
@@ -216,14 +221,20 @@ in
     requires = [ "network-online.target" ];
     after = [ "network-online.target" ];
     path = with pkgs; [
-      python3
-      python3Packages.pyyaml
+      (python3.withPackages (py3: [ py3.pyyaml ]))
       curl
     ];
-    serviceConfig = {
-      Type = "oneshot";
-      ExecStart = ./clash-renew.py;
-    };
+    serviceConfig =
+      let
+        dir = lib.fileset.toSource {
+          root = ./.;
+          fileset = ./clash-renew.py;
+        };
+      in
+      {
+        Type = "oneshot";
+        ExecStart = "${dir}/clash-renew.py";
+      };
   };
   n9.security.keys."/etc/mihomo/subscribe".source = "subscribe";
 
@@ -254,7 +265,7 @@ in
     extraInputRules = "meta mark ${fwClash} accept";
     interfaces.${ports.lan}.allowedTCPPorts = [
       7890 # http:// proxy
-      9090 # metacubexd
+      9090 # metacubexd, access /ui
     ];
   };
 }
