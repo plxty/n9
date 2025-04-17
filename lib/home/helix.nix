@@ -27,8 +27,8 @@ in
     bash-language-server
     shellcheck
     ruff
-    python312Packages.jedi-language-server
-    python312Packages.python-lsp-server
+    python3Packages.jedi-language-server
+    python3Packages.python-lsp-server
   ];
 
   programs.helix = {

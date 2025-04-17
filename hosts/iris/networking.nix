@@ -122,6 +122,26 @@ in
       };
       linkConfig.RequiredForOnline = "yes"; # TODO: Is it really working?
     };
+
+    # The policy route is mandatory, because tproxy won't stop nf hooks and it
+    # won't change the packet, the `ip_forward` can hard to tell where to route
+    # the packet, we need to tell it routing to lo device, and there's mihomo.
+    "30-clash" = n9.mkCarrierOnlyNetwork "lo" {
+      routes = [
+        {
+          Table = 100; # any of it, 42, 101, ...
+          Destination = "0.0.0.0/0";
+          Type = "local";
+        }
+      ];
+      routingPolicyRules = [
+        {
+          FirewallMark = fwClash;
+          Table = 100;
+          Priority = 100;
+        }
+      ];
+    };
   };
 
   # Relavents:
@@ -154,6 +174,7 @@ in
     # @see /var/lib/dnsmasq/dnsmasq.leases
     dhcp-host = [
       "${miwifi},MiWiFi-RC06"
+      "10.254.195.65,MiWiFi-RD08"
     ];
 
     # tftp, TODO: https://nixos.wiki/wiki/Netboot
@@ -183,53 +204,57 @@ in
   };
 
   # Old new world:
-  # TODO: Daily update configuration?
   services.mihomo = {
     enable = true;
     configFile = "/etc/mihomo/clash.yaml";
     webui = pkgs.metacubexd;
     tunMode = true; # tproxy needs it as well
   };
-  n9.security.keys."/etc/mihomo/clash.yaml".source = "clash.yaml";
+
+  # https://github.com/NixOS/nixpkgs/blob/26d499fc9f1d567283d5d56fcf367edd815dba1d/nixos/modules/system/boot/systemd.nix#L747C1-L748C1
+  systemd.services.clash-renew = {
+    requires = [ "network-online.target" ];
+    after = [ "network-online.target" ];
+    path = with pkgs; [
+      python3
+      python3Packages.pyyaml
+      curl
+    ];
+    serviceConfig = {
+      Type = "oneshot";
+      ExecStart = ./clash-renew.py;
+    };
+  };
+  n9.security.keys."/etc/mihomo/subscribe".source = "subscribe";
+
+  # Make mihomo depends:
+  systemd.services.mihomo = {
+    requires = [ "clash-renew.service" ];
+    after = [ "clash-renew.service" ];
+    startAt = "Mon,Tue,Thu,Sat *-*-* 05:06:07";
+  };
 
   # https://github.com/Seidko/my-linux-note/blob/master/tproxy%20with%20clash%20and%20nftables.md
   # TODO: Redirect GeoIP to clash? TUN? Restrict to lan port only?
+  # Trace packet with `meta nftrace set 1`, monitor with shell `nft monitor trace`.
   networking.nftables.tables.clash = {
     family = "inet";
     content = ''
       chain prerouting {
         type filter hook prerouting priority mangle;
-        ip daddr 198.18.0.0/15 mark set ${fwClash} # meta nftrace set 1
-        meta mark ${fwClash} meta l4proto { tcp, udp } tproxy ip to 127.0.0.1:7892 counter
+        ip daddr 198.18.0.0/15 meta l4proto { tcp, udp } mark set ${fwClash} \
+          tproxy ip to 127.0.0.1:7892 counter
       }
     '';
   };
-  networking.firewall.interfaces.${ports.lan}.allowedTCPPorts = [
-    7890 # http:// proxy
-    9090 # metacubexd
-  ];
 
-  # To forward tproxy traffic to lo, nf doesn't support something like always-accept.
-  networking.firewall.extraReversePathFilterRules = "meta mark ${fwClash} accept";
-  networking.firewall.extraInputRules = "meta mark ${fwClash} accept";
-
-  # The policy route is mandatory, because tproxy won't stop nf hooks and it
-  # won't change the packet, the `ip_forward` can hard to tell where to route
-  # the packet, we need to tell it routing to lo device, and there's mihomo.
-  systemd.network.networks."50-clash" = n9.mkCarrierOnlyNetwork "lo" {
-    routes = [
-      {
-        Table = 100; # any of it, 42, 101, ...
-        Destination = "0.0.0.0/0";
-        Type = "local";
-      }
-    ];
-    routingPolicyRules = [
-      {
-        FirewallMark = fwClash;
-        Table = 100;
-        Priority = 100;
-      }
+  networking.firewall = {
+    # To forward tproxy traffic to lo, nf doesn't support something like always-accept.
+    extraReversePathFilterRules = "meta mark ${fwClash} accept";
+    extraInputRules = "meta mark ${fwClash} accept";
+    interfaces.${ports.lan}.allowedTCPPorts = [
+      7890 # http:// proxy
+      9090 # metacubexd
     ];
   };
 }
