@@ -1,0 +1,56 @@
+commit 70a8eaf12117347b13e996f7e0c26d63f319c19f
+Author: Zigit Zo <byte@pen.guru>
+Date:   Mon Apr 21 16:17:45 2025 +0800
+
+    https://github.com/tam5/util-font-patcher
+
+diff --git a/patch.sh b/patch.sh
+new file mode 100755
+index 0000000..21c7406
+--- /dev/null
++++ b/patch.sh
+@@ -0,0 +1,12 @@
++#!/bin/bash
++
++target="$HOME/.local/share/fonts/ubuntu-mono"
++rm -rf "$target"
++mkdir -p "$target"
++
++for ttf in $(fc-list | grep "Ubuntu Mono" | awk -F: '{print $1}'); do
++	echo "patching $ttf..."
++	python3 src/main.py --factor=1.25 --input="$ttf" --outputDir="$target"
++done
++
++fc-cache -fv
+diff --git a/src/main.py b/src/main.py
+index f335cbb..cafc941 100644
+--- a/src/main.py
++++ b/src/main.py
+@@ -6,10 +6,10 @@ from datetime import datetime
+ from parseOpts import parseOpts
+ 
+ 
+-def adjust(font, attribute, factor):
++def adjust(font, attribute, factor, tweak=0):
+     """Adjust an attribute of a font by a given factor."""
+     original = getattr(font, attribute)
+-    new = int(getattr(font, attribute) * factor)
++    new = int(getattr(font, attribute) * factor) + tweak
+ 
+     print("Adjusting {}: {} -> {}".format(
+         colored(attribute, 'yellow', attrs=['bold']),
+@@ -24,10 +24,12 @@ font = fontforge.open(args["input"])
+ 
+ print('')
+ for prop in ['os2_winascent', 'os2_typoascent', 'hhea_ascent']:
+-    adjust(font, prop, args["factor"])
++    # top padding
++    adjust(font, prop, args["factor"], -72)
+ 
+ for prop in ['os2_windescent', 'os2_typodescent', 'hhea_descent']:
+-    adjust(font, prop, args["factor"] * 2)
++    # bottom padding
++    adjust(font, prop, args["factor"], -72)
+ 
+ for attr in ['fontname', 'familyname', 'fullname']:
+     value = args[attr] or "{} {}".format(getattr(font, attr), args["factor"])

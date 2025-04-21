@@ -1,0 +1,177 @@
+commit 9a1599788e2a18e1d5244185fe475d43bb1095fe
+Author: Zigit Zo <hardirq@outlook.com>
+Date:   Wed Mar 20 14:49:14 2024 +0800
+
+    https://github.com/svenstaro/wmfocus
+
+diff --git a/src/args.rs b/src/args.rs
+index c1f7dc2..3ffe832 100644
+--- a/src/args.rs
++++ b/src/args.rs
+@@ -125,6 +125,10 @@ pub struct AppConfig {
+     #[arg(short = 'c', long = "chars", default_value = "sadfjklewcmpgh")]
+     pub hint_chars: String,
+ 
++    /// Which keys to be pressed simulately
++    #[arg(short = 'k', long = "press", default_value = "")]
++    pub pressed_chars: String,
++
+     /// Add an additional margin around the text box (value is a factor of the box size)
+     #[arg(short, long, default_value = "0.2")]
+     pub margin: f32,
+@@ -226,6 +230,10 @@ pub struct AppConfig {
+     /// If this flag is set, the currently active window will swap with the selected window.
+     #[arg(short, long)]
+     pub swap: bool,
++
++    /// If this flag is set, only show keys in current active workspace, instead of all (useful in multi monitors)
++    #[arg(short, long)]
++    pub active_only: bool,
+ }
+ 
+ pub fn parse_args() -> AppConfig {
+diff --git a/src/main.rs b/src/main.rs
+index 6ea21ea..2737cb9 100644
+--- a/src/main.rs
++++ b/src/main.rs
+@@ -31,6 +31,7 @@ pub struct DesktopWindow {
+     pos: (i32, i32),
+     size: (i32, i32),
+     is_focused: bool,
++    workspace: i32,
+ }
+ 
+ #[derive(Debug)]
+@@ -39,6 +40,7 @@ pub struct RenderWindow<'a> {
+     cairo_context: cairo::Context,
+     draw_pos: (f64, f64),
+     rect: (i32, i32, i32, i32),
++    xcb_window_id: u32,
+ }
+ 
+ #[cfg(any(feature = "i3", feature = "add_some_other_wm_here"))]
+@@ -47,7 +49,8 @@ fn main() -> Result<()> {
+     let app_config = args::parse_args();
+ 
+     // Get the windows from each specific window manager implementation.
+-    let desktop_windows_raw = wm::get_windows().context("Couldn't get desktop windows")?;
++    let desktop_windows_raw = wm::get_windows(app_config.active_only)
++        .context("Couldn't get desktop windows")?;
+ 
+     // Sort by position to make hint position more deterministic.
+     let desktop_windows = utils::sort_by_pos(desktop_windows_raw);
+@@ -213,11 +216,47 @@ fn main() -> Result<()> {
+             cairo_context,
+             draw_pos,
+             rect: (x.into(), y.into(), width.into(), height.into()),
++            xcb_window_id,
+         };
+ 
+         render_windows.insert(hint, render_window);
+     }
+ 
++    let try_focus_window = |rw: &RenderWindow| -> Result<()> {
++        info!("Found matching window, focusing");
++
++        // @see https://github.com/svenstaro/wmfocus/issues/213
++        for (_, rw) in &render_windows {
++            conn.unmap_window(rw.xcb_window_id)?;
++        }
++        conn.flush()?;
++
++        if app_config.print_only {
++            println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
++        } else if app_config.swap {
++            let Some(active_window) =
++                desktop_windows.iter().find(|window| window.is_focused)
++            else {
++                warn!("There's no active window.");
++                return Ok(());
++            };
++            wm::swap_windows(active_window, rw.desktop_window)
++                .context("Couldn't swap windows")?;
++        } else {
++            wm::focus_window(rw.desktop_window).context("Couldn't focus window")?;
++        }
++        Ok(())
++    };
++
++
++    if ! app_config.pressed_chars.is_empty() {
++        if let Some(rw) = &render_windows.get(&app_config.pressed_chars) {
++            try_focus_window(rw)?;
++        }
++        // TODO: return Err?
++        return Ok(());
++    }
++
+     // Receive keyboard events.
+     utils::snatch_keyboard(&conn, screen, Duration::from_secs(1))?;
+ 
+@@ -291,22 +330,7 @@ fn main() -> Result<()> {
+                     if sequence.is_started() {
+                         utils::remove_last_key(&mut pressed_keys, &kstr);
+                     } else if let Some(rw) = &render_windows.get(&pressed_keys) {
+-                        info!("Found matching window, focusing");
+-                        if app_config.print_only {
+-                            println!("0x{:x}", rw.desktop_window.x_window_id.unwrap_or(0));
+-                        } else if app_config.swap {
+-                            let Some(active_window) =
+-                                desktop_windows.iter().find(|window| window.is_focused)
+-                            else {
+-                                warn!("There's no active window.");
+-                                closed = true;
+-                                continue;
+-                            };
+-                            wm::swap_windows(active_window, rw.desktop_window)
+-                                .context("Couldn't swap windows")?;
+-                        } else {
+-                            wm::focus_window(rw.desktop_window).context("Couldn't focus window")?;
+-                        }
++                        try_focus_window(rw)?;
+                         closed = true;
+                     } else if !pressed_keys.is_empty()
+                         && render_windows.keys().any(|k| k.starts_with(&pressed_keys))
+diff --git a/src/utils.rs b/src/utils.rs
+index 77d434d..8cdc076 100644
+--- a/src/utils.rs
++++ b/src/utils.rs
+@@ -253,6 +253,7 @@ pub fn snatch_mouse(conn: &impl Connection, screen: &Screen, timeout: Duration)
+ pub fn sort_by_pos(mut dws: Vec<DesktopWindow>) -> Vec<DesktopWindow> {
+     dws.sort_by_key(|w| w.pos.0);
+     dws.sort_by_key(|w| w.pos.1);
++    dws.sort_by_key(|w| w.workspace);
+     dws
+ }
+ 
+diff --git a/src/wm_i3.rs b/src/wm_i3.rs
+index 0538304..03cb4d6 100644
+--- a/src/wm_i3.rs
++++ b/src/wm_i3.rs
+@@ -84,6 +84,7 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Result<Vec<DesktopW
+                     pos: (pos_x, pos_y),
+                     size: (size_x, (node.rect.3 + node.deco_rect.3)),
+                     is_focused: node.focused,
++                    workspace: workspace.num,
+                 };
+                 debug!("Found {:?}", window);
+                 windows.push(window);
+@@ -95,14 +96,16 @@ fn crawl_windows(root_node: &Node, workspace: &Workspace) -> Result<Vec<DesktopW
+ }
+ 
+ /// Return a list of all windows.
+-pub fn get_windows() -> Result<Vec<DesktopWindow>> {
++pub fn get_windows(active_only: bool) -> Result<Vec<DesktopWindow>> {
+     // Establish a connection to i3 over a unix socket
+     let mut connection = I3Connection::connect().context("Couldn't acquire i3 connection")?;
+     let workspaces = connection
+         .get_workspaces()
+         .context("Problem communicating with i3")?
+         .workspaces;
+-    let visible_workspaces = workspaces.iter().filter(|w| w.visible);
++    let visible_workspaces = workspaces.iter().filter(|w| {
++        if active_only { w.focused } else { w.visible }
++    });
+     let root_node = connection.get_tree()?;
+     let mut windows = vec![];
+     for workspace in visible_workspaces {
