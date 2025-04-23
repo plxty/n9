@@ -26,7 +26,7 @@ stdenv.mkDerivation {
   };
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
-  patches = [ ../patches/rime-ice-taste.patch ];
+  patches = [ ../pkgs/patches/rime-ice-taste.patch ];
 
   buildInputs = [ librime ];
 

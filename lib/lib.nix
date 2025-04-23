@@ -8,7 +8,7 @@ rec {
   patches =
     pkg: attrs:
     pkg.overrideAttrs (prev: {
-      patches = (prev.patches or [ ]) ++ (lib.map (v: ../patches/${v}.patch) attrs);
+      patches = (prev.patches or [ ]) ++ (lib.map (v: ../pkgs/patches/${v}.patch) attrs);
     });
   patch = pkg: attr: patches pkg [ attr ];
 
