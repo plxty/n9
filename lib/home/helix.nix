@@ -33,7 +33,7 @@ in
 
   programs.helix = {
     enable = true;
-    package = n9.patch pkgs.helix ../../pkgs/helix-taste.patch;
+    package = n9.patch pkgs.helix "helix-taste";
     defaultEditor = true;
 
     settings = {

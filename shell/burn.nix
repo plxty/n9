@@ -10,9 +10,7 @@ let
 
   # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
   # It can be an overlay of nixpkgs, however for simplicity...
-  colmenaPackage = n9.patches inputs.colmena.packages.${system}.colmena [
-    ../pkgs/colmena-nix-store-sign.patch
-  ];
+  colmenaPackage = n9.patch inputs.colmena.packages.${system}.colmena "colmena-nix-store-sign";
 
   preBurn = ''
     set -uex
