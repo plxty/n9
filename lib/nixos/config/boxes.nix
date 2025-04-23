@@ -8,6 +8,11 @@
 
 let
   usercfg = n9.users "boxes" (v: v.n9.virtualisation.boxes) config;
+
+  # To reduce QEMU compile time, for user-mode, use package `qemu-user` may be better.
+  qemu_kvm = pkgs.qemu_kvm.overrideAttrs (prev: {
+    configureFlags = prev.configureFlags ++ [ "--disable-user" ];
+  });
 in
 {
   # The config MUST be known at evaluate time, thus it can't be generate via
@@ -20,6 +25,7 @@ in
           enable = true;
           packages = [
             (pkgs.OVMF.override {
+              qemu = qemu_kvm;
               secureBoot = true;
               tpmSupport = true;
               msVarsTemplate = true;
@@ -30,7 +36,7 @@ in
       {
         enable = true;
         qemu = {
-          package = pkgs.qemu_kvm;
+          package = qemu_kvm;
           runAsRoot = true;
           swtpm.enable = true;
           inherit ovmf;

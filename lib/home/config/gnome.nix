@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  n9,
   ...
 }:
 
@@ -31,9 +32,9 @@ in
           extensions = with pkgs.gnomeExtensions; [
             { package = brightness-control-using-ddcutil; }
             { package = switcher; }
-            { package = paperwm; }
+            { package = n9.patch paperwm ../../../pkgs/paperwm-focus.patch; }
             { package = dash-to-dock; }
-            { package = customize-ibus; }
+            { package = n9.patch customize-ibus ../../../pkgs/customize-ibus-keep.patch; }
             { package = tray-icons-reloaded; }
             { package = hide-cursor; }
           ];

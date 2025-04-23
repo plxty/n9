@@ -82,6 +82,7 @@ in
   n9.security.keys."/etc/ppp/keys/wan".source = "wan";
   services.pppd = {
     enable = true;
+    package = n9.patch pkgs.ppp ../../pkgs/ppp-run-resolv.patch;
     # https://man7.org/linux/man-pages/man8/pppd.8.html
     peers.wan.config = ''
       plugin pppoe.so
@@ -211,6 +212,7 @@ in
   # Old new world:
   services.mihomo = {
     enable = true;
+    package = n9.patch pkgs.mihomo ../../pkgs/mihomo-taste.patch;
     configFile = "/etc/mihomo/clash.yaml";
     webui = pkgs.metacubexd;
     tunMode = true; # tproxy needs it as well

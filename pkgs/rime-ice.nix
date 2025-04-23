@@ -13,7 +13,7 @@
 
 let
   pname = "rime-ice";
-  version = "1dcc6f1119836af276dd35c6f0fe93f6bdabc65a";
+  version = "7f6f4880bd5f6b7a76195c515af2e64b88ce0ec2";
 in
 stdenv.mkDerivation {
   inherit pname version;
@@ -22,11 +22,11 @@ stdenv.mkDerivation {
     owner = "iDvel";
     repo = "rime-ice";
     rev = version;
-    hash = "sha256-9Xpx3s7iHLiwdzehPQZl44Q1aWhqViekrAHFBXE2PCc=";
+    hash = "sha256-N7EDvQX598jxNILzwTwAeu/BY9wWVBRUuTApamf4nAY=";
   };
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
-  patches = [ ./patches/rime-ice-taste.patch ];
+  patches = [ ./rime-ice-taste.patch ];
 
   buildInputs = [ librime ];
 

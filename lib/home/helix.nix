@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ pkgs, n9, ... }:
 
 let
   kconfig-ts-src = pkgs.fetchFromGitHub {
@@ -33,6 +33,7 @@ in
 
   programs.helix = {
     enable = true;
+    package = n9.patch pkgs.helix ../../pkgs/helix-taste.patch;
     defaultEditor = true;
 
     settings = {

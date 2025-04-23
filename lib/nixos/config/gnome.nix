@@ -34,7 +34,13 @@ in
 
       systemPackages = with pkgs; [
         wl-clipboard
-        brave
+        (brave.override (prev: {
+          commandLineArgs = builtins.concatStringsSep " " [
+            (prev.commandLineArgs or "")
+            "--wayland-text-input-version=3"
+            "--sync-url=https://brave-sync.pteno.cn/v2"
+          ];
+        }))
         ptyxis
         nautilus
         gedit
