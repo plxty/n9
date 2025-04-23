@@ -28,4 +28,16 @@ in
       };
     }) keys
   );
+
+  # have no much usage now... @see keyServiceModule
+  config.systemd.paths = lib.mkMerge (
+    lib.map (v: {
+      "${builtins.baseNameOf v.target}-key".enable = v.service;
+    }) keys
+  );
+  config.systemd.services = lib.mkMerge (
+    lib.map (v: {
+      "${builtins.baseNameOf v.target}-key".enable = lib.mkForce v.service;
+    }) keys
+  );
 }

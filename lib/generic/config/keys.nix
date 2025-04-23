@@ -56,6 +56,11 @@
               ];
               default = if userName == null then "pre-activation" else "post-activation";
             };
+
+            service = lib.mkOption {
+              type = lib.types.bool;
+              default = false;
+            };
           };
         }
       )

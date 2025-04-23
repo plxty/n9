@@ -1,10 +1,30 @@
 diff --git a/tiling.js b/tiling.js
-index 4e98ed7..2a5c199 100644
+index 4e98ed7..30af917 100644
 --- a/tiling.js
 +++ b/tiling.js
-@@ -1181,6 +1181,19 @@ export class Space extends Array {
+@@ -1123,11 +1123,11 @@ export class Space extends Array {
+         return true;
+     }
+ 
+-    switchLeft(loop) { return this.switch(Meta.MotionDirection.LEFT, loop); }
+-    switchRight(loop) { return this.switch(Meta.MotionDirection.RIGHT, loop); }
+-    switchUp(loop) { return this.switch(Meta.MotionDirection.UP, loop); }
+-    switchDown(loop) { return this.switch(Meta.MotionDirection.DOWN, loop); }
+-    switch(direction, loop) {
++    switchLeft(loop, focus = true) { return this.switch(Meta.MotionDirection.LEFT, loop, focus); }
++    switchRight(loop, focus = true) { return this.switch(Meta.MotionDirection.RIGHT, loop, focus); }
++    switchUp(loop, focus = true) { return this.switch(Meta.MotionDirection.UP, loop, focus); }
++    switchDown(loop, focus = true) { return this.switch(Meta.MotionDirection.DOWN, loop, focus); }
++    switch(direction, loop, focus = true) {
+         let space = this;
+         let index = space.selectedIndex();
+         if (index === -1) {
+@@ -1180,7 +1180,21 @@ export class Space extends Array {
+ 
          let metaWindow = space.getWindow(index, row);
          ensureViewport(metaWindow, space);
++        if (!focus)
++            return true;
  
 +        // Not using ensureViewport({callback}) because the navigator will invoke minimap,
 +        // and the final focus is determined via the minimap, instead of here.
@@ -18,11 +38,10 @@ index 4e98ed7..2a5c199 100644
 +                this.warpPointerTimeout = null;
 +            }, timeout);
 +        });
-+
          return true;
      }
  
-@@ -2544,9 +2557,6 @@ export const Spaces = class Spaces extends Map {
+@@ -2544,9 +2558,6 @@ export const Spaces = class Spaces extends Map {
          if (i === -1)
              return;
          let newMonitor = Main.layoutManager.monitors[i];
@@ -32,7 +51,7 @@ index 4e98ed7..2a5c199 100644
          let space = this.monitors.get(newMonitor);
  
          if (move && focus) {
-@@ -2575,6 +2585,10 @@ export const Spaces = class Spaces extends Map {
+@@ -2575,6 +2586,10 @@ export const Spaces = class Spaces extends Map {
          } else {
              space.activate(false, false);
          }
@@ -43,6 +62,23 @@ index 4e98ed7..2a5c199 100644
      }
  
      moveToMonitor(direction, backDirection) {
+diff --git a/topbar.js b/topbar.js
+index f42a528..2c992ca 100644
+--- a/topbar.js
++++ b/topbar.js
+@@ -180,10 +180,10 @@ export function topBarScrollAction(event) {
+     let direction = event.get_scroll_direction();
+     switch (direction) {
+     case Clutter.ScrollDirection.DOWN:
+-        Tiling.spaces?.activeSpace.switchRight(false);
++        Tiling.spaces?.activeSpace.switchRight(false, false);
+         break;
+     case Clutter.ScrollDirection.UP:
+-        Tiling.spaces?.activeSpace.switchLeft(false);
++        Tiling.spaces?.activeSpace.switchLeft(false, false);
+         break;
+     }
+     const selected = Tiling.spaces?.activeSpace?.selectedWindow;
 diff --git a/utils.js b/utils.js
 index 15bb86a..2ec0109 100644
 --- a/utils.js
