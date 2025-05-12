@@ -66,7 +66,7 @@ let
 
   burnSwitch = pkgs.writers.writeBashBin "burn" ''
     ${preBurn}
-    B_COLMENA=(colmena --show-trace --experimental-flake-eval)
+    B_COLMENA=(colmena --show-trace)
     B_HWCONF=(sudo nixos-generate-config --show-hardware-config --no-filesystems)
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then

@@ -4,6 +4,7 @@ import os
 import time
 import subprocess
 import yaml
+import traceback
 
 SOURCE = "/etc/mihomo/original.yaml"
 TARGET = "/etc/mihomo/clash.yaml"
@@ -44,6 +45,30 @@ def main():
         "geoip": "https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geoip.dat",
         "geosite": "https://cdn.jsdelivr.net/gh/Loyalsoldier/v2ray-rules-dat@release/geosite.dat",
     }
+    config["proxy-groups"] += [
+        {
+            "name": "ThroughJapan",
+            "proxies": [
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 01",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 02",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 03",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 04",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 05",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 06",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 07",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 08",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 09",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 10",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 11",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 12",
+                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 13",
+            ],
+            "type": "select",
+        },
+    ]
+    config["rules"] += [
+        "DOMAIN-SUFFIX,ototoy.jp,ThroughJapan",
+    ]
 
     # dump again
     with open(TARGET, "w") as writer:
@@ -54,4 +79,7 @@ def main():
 
 
 if __name__ == "__main__":
-    exit(main())
+    try:
+        __return__ = main()
+    except Exception:
+        print(f"error={__return__}", traceback.format_exc())

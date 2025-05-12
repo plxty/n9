@@ -1,17 +1,14 @@
-commit ffa360511e0ebade66394405630da2ccca7907bd
-Author: Zigit Zo <repl@z.xas.is>
-Date:   Wed Feb 19 17:43:29 2025 +0800
-
-    Add nix sign closure before pushing (id to secret-key-files)
-
 diff --git a/src/command/apply.rs b/src/command/apply.rs
-index 33395db..1053f9b 100644
+index 721c864..d9295b3 100644
 --- a/src/command/apply.rs
 +++ b/src/command/apply.rs
-@@ -55,6 +55,17 @@ The links will be created under .gcroots in the directory the Hive configuration
-         long_help = "Deactivates the progress spinner and prints every line of output."
-     )]
+@@ -45,6 +45,21 @@ pub struct DeployOpts {
+     #[arg(short, long)]
      verbose: bool,
+ 
++    /// Sign the store
++    ///
++    /// Before uploading the closure, sign it first.
 +    #[arg(
 +        long,
 +        help = "Sign nix store closure",
@@ -23,10 +20,11 @@ index 33395db..1053f9b 100644
 +This is identical to `services.nix-serve.secretKeyFile` in nix.conf, but more flexible."#
 +    )]
 +    sign: Option<String>,
-     #[arg(
-         long,
-         help = "Do not upload keys",
-@@ -152,6 +163,7 @@ pub async fn run(hive: Hive, opts: Opts) -> Result<(), ColmenaError> {
++
+     /// Do not upload keys
+     ///
+     /// By default, Colmena will upload secret keys set in `deployment.keys` before deploying
+@@ -142,6 +157,7 @@ pub async fn run(hive: Hive, opts: Opts) -> Result<(), ColmenaError> {
                  keep_result,
                  verbose,
                  no_keys,
@@ -34,7 +32,7 @@ index 33395db..1053f9b 100644
                  reboot,
                  no_substitute,
                  no_gzip,
-@@ -194,6 +206,7 @@ pub async fn run(hive: Hive, opts: Opts) -> Result<(), ColmenaError> {
+@@ -184,6 +200,7 @@ pub async fn run(hive: Hive, opts: Opts) -> Result<(), ColmenaError> {
          options.set_substituters_push(!no_substitute);
          options.set_gzip(!no_gzip);
          options.set_upload_keys(!no_keys);
