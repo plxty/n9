@@ -59,7 +59,7 @@ in
 
           read -l -P "will use env \"$env\", y? " confirm
           if test "$confirm" = "y"
-            echo "use flake n9#$env" | tee .envrc
+            echo "use flake n9#\"$env\"" | tee .envrc
             direnv allow
           end
         '';

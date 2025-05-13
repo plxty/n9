@@ -32,7 +32,20 @@ let
         };
 
         # shorthand of depsBuildBuild:
+        options.depsBuildBuild = lib.mkOption {
+          type = lib.types.listOf lib.types.package;
+          default = [ ];
+        };
+
+        # shorthand of packages (@see nixpkgs/pkgs/build-support/mkshell/default.nix),
+        # the alias of nativeBuildInputs:
         options.packages = lib.mkOption {
+          type = lib.types.listOf lib.types.package;
+          default = [ ];
+        };
+
+        # shorthand of buildInputs:
+        options.buildInputs = lib.mkOption {
           type = lib.types.listOf lib.types.package;
           default = [ ];
         };
@@ -43,14 +56,13 @@ let
           default = "";
         };
 
-        options.passthru = n9.mkAttrsOption { };
-
         config._module.args.pkgsCross = import inputs.nixpkgs {
           inherit (pkgs) system;
           crossSystem.config = config.triplet;
         };
       }
       ./config/gcc.nix
+      ./config/clang.nix
       ./config/rust.nix
     ];
     specialArgs = {
@@ -79,13 +91,14 @@ in
     (
       if pkgs.system == config.target then pkgs.mkShellNoCC else config._module.args.pkgsCross.mkShellNoCC
     )
-      (
-        {
-          inherit name;
-          inherit (config) shellHook;
-          depsBuildBuild = config.packages;
-        }
-        // config.passthru
-      )
+      {
+        inherit name;
+        inherit (config)
+          depsBuildBuild
+          packages
+          buildInputs
+          shellHook
+          ;
+      }
   ) cfg;
 }

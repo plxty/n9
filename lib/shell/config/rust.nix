@@ -30,15 +30,15 @@ in
     };
   };
 
-  config.passthru = lib.mkIf cfg.enable {
-    # Tools in host (like packages):
-    depsBuildBuild = with pkgs; [
+  config.depsBuildBuild = lib.mkIf cfg.enable (
+    with pkgs;
+    [
       (rust.rust-bin.${cfg.channel}.${cfg.version}.default.override {
         inherit (cfg) extensions;
         targets = [ config.triplet ];
       })
       rust-bindgen
       cargo
-    ];
-  };
+    ]
+  );
 }

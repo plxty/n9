@@ -48,20 +48,18 @@
             (lib.evalModules {
               modules = [
                 ./lib/shell
-                ./shell/test.nix
                 ./shell/asterinas.nix
+                # ./shell/linux.nix # FIXME
               ];
               specialArgs = args;
             }).config.drv;
         in
         {
           default = import ./shell/burn.nix args;
-
           tex = import ./shell/tex.nix args;
           qemu = import ./shell/qemu.nix args;
-          linux = import ./shell/linux.nix args;
-          inherit (shells) test asterinas;
-        };
+        }
+        // shells;
     in
     {
       lib = import ./lib/lib.nix inputs;

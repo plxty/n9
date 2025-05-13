@@ -17,16 +17,31 @@ in
     };
   };
 
-  # TODO: Some common libraries here.
-  config.passthru = lib.mkIf cfg.enable {
+  # TODO: More common libraries here.
+  config = lib.mkIf cfg.enable {
     depsBuildBuild =
-      [
-        pkgs.gcc
-        pkgs.gdb
-      ]
-      ++ lib.optionals (pkgs.system != config.target) [
-        pkgsCross.buildPackages.gcc # pkgsCross.stdenv.cc
-        pkgsCross.buildPackages.gdb
-      ];
+      (with pkgs; [
+        gcc
+        gdb
+        gnumake
+        autoconf
+        meson
+        ninja
+        cmake
+        flex
+        bison
+      ])
+      ++ lib.optionals (pkgs.system != config.target) (
+        with pkgsCross;
+        [
+          buildPackages.gcc # stdenv.cc
+          buildPackages.gdb
+        ]
+      );
+
+    # TODO: is it neccessary?
+    shellHook = lib.optionalString (pkgs.system != config.target) ''
+      export CROSS_COMPILE="${pkgsCross.stdenv.cc.targetPrefix}"
+    '';
   };
 }
