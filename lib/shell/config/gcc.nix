@@ -40,7 +40,7 @@ in
       );
 
     # TODO: is it neccessary?
-    shellHook = lib.optionalString (pkgs.system != config.target) ''
+    shellHooks = lib.optional (pkgs.system != config.target) ''
       export CROSS_COMPILE="${pkgsCross.stdenv.cc.targetPrefix}"
     '';
   };

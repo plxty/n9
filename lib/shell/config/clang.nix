@@ -34,20 +34,19 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    depsBuildBuild = lib.mkIf cfg.enable (
-      with pkgs;
-      [
-        clangWrapper # it's multi-target, altough nix don't like
-        lld
-        libllvm
-      ]
-    );
+    depsBuildBuild = with pkgs; [
+      clangWrapper # it's multi-target, altough nix don't like
+      lld
+      libllvm
+    ];
 
     # TODO: Workaround for fatal errors:
-    shellHook = lib.mkIf cfg.enable ''
-      export NIX_CFLAGS_COMPILE+=" -Qunused-arguments"
-      export NIX_CFLAGS_COMPILE_${underscore pkgs.stdenv.buildPlatform.config}+=" -Qunused-arguments"
-      export NIX_CFLAGS_COMPILE_${underscore config.target}+=" -Qunused-arguments"
-    '';
+    shellHooks = [
+      ''
+        export NIX_CFLAGS_COMPILE+=" -Qunused-arguments"
+        export NIX_CFLAGS_COMPILE_${underscore pkgs.stdenv.buildPlatform.config}+=" -Qunused-arguments"
+        export NIX_CFLAGS_COMPILE_${underscore config.target}+=" -Qunused-arguments"
+      ''
+    ];
   };
 }

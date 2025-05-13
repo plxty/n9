@@ -21,9 +21,7 @@ let
 in
 {
   n9.shell.linux = {
-    shellHook = ''
-      export MAKEFLAGS="-j$(nproc --ignore 3)"
-    '';
+    shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
     inherit depsBuildBuild;
   };
 
@@ -31,9 +29,7 @@ in
     # TODO: Merge target & triplet?
     target = "aarch64-linux";
     triplet = "aarch64-linux-gnu-gcc";
-    shellHook = ''
-      export MAKEFLAGS="-j$(nproc --ignore 3)"
-    '';
+    shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
     inherit depsBuildBuild;
   };
 
@@ -42,10 +38,12 @@ in
     gcc.enable = false;
     clang.enable = true;
     rust.enable = true;
-    shellHook = ''
-      export MAKEFLAGS="-j$(nproc --ignore 3)"
-      export LLVM="1"
-    '';
+    shellHooks = [
+      ''
+        export MAKEFLAGS="-j$(nproc --ignore 3)"
+        export LLVM="1"
+      ''
+    ];
     inherit depsBuildBuild;
   };
 }

@@ -45,14 +45,15 @@
           };
 
           shells =
-            (lib.evalModules {
-              modules = [
-                ./lib/shell
-                ./shell/asterinas.nix
-                # ./shell/linux.nix # FIXME
-              ];
-              specialArgs = args;
-            }).config.drv;
+            lib.mapAttrs (_: cfg: cfg.drv)
+              (lib.evalModules {
+                modules = [
+                  ./lib/shell
+                  ./shell/asterinas.nix
+                  ./shell/linux.nix
+                ];
+                specialArgs = args;
+              }).config.n9.shell;
         in
         {
           default = import ./shell/burn.nix args;

@@ -35,13 +35,15 @@ in
     ];
 
     # To prevent from mixing targets with container rust, only for indexing:
-    shellHook = ''
-      export CARGO_TARGET_DIR="target.rs.bk"
-      mkdir -p .helix
-      {
-        echo "[language-server.rust-analyzer]"
-        echo "config = { cargo = { \"target\" = \"x86_64-unknown-none\" } }"
-      } > .helix/languages.toml
-    '';
+    shellHooks = [
+      ''
+        export CARGO_TARGET_DIR="target.rs.bk"
+        mkdir -p .helix
+        {
+          echo "[language-server.rust-analyzer]"
+          echo "config = { cargo = { \"target\" = \"x86_64-unknown-none\" } }"
+        } > .helix/languages.toml
+      ''
+    ];
   };
 }
