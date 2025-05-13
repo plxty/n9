@@ -19,6 +19,11 @@ rec {
   # Path of me:
   dir = "/home/byte/.n9";
 
+  # Match or default:
+  match =
+    attrs: name: default:
+    if default == null || builtins.hasAttr name attrs then attrs.${name} else default;
+
   # Like recursiveUpdate, but also handle the lists concation:
   # When using mergeAttrs, recursiveUpdate or other merging functions, you'd
   # better think twice of what you want, and what is the inner types you're

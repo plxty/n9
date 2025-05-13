@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  n9,
   pkgs,
   inputs,
   ...
@@ -35,7 +36,16 @@ in
     [
       (rust.rust-bin.${cfg.channel}.${cfg.version}.default.override {
         inherit (cfg) extensions;
-        targets = [ config.triplet ];
+        # https://doc.rust-lang.org/beta/rustc/platform-support.html
+        # Adjust some of the triplets... TODO: Better idea? Triplet of Rust and
+        # GCC isn't always the same... No idea of how to match them at once.
+        # Maybe add a new rust.triplet option?
+        targets = [
+          (n9.match {
+            "x86_64-linux-gnu" = "x86_64-unknown-linux-gnu";
+            "aarch64-linux-gnu" = "aarch64-unknown-linux-gnu";
+          } config.triplet config.triplet)
+        ];
       })
       rust-bindgen
       cargo

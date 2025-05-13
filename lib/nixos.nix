@@ -24,7 +24,7 @@ let
   apply =
     hostName: modules:
     let
-      system' = lib.trace "selecting ${system} for ${hostName}" system;
+      system' = lib.trace "nixos: selecting ${system} for ${hostName}" system;
     in
     {
       meta.nodeNixpkgs.${hostName} = n9.mkPkgs system';

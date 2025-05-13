@@ -8,24 +8,30 @@
 
 let
   essential =
-    { config, ... }:
+    { name, config, ... }:
     {
       options.target = lib.mkOption {
         type = lib.types.str;
-        default = pkgs.system;
       };
 
       options.triplet = lib.mkOption {
         type = lib.types.str;
         # TODO: examples.nix?
-        default =
-          if pkgs.system == "x86_64-linux" then
-            "x86_64-unknown-linux-gnu"
-          else if pkgs.system == "aarch64-linux" then
-            "aarch64-unknown-linux-gnu"
-          else
-            abort "No match triplet of ${pkgs.system}";
+        default = pkgs.stdenv.buildPlatform.config;
       };
+
+      # choose target from triplet:
+      config.target =
+        let
+          target = n9.match {
+            x86_64-unknown-linux-gnu = "x86_64-linux";
+            x86_64-unknown-none = "x86_64-linux";
+            x86_64-linux-gnu = "x86_64-linux";
+            aarch64-unknown-linux-gnu = "aarch64-linux";
+            aarch64-linux-gnu = "aarch64-linux";
+          } config.triplet null;
+        in
+        lib.trace "shell: selecting ${target} for ${name}" target;
 
       # shorthand of depsBuildBuild:
       options.depsBuildBuild = lib.mkOption {

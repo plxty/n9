@@ -34,7 +34,6 @@
     smartmontools
     gitoxide
     bc
-    openssl
   ];
 
   services.ssh-agent.enable = true;

@@ -17,6 +17,7 @@ let
     bison
     ncurses
     elfutils
+    openssl
   ];
 in
 {
@@ -26,15 +27,14 @@ in
   };
 
   n9.shell."linux.arm64" = {
-    # TODO: Merge target & triplet?
-    target = "aarch64-linux";
-    triplet = "aarch64-linux-gnu-gcc";
+    triplet = "aarch64-linux-gnu";
     shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
     inherit depsBuildBuild;
   };
 
   # Just fancy.
   n9.shell.rust-for-linux = {
+    triplet = "x86_64-linux-gnu"; # only required for clang-for-linux
     gcc.enable = false;
     clang.enable = true;
     rust.enable = true;
