@@ -43,13 +43,24 @@
           args = inputs // {
             pkgs = n9.mkPkgs system;
           };
+
+          shells =
+            (lib.evalModules {
+              modules = [
+                ./lib/shell
+                ./shell/test.nix
+                ./shell/asterinas.nix
+              ];
+              specialArgs = args;
+            }).config.drv;
         in
         {
           default = import ./shell/burn.nix args;
+
           tex = import ./shell/tex.nix args;
           qemu = import ./shell/qemu.nix args;
           linux = import ./shell/linux.nix args;
-          asterinas = import ./shell/asterinas.nix args;
+          inherit (shells) test asterinas;
         };
     in
     {

@@ -206,8 +206,9 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/shell/extensions/dash-to-dock" = {
-      apply-custom-theme = false;
+      apply-custom-theme = true;
       background-opacity = 0.8;
+      click-action = "previews";
       custom-background-color = false;
       custom-theme-shrink = false;
       dash-max-icon-size = 48;
@@ -215,12 +216,24 @@ with lib.hm.gvariant;
       extend-height = false;
       height-fraction = 0.9;
       hot-keys = false;
+      icon-size-fixed = false;
       intellihide-mode = "FOCUS_APPLICATION_WINDOWS";
+      isolate-monitors = false;
+      isolate-workspaces = false;
+      middle-click-action = "launch";
       multi-monitor = false;
       running-indicator-style = "DASHES";
       scroll-action = "switch-workspace";
+      shift-click-action = "minimize";
+      shift-middle-click-action = "launch";
+      show-apps-always-in-the-edge = true;
+      show-mounts = false;
+      show-mounts-only-mounted = true;
+      show-show-apps-button = true;
       show-trash = false;
+      show-windows-preview = true;
       transparency-mode = "DYNAMIC";
+      workspace-agnostic-urgent-windows = true;
     };
 
     "org/gnome/shell/extensions/display-brightness-ddcutil" = {

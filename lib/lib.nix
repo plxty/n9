@@ -44,12 +44,17 @@ rec {
     f [ ] attrList;
 
   # @see attrs = mkOptionType { ... }
-  mkAttrsOption = lib.mkOption {
-    type = lib.types.attrs // {
-      merge = _: defs: recursiveMerge (lib.map (def: def.value) defs);
-    };
-    default = { };
-  };
+  mkAttrsOption =
+    attrs:
+    lib.mkOption (
+      {
+        type = lib.types.attrs // {
+          merge = _: defs: recursiveMerge (lib.map (def: def.value) defs);
+        };
+        default = { };
+      }
+      // attrs
+    );
 
   # @see lib/nixos/config/users.nix
   # Returns { user: config; };
