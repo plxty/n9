@@ -9,6 +9,7 @@
 let
   cfg = config.n9.environment.gnome;
   dconf = import ../dconf-gnome.nix { inherit lib; };
+  ext = package: { inherit package; };
 in
 {
   options.n9.environment.gnome = {
@@ -30,13 +31,14 @@ in
         programs.gnome-shell = {
           enable = true;
           extensions = with pkgs.gnomeExtensions; [
-            { package = brightness-control-using-ddcutil; }
-            { package = switcher; }
-            { package = n9.patch paperwm "paperwm-focus"; }
-            { package = dash-to-dock; }
-            { package = n9.patch customize-ibus "customize-ibus-keep"; }
-            { package = tray-icons-reloaded; }
-            { package = hide-cursor; }
+            (ext brightness-control-using-ddcutil)
+            (ext switcher)
+            (ext (n9.patch paperwm "paperwm-focus"))
+            (ext dash-to-dock)
+            (ext (n9.patch customize-ibus "customize-ibus-keep"))
+            (ext tray-icons-reloaded)
+            (ext hide-cursor)
+            (ext focus)
           ];
         };
 

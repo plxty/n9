@@ -33,6 +33,7 @@ in
       };
 
       systemPackages = with pkgs; [
+        (n9.patch pop-wallpapers "pop-wallpapers-stable-dir")
         wl-clipboard
         (brave.override (prev: {
           commandLineArgs = builtins.concatStringsSep " " [
@@ -45,9 +46,11 @@ in
         nautilus
         gedit
         gnome-tweaks
+        file-roller
       ];
 
       gnome.excludePackages = with pkgs; [
+        gnome-backgrounds
         gnome-tour
         gnome-shell-extensions
       ];

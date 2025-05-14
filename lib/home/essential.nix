@@ -34,6 +34,7 @@
     smartmontools
     gitoxide
     bc
+    ncdu
   ];
 
   services.ssh-agent.enable = true;

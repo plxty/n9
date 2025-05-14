@@ -46,6 +46,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/desktop/interface" = {
+      accent-color = "slate";
       color-scheme = "prefer-dark";
       document-font-name = "Noto Sans CJK SC 11 @wght=400";
       enable-hot-corners = false;
@@ -249,6 +250,13 @@ with lib.hm.gvariant;
       show-internal-slider = false;
       show-value-label = true;
       step-change-keyboard = 5.0;
+    };
+
+    "org/gnome/shell/extensions/focus" = {
+      inactive-opacity = mkUint32 90;
+      is-background-blur = false;
+      is-desaturate-enabled = false;
+      special-focus-opacity = mkUint32 95;
     };
 
     "org/gnome/shell/extensions/paperwm" = {

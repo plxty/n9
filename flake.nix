@@ -74,11 +74,8 @@
     };
 
   inputs = {
-    # Stick to a version for a little while, don't be so aggrassive as it rebuilds a lot :/
-    # @see https://github.com/NixOS/nixpkgs/commits/master/pkgs/development/libraries/webkitgtk/default.nix
-    # @see pkgs/overlay.nix: webkitgtk
+    # TODO: Stick to 25.05 for a while... Rolling is hurting my walts :(
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    snapshot.url = "github:NixOS/nixpkgs/6c57ac8b3090d7022bd5ac1a072f297bdbdd6311";
 
     colmena = {
       url = "github:zhaofengli/colmena";
