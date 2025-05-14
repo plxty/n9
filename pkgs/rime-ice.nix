@@ -13,7 +13,7 @@
 
 let
   pname = "rime-ice";
-  version = "7f6f4880bd5f6b7a76195c515af2e64b88ce0ec2";
+  version = "face4fabbe9d2ab01e73ec3cc6253924cca5e2f7";
 in
 stdenv.mkDerivation {
   inherit pname version;
@@ -22,7 +22,7 @@ stdenv.mkDerivation {
     owner = "iDvel";
     repo = "rime-ice";
     rev = version;
-    hash = "sha256-N7EDvQX598jxNILzwTwAeu/BY9wWVBRUuTApamf4nAY=";
+    hash = "sha256-K+xYo4SBDws5oPKVkxkfosw8sizzFO9DWxWEu7PRPQ0=";
   };
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
