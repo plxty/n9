@@ -1,11 +1,9 @@
-{ n9, inputs, ... }:
+{ n9, lib, ... }:
 
 whereHosts:
 
 # For reverting to nixosSystem, commit 0dfc786daefb441c8e14b3f97fa3393847d1de9d
 let
-  inherit (inputs.nixpkgs) lib;
-
   # Wow, is it a really config?
   cfg = config.n9.os;
 
@@ -24,7 +22,7 @@ let
   apply =
     hostName: modules:
     let
-      system' = lib.trace "selecting ${system} for ${hostName}" system;
+      system' = lib.trace "nixos: selecting ${system} for ${hostName}" system;
     in
     {
       meta.nodeNixpkgs.${hostName} = n9.mkPkgs system';
@@ -37,21 +35,21 @@ let
       ${hostName} = n9.recursiveMerge [
         {
           imports = [
-            # options
-            ./nixos/config/disk.nix
-            ./nixos/config/network.nix
-            ./nixos/config/sshd.nix
-            ./nixos/config/users.nix
-            ./generic/config/keys.nix
-            ./nixos/config/keys.nix
-            ./nixos/config/passwd.nix
-            ./nixos/config/ssh-key.nix
-            ./nixos/config/gnome.nix
-            ./nixos/config/boxes.nix
+            # modules
+            ./config/disk.nix
+            ./config/network.nix
+            ./config/sshd.nix
+            ./config/users.nix
+            ../generic/config/keys.nix
+            ./config/keys.nix
+            ./config/passwd.nix
+            ./config/ssh-key.nix
+            ./config/gnome.nix
+            ./config/boxes.nix
 
             # configs
             hwModule
-            ./nixos/essential.nix
+            ./essential.nix
           ];
         }
         modules

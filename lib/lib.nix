@@ -1,8 +1,5 @@
-{ inputs, ... }@args:
+{ inputs, lib, ... }@args:
 
-let
-  inherit (inputs.nixpkgs) lib;
-in
 rec {
   # Helpers of mine:
   patches =

@@ -3,23 +3,17 @@
 
 {
   outputs =
-    {
-      self,
-      nixpkgs,
-      colmena,
-      ...
-    }@allInputs:
+    { nixpkgs, colmena, ... }@allInputs:
     let
+      # Unify the arguments, keep only libraries and inputs:
       inherit (nixpkgs) lib;
-
-      # Unify the arguments, keep only n9 (outputs) and inputs:
-      n9 = self.lib;
+      n9 = import ./lib/lib.nix inputs;
       inputs = {
-        inherit n9;
+        inherit lib n9;
         inputs = allInputs;
       };
 
-      mkSystems = import ./lib/nixos.nix inputs;
+      # Systems:
       colmenaHive = colmena.lib.makeHive (
         # @see lib/nixos.nix, meta.nixpkgs will be overridden:
         lib.fold lib.recursiveUpdate
@@ -28,7 +22,7 @@
             meta.specialArgs = inputs;
           }
           (
-            n9.flatMap mkSystems [
+            n9.flatMap (import ./lib/nixos inputs) [
               ./hosts/evil
               ./hosts/iris
               ./hosts/coffee
@@ -37,6 +31,7 @@
           )
       );
 
+      # Develop shells:
       mkShells =
         system:
         let
@@ -45,24 +40,16 @@
           };
         in
         {
-          default = import ./shell/burn.nix args;
-          tex = import ./shell/tex.nix args;
-          qemu = import ./shell/qemu.nix args;
+          default = import ./shells/burn.nix args;
+          tex = import ./shells/tex.nix args;
+          qemu = import ./shells/qemu.nix args;
         }
-        // (lib.mapAttrs (_: cfg: cfg.drv)
-          (lib.evalModules {
-            modules = [
-              ./lib/shell
-              ./shell/asterinas.nix
-              ./shell/linux.nix
-            ];
-            specialArgs = args;
-          }).config.n9.shell
-        );
+        // ((import ./lib/shell args) [
+          ./shells/asterinas.nix
+          ./shells/linux.nix
+        ]);
     in
     {
-      lib = import ./lib/lib.nix inputs;
-
       inherit colmenaHive;
       nixosConfigurations = colmenaHive.nodes; # compatible
 

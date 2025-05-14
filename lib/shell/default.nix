@@ -4,7 +4,9 @@
   lib,
   pkgs,
   ...
-}:
+}@args:
+
+shells:
 
 let
   essential =
@@ -91,7 +93,7 @@ let
 
   module = lib.types.submoduleWith {
     modules = [
-      # options
+      # modules
       essential
       ./config/gcc.nix
       ./config/clang.nix
@@ -110,9 +112,15 @@ let
     };
   };
 in
-{
-  options.n9.shell = lib.mkOption {
-    type = lib.types.attrsOf module;
-    default = { };
-  };
-}
+lib.mapAttrs (_: cfg: cfg.drv)
+  (lib.evalModules {
+    modules = [
+      {
+        options.n9.shell = lib.mkOption {
+          type = lib.types.attrsOf module;
+          default = { };
+        };
+      }
+    ] ++ shells;
+    specialArgs = args;
+  }).config.n9.shell

@@ -35,7 +35,7 @@ in
             }
           )
 
-          # options
+          # modules
           ../../generic/config/keys.nix
           ../../home/config/passwd.nix
           ../../home/config/ssh-key.nix

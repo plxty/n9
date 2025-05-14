@@ -253,7 +253,7 @@ with lib.hm.gvariant;
     };
 
     "org/gnome/shell/extensions/focus" = {
-      inactive-opacity = mkUint32 90;
+      inactive-opacity = mkUint32 95;
       is-background-blur = false;
       is-desaturate-enabled = false;
       special-focus-opacity = mkUint32 95;
