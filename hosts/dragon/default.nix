@@ -1,12 +1,7 @@
 {
   n9.os.dragon.imports = [
     (
-      {
-        lib,
-        pkgs,
-        inputs,
-        ...
-      }:
+      { lib, inputs, ... }:
       {
         imports = [ inputs.nixos-wsl.nixosModules.default ];
 
@@ -21,12 +16,6 @@
 
         # Against lib/nixos/essential.nix:
         boot.loader.systemd-boot.enable = lib.mkForce false;
-
-        # for vscode remote server:
-        programs.nix-ld = {
-          enable = true;
-          package = pkgs.nix-ld-rs;
-        };
       }
     )
     {

@@ -76,5 +76,11 @@
     };
   };
 
+  # To run "native" linux elf, such as vscode remote server:
+  programs.nix-ld = {
+    enable = true;
+    package = pkgs.nix-ld-rs;
+  };
+
   system.stateVersion = "25.05";
 }
