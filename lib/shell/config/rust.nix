@@ -41,10 +41,10 @@ in
         # GCC isn't always the same... No idea of how to match them at once.
         # Maybe add a new rust.triplet option?
         targets = [
-          (n9.match {
+          (n9.match config.triplet {
             "x86_64-linux-gnu" = "x86_64-unknown-linux-gnu";
             "aarch64-linux-gnu" = "aarch64-unknown-linux-gnu";
-          } config.triplet config.triplet)
+          } config.triplet)
         ];
       })
       rust-bindgen

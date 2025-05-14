@@ -11,6 +11,8 @@ let
     exec ${pkgs.gnumake}/bin/make "$@"
   '';
 
+  shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
+
   depsBuildBuild = with pkgs; [
     makeWrapper
     flex
@@ -22,14 +24,20 @@ let
 in
 {
   n9.shell.linux = {
-    shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
-    inherit depsBuildBuild;
+    inherit shellHooks depsBuildBuild;
   };
 
   n9.shell."linux.arm64" = {
-    triplet = "aarch64-linux-gnu";
-    shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
+    triplet = "aarch64-unknown-linux-gnu";
+    shellHooks = shellHooks ++ [ "export ARCH=arm64" ];
     inherit depsBuildBuild;
+  };
+
+  # For different config, it seems the nix will select the most suitable argument,
+  # dynamically, with `config._module.args` as other options.
+  n9.shell."linux.riscv" = {
+    triplet = "riscv64-unknown-linux-gnu";
+    shellHooks = shellHooks ++ [ "export ARCH=riscv" ];
   };
 
   # Just fancy.
@@ -38,12 +46,7 @@ in
     gcc.enable = false;
     clang.enable = true;
     rust.enable = true;
-    shellHooks = [
-      ''
-        export MAKEFLAGS="-j$(nproc --ignore 3)"
-        export LLVM="1"
-      ''
-    ];
+    shellHooks = shellHooks ++ [ ''export LLVM="1"'' ];
     inherit depsBuildBuild;
   };
 }

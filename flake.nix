@@ -43,24 +43,22 @@
           args = inputs // {
             pkgs = n9.mkPkgs system;
           };
-
-          shells =
-            lib.mapAttrs (_: cfg: cfg.drv)
-              (lib.evalModules {
-                modules = [
-                  ./lib/shell
-                  ./shell/asterinas.nix
-                  ./shell/linux.nix
-                ];
-                specialArgs = args;
-              }).config.n9.shell;
         in
         {
           default = import ./shell/burn.nix args;
           tex = import ./shell/tex.nix args;
           qemu = import ./shell/qemu.nix args;
         }
-        // shells;
+        // (lib.mapAttrs (_: cfg: cfg.drv)
+          (lib.evalModules {
+            modules = [
+              ./lib/shell
+              ./shell/asterinas.nix
+              ./shell/linux.nix
+            ];
+            specialArgs = args;
+          }).config.n9.shell
+        );
     in
     {
       lib = import ./lib/lib.nix inputs;

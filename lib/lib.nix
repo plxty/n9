@@ -21,7 +21,7 @@ rec {
 
   # Match or default:
   match =
-    attrs: name: default:
+    name: attrs: default:
     if default == null || builtins.hasAttr name attrs then attrs.${name} else default;
 
   # Like recursiveUpdate, but also handle the lists concation:

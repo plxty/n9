@@ -23,13 +23,14 @@ let
       # choose target from triplet:
       config.target =
         let
-          target = n9.match {
+          target = n9.match config.triplet {
             x86_64-unknown-linux-gnu = "x86_64-linux";
             x86_64-unknown-none = "x86_64-linux";
             x86_64-linux-gnu = "x86_64-linux";
             aarch64-unknown-linux-gnu = "aarch64-linux";
             aarch64-linux-gnu = "aarch64-linux";
-          } config.triplet null;
+            riscv64-unknown-linux-gnu = "riscv64-linux";
+          } null;
         in
         lib.trace "shell: selecting ${target} for ${name}" target;
 
