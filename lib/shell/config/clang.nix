@@ -36,8 +36,7 @@ in
   options.clang = {
     enable = lib.mkEnableOption "clang";
 
-    # Whether to use a unwrapped clang when cross compiling, if true, you may
-    # also need to take care of the "config.triplet".
+    # Whether to use a unwrapped clang when cross compiling?
     unwrapped = lib.mkOption {
       type = lib.types.bool;
       default = false;

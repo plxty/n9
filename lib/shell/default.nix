@@ -104,6 +104,7 @@ lib.mapAttrs (_: cfg: cfg.drv)
                 ./config/gcc.nix
                 ./config/clang.nix
                 ./config/rust.nix
+                ./config/tex.nix
 
                 # config
                 drv

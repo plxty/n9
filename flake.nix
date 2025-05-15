@@ -41,10 +41,10 @@
         in
         {
           default = import ./shells/burn.nix args;
-          tex = import ./shells/tex.nix args;
           qemu = import ./shells/qemu.nix args;
         }
         // ((import ./lib/shell args) [
+          ./shells/resume.nix
           ./shells/asterinas.nix
           ./shells/linux.nix
         ]);
