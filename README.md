@@ -25,7 +25,7 @@ burn
 burn evil
 
 # nixos-anywhere
-fire wa
+fire iris
 ```
 
 Checkout `hosts` directory for my own builds, using [colmena](https://github.com/zhaofengli/colmena).

@@ -101,6 +101,7 @@ lib.mapAttrs (_: cfg: cfg.drv)
               modules = [
                 # modules
                 essential
+                ./config/make.nix
                 ./config/gcc.nix
                 ./config/clang.nix
                 ./config/rust.nix

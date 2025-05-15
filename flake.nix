@@ -34,16 +34,8 @@
       # Develop shells:
       mkShells =
         system:
-        let
-          args = inputs // {
-            pkgs = n9.mkPkgs system;
-          };
-        in
-        {
-          default = import ./shells/burn.nix args;
-          qemu = import ./shells/qemu.nix args;
-        }
-        // ((import ./lib/shell args) [
+        ((import ./lib/shell (inputs // { pkgs = n9.mkPkgs system; })) [
+          ./shells/burn.nix
           ./shells/resume.nix
           ./shells/asterinas.nix
           ./shells/linux.nix

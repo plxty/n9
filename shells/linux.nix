@@ -1,20 +1,14 @@
 { pkgs, ... }:
 
 let
-  makeWrapper = pkgs.writers.writeBashBin "make" ''
-    if [[ "$1" == "compdb" ]]; then
-      shift 1
-      set -xeu
-      cd $(git rev-parse --show-toplevel)
-      exec ./scripts/clang-tools/gen_compile_commands.py "$@"
-    fi
-    exec ${pkgs.gnumake}/bin/make "$@"
-  '';
-
   shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
 
+  make.compdb = ''
+    cd $(git rev-parse --show-toplevel)
+    exec ./scripts/clang-tools/gen_compile_commands.py "$@"
+  '';
+
   depsBuildBuild = with pkgs; [
-    makeWrapper
     flex
     bison
     ncurses
@@ -24,13 +18,13 @@ let
 in
 {
   n9.shell.linux = {
-    inherit shellHooks depsBuildBuild;
+    inherit make shellHooks depsBuildBuild;
   };
 
   n9.shell."linux.arm64" = {
     triplet = "aarch64-unknown-linux-gnu";
     shellHooks = shellHooks ++ [ "export ARCH=arm64" ];
-    inherit depsBuildBuild;
+    inherit make depsBuildBuild;
   };
 
   # For different config, it seems the nix will select the most suitable argument,
@@ -38,6 +32,7 @@ in
   n9.shell."linux.riscv" = {
     triplet = "riscv64-unknown-linux-gnu";
     shellHooks = shellHooks ++ [ "export ARCH=riscv" ];
+    inherit make;
   };
 
   # Just fancy.
@@ -49,6 +44,6 @@ in
     };
     rust.enable = true;
     shellHooks = shellHooks ++ [ ''export LLVM="1"'' ];
-    inherit depsBuildBuild;
+    inherit make depsBuildBuild;
   };
 }

@@ -136,10 +136,8 @@ let
     ${postBurn}
   '';
 in
-pkgs.mkShell {
-  name = "burn";
-
-  packages = with pkgs; [
+{
+  n9.shell.burn.packages = with pkgs; [
     # RDepends:
     gnused
     jq
