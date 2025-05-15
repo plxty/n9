@@ -2,7 +2,7 @@
 
 let
   plugin = pkg: { inherit (pkg) name src; };
-  tideToken = "0";
+  tideToken = "1";
 in
 {
   home.packages = with pkgs; [
@@ -101,7 +101,7 @@ in
           set -eU (set -U | awk '/tide/ {print $1}')
 
           # what `tide configure` shows:
-          tide configure --auto --style=Rainbow --prompt_colors='True color' --show_time='24-hour format' --rainbow_prompt_separators=Slanted --powerline_prompt_heads=Slanted --powerline_prompt_tails=Flat --powerline_prompt_style='Two lines, character' --prompt_connection=Disconnected --powerline_right_prompt_frame=No --prompt_spacing=Sparse --icons='Few icons' --transient=Yes
+          tide configure --auto --style=Lean --prompt_colors='True color' --show_time='24-hour format' --lean_prompt_height='Two lines' --prompt_connection=Disconnected --prompt_spacing=Sparse --icons='Few icons' --transient=Yes
           set -U tide_configure_token ${tideToken}
         end
 

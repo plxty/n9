@@ -179,6 +179,24 @@ EXCLUDIND = [
             "window-size",  # (1203, 902)
         ],
     ),
+    (
+        "org/gnome/file-roller/listing",
+        [
+            "list-mode",  # 'as-folder'
+            "name-column-width",  # 253
+            "show-path",  # false
+            "sort-method",  # 'name'
+            "sort-type",  # 'ascending'
+        ],
+    ),
+    (
+        "org/gnome/file-roller/ui",
+        [
+            "sidebar-width",  # 200
+            "window-height",  # 1394
+            "window-width",  # 600
+        ],
+    ),
 ]
 
 

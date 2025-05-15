@@ -65,10 +65,13 @@ in
         noto-fonts-cjk-sans
         noto-fonts-cjk-serif
 
+        # +-*/{}=[]:
+        jetbrains-mono
+        source-code-pro
+
         # Extra fonts:
         wqy_microhei
         wqy_zenhei
-        nerd-fonts.mononoki
       ];
 
       # gnome-font-viewer
