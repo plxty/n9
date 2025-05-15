@@ -26,7 +26,6 @@ in
         "rust-src"
         "rustc-dev"
         "llvm-tools-preview"
-        "rust-analyzer"
       ];
     };
 

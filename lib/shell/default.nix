@@ -90,34 +90,34 @@ let
         shellHook = lib.concatStringsSep "\n" config.shellHooks;
       };
     };
-
-  module = lib.types.submoduleWith {
-    modules = [
-      # modules
-      essential
-      ./config/gcc.nix
-      ./config/clang.nix
-      ./config/rust.nix
-
-      # config
-      drv
-    ];
-    specialArgs = {
-      inherit
-        n9
-        inputs
-        lib
-        pkgs
-        ;
-    };
-  };
 in
 lib.mapAttrs (_: cfg: cfg.drv)
   (lib.evalModules {
     modules = [
       {
         options.n9.shell = lib.mkOption {
-          type = lib.types.attrsOf module;
+          type = lib.types.attrsOf (
+            lib.types.submoduleWith {
+              modules = [
+                # modules
+                essential
+                ./config/gcc.nix
+                ./config/clang.nix
+                ./config/rust.nix
+
+                # config
+                drv
+              ];
+              specialArgs = {
+                inherit
+                  n9
+                  inputs
+                  lib
+                  pkgs
+                  ;
+              };
+            }
+          );
           default = { };
         };
       }

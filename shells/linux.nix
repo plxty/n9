@@ -42,9 +42,11 @@ in
 
   # Just fancy.
   n9.shell.rust-for-linux = {
-    triplet = "x86_64-linux-gnu"; # only required for clang-for-linux
     gcc.enable = false;
-    clang.enable = true;
+    clang = {
+      enable = true;
+      unwrapped = true;
+    };
     rust.enable = true;
     shellHooks = shellHooks ++ [ ''export LLVM="1"'' ];
     inherit depsBuildBuild;
