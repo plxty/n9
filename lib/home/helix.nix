@@ -213,6 +213,8 @@ in
           - -fno-allow-store-data-races
           - -fconserve-stack
           - --no-sysroot-suffix
+          - -fmin-function-alignment=*
+          - -femit-struct-debug-baseonly
     '';
   };
 }

@@ -15,7 +15,7 @@ in
   };
 
   config = lib.mkIf (cfg != { }) {
-    depsBuildBuild = [
+    packages = [
       (pkgs.writers.writeBashBin "make" (
         lib.concatStringsSep "\n" (
           (lib.mapAttrsToList (name: value: ''

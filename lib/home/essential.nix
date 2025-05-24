@@ -35,6 +35,7 @@
     gitoxide
     bc
     ncdu
+    nix-prefetch-scripts
   ];
 
   services.ssh-agent.enable = true;
