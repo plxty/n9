@@ -53,8 +53,8 @@
     };
 
   inputs = {
-    # TODO: Stick to 25.05 for a while... Rolling is hurting my walts :(
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Stick to 25.05 for a while... Rolling is hurting my walts :(
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
 
     colmena = {
       url = "github:zhaofengli/colmena";
@@ -74,6 +74,7 @@
         nixos-stable.follows = "";
         nixos-images.follows = "";
         treefmt-nix.follows = "";
+        nix-vm-test.follows = "";
       };
     };
 

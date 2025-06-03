@@ -83,7 +83,7 @@ let
 
         if $B_UP; then
           # Try updateing the database for command-not-found as well:
-          sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-unstable nixos
+          sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-25.05 nixos
           sudo nix-channel --update nixos || true
         fi
 
