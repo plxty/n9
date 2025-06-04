@@ -2,7 +2,6 @@
   n9.os.coffee.imports = [
     {
       n9.hardware.disk.nvme0n1.type = "btrfs";
-      deployment.allowLocalDeployment = true;
 
       n9.users.byte.imports = [
         (

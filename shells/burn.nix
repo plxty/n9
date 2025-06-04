@@ -77,7 +77,8 @@ let
         # "Wakeup" the sleeping parent when exit normally or abnormally:
         trap 'pkill -P $$ sleep' EXIT
 
-        # For hosts that mismatch with local, suggest `hostname xxx`:
+        # For hosts that mismatch with local, suggest `sudo hostname xxx`:
+        mkdir -p "hosts/$B_THIS"
         "''${B_HWCONF[@]}" > "hosts/$B_THIS/hardware-configuration.nix"
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
 

@@ -2,6 +2,7 @@
 
 let
   cfg = config.n9.services.sshd;
+  agents = [ "/etc/ssh/agent_keys.d/%u" ];
 in
 {
   options.n9.services.sshd = {
@@ -13,21 +14,28 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    services.openssh = {
-      enable = true;
-      ports = [ cfg.port ];
-      authorizedKeysFiles = [ "/etc/ssh/agent_keys.d/%u" ];
-    };
-    networking.firewall.allowedTCPPorts = [ cfg.port ];
-
-    # Fine-gran control of which user can use PAM to authorize things.
-    security.pam = {
-      sshAgentAuth = {
+  config = lib.mkMerge [
+    (lib.mkIf cfg.enable {
+      services.openssh = {
         enable = true;
-        authorizedKeysFiles = [ "/etc/ssh/agent_keys.d/%u" ];
+        ports = [ cfg.port ];
+        authorizedKeysFiles = agents;
       };
-      services.sudo.sshAgentAuth = true;
-    };
-  };
+
+      # TODO: NIC Port control?
+      networking.firewall.allowedTCPPorts = [ cfg.port ];
+
+      # Fine-gran control of which user can use PAM to authorize things.
+      security.pam = {
+        sshAgentAuth = {
+          enable = true;
+          authorizedKeysFiles = agents;
+        };
+        services.sudo.sshAgentAuth = true;
+      };
+    })
+
+    # When sshd is disabled, we make the local deployment work:
+    { deployment.allowLocalDeployment = lib.mkDefault (!cfg.enable); }
+  ];
 }
