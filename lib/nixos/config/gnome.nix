@@ -21,7 +21,7 @@ in
       };
 
       # @see nixpkgs/nixos/modules/services/x11/desktop-managers/gnome.md
-      gnome.core-utilities.enable = false;
+      gnome.core-apps.enable = false;
     };
 
     environment = {
@@ -68,6 +68,7 @@ in
         # +-*/{}=[]:
         jetbrains-mono
         source-code-pro
+        nerd-fonts.symbols-only
 
         # Extra fonts:
         wqy_microhei

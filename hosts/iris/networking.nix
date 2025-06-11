@@ -1,9 +1,4 @@
-{
-  pkgs,
-  n9,
-  lib,
-  ...
-}:
+{ pkgs, n9, ... }:
 
 let
   ports = {
@@ -209,43 +204,7 @@ in
     '';
   };
 
-  # Old new world:
-  services.mihomo = {
-    enable = true;
-    package = n9.patch pkgs.mihomo "mihomo-taste";
-    configFile = "/etc/mihomo/clash.yaml";
-    webui = pkgs.metacubexd;
-    tunMode = true; # tproxy needs it as well
-  };
-
-  # https://github.com/NixOS/nixpkgs/blob/26d499fc9f1d567283d5d56fcf367edd815dba1d/nixos/modules/system/boot/systemd.nix#L747C1-L748C1
-  systemd.services.clash-renew = {
-    requires = [ "network-online.target" ];
-    after = [ "network-online.target" ];
-    path = with pkgs; [
-      (python3.withPackages (py3: [ py3.pyyaml ]))
-      curl
-    ];
-    serviceConfig =
-      let
-        dir = lib.fileset.toSource {
-          root = ./.;
-          fileset = ./clash-renew.py;
-        };
-      in
-      {
-        Type = "oneshot";
-        ExecStart = "${dir}/clash-renew.py";
-      };
-  };
-  n9.security.keys."/etc/mihomo/subscribe".source = "subscribe";
-
-  # Make mihomo depends:
-  systemd.services.mihomo = {
-    requires = [ "clash-renew.service" ];
-    after = [ "clash-renew.service" ];
-    startAt = "Mon,Tue,Thu,Sat *-*-* 05:06:07";
-  };
+  n9.network.clash.enable = true;
 
   # https://github.com/Seidko/my-linux-note/blob/master/tproxy%20with%20clash%20and%20nftables.md
   # TODO: Redirect GeoIP to clash? TUN? Restrict to lan port only?

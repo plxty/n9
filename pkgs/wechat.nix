@@ -35,6 +35,9 @@
   libxkbcommon,
   libXrandr,
   zlib,
+  libtiff,
+  libSM,
+  libICE,
   ...
 }:
 
@@ -51,6 +54,10 @@ stdenv.mkDerivation {
       x86_64-linux = fetchurl {
         url = "https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.deb";
         hash = "sha256-FkEODKeJXlqjdSgt5eSLLV/LlYsGPeay3P0CvtGQzAE=";
+      };
+      aarch64-linux = fetchurl {
+        url = "https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_arm64.deb";
+        hash = "sha256-WYBa1zNd5eux/VdI0ZsvOXYaCFpFvjCQaBB1bQZid7w=";
       };
     }
     .${stdenv.system};
@@ -90,6 +97,9 @@ stdenv.mkDerivation {
     libxkbcommon
     libXrandr
     zlib
+    libtiff
+    libSM
+    libICE
   ];
 
   # TODO: May need buildFHSEnv?
@@ -112,6 +122,11 @@ stdenv.mkDerivation {
     rm -rf opt usr
     popd
 
+    # @see nixpkgs/pkgs/development/cuda-modules/_cuda/fixups/nsight_systems.nix
+    # To fix libtiff.so.5, use libtiff.so.6 instead.
+    # TODO: preFixup hook?
+    patchelf --replace-needed libtiff.so.5 libtiff.so $out/wechat/wechat
+
     wrapProgram $out/wechat/wechat \
       --prefix LD_LIBRARY_PATH : ${
         lib.makeLibraryPath [
@@ -129,6 +144,9 @@ stdenv.mkDerivation {
   meta = {
     homepage = "https://linux.weixin.qq.com";
     license = lib.licenses.unfree;
-    platforms = [ "x86_64-linux" ];
+    platforms = [
+      "x86_64-linux"
+      "aarch64-linux"
+    ];
   };
 }

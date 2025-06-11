@@ -1,114 +1,126 @@
+commit 660dc0caa3849d5c64fc466fef5867b45e81af2e
+Author: Zigit Zo <byte@pen.guru>
+Date:   Wed Jun 11 22:48:13 2025 +0800
+
+    feat: really switch
+
 diff --git a/extension.js b/extension.js
-index 8dfc884..da28c3b 100644
+index 57d6be6..26ba216 100644
 --- a/extension.js
 +++ b/extension.js
-@@ -564,7 +564,6 @@ const IBusAutoSwitch = GObject.registerClass(
-     constructor() {
-       super();
-       this._bindSettings();
--      this._tmpWindow = null;
-       this._overviewHiddenID = Main.overview.connect(
-         "hidden",
-         this._onWindowChanged.bind(this),
-@@ -577,6 +576,10 @@ const IBusAutoSwitch = GObject.registerClass(
-         "notify::focus-window",
-         this._onWindowChanged.bind(this),
-       );
-+      this._updatePropertyID = null;
-+      this._timeoutID = null;
-+      this._prevState = null;
-+      this._prevWindow = null;
-     }
+@@ -596,7 +596,6 @@ const IBusAutoSwitch = GObject.registerClass(
+         constructor() {
+             super();
+             this._bindSettings();
+-            this._tmpWindow = null;
+             this.last_null = false;
+             this._overviewHiddenID = Main.overview.connect(
+                 'hidden',
+@@ -610,6 +609,10 @@ const IBusAutoSwitch = GObject.registerClass(
+                 'notify::focus-window',
+                 this._onWindowChanged.bind(this)
+             );
++            this._updatePropertyID = null;
++            this._timeoutID = null;
++            this._prevState = null;
++            this._prevWindow = null;
+         }
  
-     get _state() {
-@@ -587,43 +590,44 @@ const IBusAutoSwitch = GObject.registerClass(
-       return ASCIIMODES.includes(text);
-     }
+         get _state() {
+@@ -620,51 +623,44 @@ const IBusAutoSwitch = GObject.registerClass(
+             return ASCIIMODES.includes(text);
+         }
  
--    get _toggle() {
--      let win = InputSourceManager._getCurrentWindow();
--      if (!win) return false;
+-        get _toggle() {
+-            let win = InputSourceManager._getCurrentWindow();
+-            if (!win) {
+-                this.last_null = true;
+-                return false;
+-            }
+-            if (this.last_null) {
+-                this.last_null = false;
+-                return false;
+-            }
+-            let state = this._state;
+-            let stateConf = false;
+-            if (this._remember) {
+-                let store = this._states.get(this._tmpWindow);
+-                if (state !== store) this._states.set(this._tmpWindow, state);
+-                this._tmpWindow = win.wm_class
+-                    ? win.wm_class.toLowerCase()
+-                    : 'undefined';
+-                if (this._tmpWindow === 'undefined') return false;
+-                if (!this._states.has(this._tmpWindow)) {
+-                    let unknown =
+-                        this.unknown === UNKNOWN.DEFAULT
+-                            ? state
+-                            : this.unknown === UNKNOWN.ON;
+-                    this._states.set(this._tmpWindow, unknown);
+-                }
+-                stateConf = this._states.get(this._tmpWindow);
+-            } else {
+-                stateConf =
+-                    this.unknown === UNKNOWN.DEFAULT
+-                        ? state
+-                        : this.unknown === UNKNOWN.ON;
+-            }
 -
--      let state = this._state;
--      let stateConf = false;
--      if (this._remember) {
--        let store = this._states.get(this._tmpWindow);
--        if (state !== store) this._states.set(this._tmpWindow, state);
--
--        this._tmpWindow = win.wm_class ? win.wm_class.toLowerCase() : "";
--        if (!this._states.has(this._tmpWindow)) {
--          let unknown =
--            this.unknown === UNKNOWN.DEFAULT
--              ? state
--              : this.unknown === UNKNOWN.ON;
--          this._states.set(this._tmpWindow, unknown);
+-            return state ^ stateConf;
 -        }
--        stateConf = this._states.get(this._tmpWindow);
--      } else {
--        stateConf =
--          this.unknown === UNKNOWN.DEFAULT
--            ? state
--            : this.unknown === UNKNOWN.ON;
--      }
 -
--      return state ^ stateConf;
--    }
--
-     set remember(remember) {
-       this._remember = remember;
-     }
+         set remember(remember) {
+             this._remember = remember;
+         }
  
-     _onWindowChanged() {
--      if (this._toggle && IBusManager._panelService) {
--        IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+      const win = InputSourceManager._getCurrentWindow();
-+      if (!(this._remember && IBusManager._panelService && win))
-+        return;
+         _onWindowChanged() {
+-            if (this._toggle && IBusManager._panelService) {
+-                IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
++            const win = InputSourceManager._getCurrentWindow();
++            if (!(this._remember && IBusManager._panelService && win))
++                return;
 +
-+      if (!this._updatePropertyID) {
-+        this._updatePropertyID = IBusManager._panelService.connect("update-property", (engineName, prop) => {
-+          if (prop.get_key() === INPUTMODE)
-+            this._prevState = this._state;
-+        });
-       }
++            if (!this._updatePropertyID) {
++                this._updatePropertyID = IBusManager._panelService.connect("update-property", (engineName, prop) => {
++                    if (prop.get_key() === INPUTMODE)
++                        this._prevState = this._state;
++                });
+             }
 +
-+      if (this._timeoutID)
-+        clearTimeout(this._timeoutID);
++            if (this._timeoutID)
++                clearTimeout(this._timeoutID);
 +
-+      // focus out
-+      if (this._prevWindow != null && this._prevState != null)
-+        this._states.set(this._prevWindow, this._prevState);
++            // focus out
++            if (this._prevWindow != null && this._prevState != null)
++                this._states.set(this._prevWindow, this._prevState);
 +
-+      // focus in, TODO: handle via ibus-rime? to avoid such delay...
-+      const wmClass = win.wm_class ? win.wm_class.toLowerCase() : "";
-+      this._timeoutID = setTimeout(() => {
-+        let state = this.unknown == UNKNOWN.ON;
-+        if (this.unknown == UNKNOWN.DEFAULT)
-+          state = this._state;
++            // focus in, TODO: handle via ibus-rime? to avoid such delay...
++            const wmClass = win.wm_class ? win.wm_class.toLowerCase() : "";
++            this._timeoutID = setTimeout(() => {
++                let state = this.unknown == UNKNOWN.ON;
++                if (this.unknown == UNKNOWN.DEFAULT)
++                    state = this._state;
 +
-+        const target = this._states.get(wmClass);
-+        if (target != undefined && state != target)
-+          IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
-+        this._timeoutID = null;
-+      }, 100);
++                const target = this._states.get(wmClass);
++                if (target != undefined && state != target)
++                    IBusManager.activateProperty(INPUTMODE, IBus.PropState.CHECKED);
++                this._timeoutID = null;
++            }, 100);
 +
-+      // previous
-+      this._prevWindow = wmClass;
-     }
++            // previous
++            this._prevWindow = wmClass;
+         }
  
-     _bindSettings() {
-@@ -658,6 +662,14 @@ const IBusAutoSwitch = GObject.registerClass(
-       if (this._overviewHiddenID)
-         Main.overview.disconnect(this._overviewHiddenID),
-           (this._overviewHiddenID = 0);
-+      if (this._updatePropertyID) {
-+        IBusManager._panelService.disconnect(this._updatePropertyID);
-+        this._updatePropertyID = null;
-+      }
-+      if (this._timeoutID) {
-+        clearTimeout(this._timeoutID);
-+        this._timeoutID = null;
-+      }
+         _bindSettings() {
+@@ -701,6 +697,12 @@ const IBusAutoSwitch = GObject.registerClass(
+             if (this._overviewHiddenID)
+                 Main.overview.disconnect(this._overviewHiddenID),
+                     (this._overviewHiddenID = 0);
++            if (this._updatePropertyID)
++                IBusManager._panelService.disconnect(this._updatePropertyID),
++                    (this._updatePropertyID = null);
++            if (this._timeoutID)
++                clearTimeout(this._timeoutID),
++                    (this._timeoutID = null);
+         }
      }
-   },
  );

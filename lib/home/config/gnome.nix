@@ -32,7 +32,15 @@ in
           enable = true;
           extensions = with pkgs.gnomeExtensions; [
             (ext brightness-control-using-ddcutil)
-            (ext switcher)
+            (ext (
+              # to compat with gnome 48, should be removed if it's merged
+              n9.patch switcher (
+                pkgs.fetchurl {
+                  url = "https://patch-diff.githubusercontent.com/raw/daniellandau/switcher/pull/177.patch";
+                  hash = "sha256-VzLv4DuI+I2RruZdC2SD+W+j/sin0S7SJjitrfNoA7s=";
+                }
+              )
+            ))
             (ext (n9.patch paperwm "paperwm-focus"))
             (ext dash-to-dock)
             (ext (n9.patch customize-ibus "customize-ibus-keep"))
