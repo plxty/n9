@@ -1,25 +1,5 @@
 {
   "nodes": {
-    "chinese-fonts": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1735891296,
-        "narHash": "sha256-xmyzX5JXC1JQNVNhI8AnbivcID2AJoCQXlSKxRxsMt0=",
-        "owner": "brsvh",
-        "repo": "chinese-fonts-overlay",
-        "rev": "748d91262ab205d069d5a40275f079ed70b71994",
-        "type": "github"
-      },
-      "original": {
-        "owner": "brsvh",
-        "repo": "chinese-fonts-overlay",
-        "type": "github"
-      }
-    },
     "colmena": {
       "inputs": {
         "flake-compat": [],
@@ -206,7 +186,6 @@
     },
     "root": {
       "inputs": {
-        "chinese-fonts": "chinese-fonts",
         "colmena": "colmena",
         "disko": "disko",
         "home-manager": "home-manager",

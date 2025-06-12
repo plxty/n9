@@ -99,11 +99,6 @@
       };
     };
 
-    chinese-fonts = {
-      url = "github:brsvh/chinese-fonts-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -117,9 +112,9 @@
 
   nixConfig = {
     substituters = [
+      "https://mirror.sjtu.edu.cn/nix-channels/store"
       "https://mirrors.ustc.edu.cn/nix-channels/store"
       "https://mirrors.sustech.edu.cn/nix-channels/store"
-      # "https://mirror.sjtu.edu.cn/nix-channels/store"
       "https://cache.nixos.org"
     ];
   };

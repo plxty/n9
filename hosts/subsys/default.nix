@@ -1,12 +1,12 @@
 {
   # WSL2
-  n9.os.dragonfly.imports = [
+  n9.os.subsys.imports = [
     (
       { lib, inputs, ... }:
       {
         imports = [ inputs.nixos-wsl.nixosModules.default ];
 
-        # sudo nix build '.#nixosConfigurations.dragonfly.config.system.build.tarballBuilder'
+        # sudo nix build '.#nixosConfigurations.subsys.config.system.build.tarballBuilder'
         wsl = {
           enable = true;
           defaultUser = "byte";
