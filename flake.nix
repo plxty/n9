@@ -18,7 +18,16 @@
       # Helpers:
       oses =
         type: initial: list:
-        lib.fold lib.recursiveUpdate initial (n9.flatMap (import ./lib/nixos args type) list);
+        lib.fold lib.recursiveUpdate initial (
+          n9.flatMap (
+            if type == "linux" then
+              import ./lib/nixos args
+            else if type == "darwin" then
+              import ./lib/darwin args
+            else
+              abort "unsupported os?"
+          ) list
+        );
 
       # Systems:
       colmenaHive = colmena.lib.makeHive (

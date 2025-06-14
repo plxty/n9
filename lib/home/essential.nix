@@ -1,9 +1,4 @@
-{
-  osConfig,
-  pkgs,
-  lib,
-  ...
-}:
+{ pkgs, lib, ... }:
 
 {
   imports = [
@@ -24,21 +19,14 @@
     pstree
     binutils
     file
-    strace
-    sysstat
-    lm_sensors
     dig
-    bpftrace
-    osConfig.boot.kernelPackages.perf
     binwalk
-    smartmontools
     gitoxide
     bc
     ncdu
     nix-prefetch-scripts
   ];
 
-  services.ssh-agent.enable = true;
   programs.ssh = {
     enable = true;
     addKeysToAgent = "9h";
