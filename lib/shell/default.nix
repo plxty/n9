@@ -32,6 +32,7 @@ let
             aarch64-unknown-linux-gnu = "aarch64-linux";
             aarch64-linux-gnu = "aarch64-linux";
             riscv64-unknown-linux-gnu = "riscv64-linux";
+            arm64-apple-darwin = "aarch64-darwin";
           } null;
         in
         lib.trace "shell: selecting ${target} for ${name}" target;

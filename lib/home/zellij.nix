@@ -1,4 +1,4 @@
-{ lib, ... }:
+{ config, lib, ... }:
 
 {
   programs = {
@@ -183,7 +183,7 @@
       };
     };
 
-    bash = {
+    bash = lib.mkIf (config.n9.services.sshd.enable or false) {
       enable = true;
 
       # Make all SSH share one `w` session, for side monitor or else:

@@ -31,6 +31,14 @@ in
 
           # configs
           ../../home/essential.nix
+          (
+            { pkgs, ... }:
+            {
+              home.packages = with pkgs; [
+                coreutils
+              ];
+            }
+          )
         ];
       }
     );
