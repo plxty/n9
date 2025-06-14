@@ -30,12 +30,4 @@
   };
 
   nixpkgs.config.allowUnfree = true;
-
-  # https://github.com/luishfonseca/nixos-config/blob/main/modules/upgrade-diff.nix
-  system.activationScripts.diff = {
-    supportsDryActivation = true;
-    text = ''
-      ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff /run/current-system "$systemConfig"
-    '';
-  };
 }

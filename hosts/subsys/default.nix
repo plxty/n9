@@ -1,20 +1,20 @@
 {
   n9.os.subsys.imports = [
     {
-      # TODO: home-manager?
-      system.defaults.CustomUserPreferences = {
-        "com.brave.Browser" = {
-          # @see lib/nixos/config/gnome.nix
-          BraveSyncUrl = "https://brave-sync.pteno.cn/v2";
-        };
-      };
-
       n9.users.byte.imports = [
         (
           { pkgs, ... }:
           {
             home.packages = with pkgs; [
-              brave
+              # FIXME: https://github.com/brave/brave-browser/issues/43181
+              # system.defaults.CustomUserPreferences = { BraveSyncUrl = ... }
+              (brave.overrideAttrs (prev: {
+                postInstall = ''
+                  cd "$out/Applications/Brave Browser.app/Contents/MacOS"
+                  wrapProgram "$PWD/Brave Browser" --add-flag "--sync-url=https://brave-sync.pteno.cn/v2"
+                '';
+              }))
+              vscode
               qemu
             ];
           }

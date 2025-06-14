@@ -71,7 +71,12 @@ let
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
       if [[ "$(uname -s)" == "Darwin" ]]; then
-        sudo darwin-rebuild switch --flake ".#$B_THIS"
+        # Why darwin-rebuild won't show the activation script?
+        B_SYSTEM="$(readlink /run/current-system)"
+        sudo darwin-rebuild switch --verbose --flake ".#$B_THIS"
+        if [[ "$B_SYSTEM" != "" ]]; then
+          nvd diff "$B_SYSTEM" /run/current-system
+        fi
         ${postBurn}
         exit $?
       fi
@@ -150,6 +155,7 @@ in
     jq
     inputs.nixos-anywhere.packages.${system}.default
     colmenaPackage
+    nvd
 
     # Real stuff:
     burnSwitch
