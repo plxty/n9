@@ -70,6 +70,12 @@ let
     B_HWCONF=(sudo nixos-generate-config --show-hardware-config --no-filesystems)
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
+      if [[ "$(uname -s)" == "Darwin" ]]; then
+        sudo darwin-rebuild switch --flake ".#$B_THIS"
+        ${postBurn}
+        exit $?
+      fi
+
       # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
       sudo -v
       trap 'pkill -P $$' SIGINT SIGTERM EXIT

@@ -31,23 +31,25 @@ in
 
           # configs
           ../../home/essential.nix
-          (
-            { pkgs, ... }:
-            {
-              home.packages = with pkgs; [
-                coreutils
-              ];
-            }
-          )
+          ../home-essential.nix
         ];
       }
     );
   };
 
   config = lib.mkIf (cfg != { }) {
+    assertions = [
+      {
+        assertion = (lib.length (lib.attrNames cfg)) == 1;
+        message = "darwin currently cannot have multiple user defined!";
+      }
+    ];
+
     users.users = lib.mapAttrs (userName: _: {
       name = userName;
       home = "/Users/${userName}";
     }) cfg;
+
+    system.primaryUser = lib.elemAt (lib.attrNames cfg) 0;
   };
 }
