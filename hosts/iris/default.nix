@@ -27,7 +27,7 @@
             ];
           }
         )
-        { n9.security.ssh-key.agents = [ "byte@coffee" ]; }
+        { n9.security.ssh-key.agents = [ "byte@dragon" ]; }
       ];
     }
   ];

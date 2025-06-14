@@ -61,6 +61,11 @@ in
 
     clash = {
       enable = lib.mkEnableOption "clash";
+
+      subscribe = lib.mkOption {
+        type = lib.types.str;
+        default = "subscribe";
+      };
     };
   };
 
@@ -180,8 +185,8 @@ in
         tunMode = true; # tproxy needs it as well
       };
 
-      # One for all:
-      n9.security.keys."/etc/mihomo/subscribe".source = "../one/subscribe";
+      # The subscribe path:
+      n9.security.keys."/etc/mihomo/subscribe".source = cfg.clash.subscribe;
 
       # https://github.com/NixOS/nixpkgs/blob/26d499fc9f1d567283d5d56fcf367edd815dba1d/nixos/modules/system/boot/systemd.nix#L747C1-L748C1
       systemd.services.clash-renew = {

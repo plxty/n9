@@ -54,7 +54,16 @@ with lib.hm.gvariant;
       font-hinting = "slight";
       font-name = "Noto Sans CJK SC 11 @wght=400";
       monospace-font-name = "Noto Sans Mono CJK SC 10";
+      show-battery-percentage = true;
       toolkit-accessibility = false;
+    };
+
+    "org/gnome/desktop/peripherals/mouse" = {
+      natural-scroll = false;
+    };
+
+    "org/gnome/desktop/peripherals/touchpad" = {
+      edge-scrolling-enabled = false;
     };
 
     "org/gnome/desktop/session" = {

@@ -47,10 +47,6 @@ in
 
         # or: direnv edit
         envrc = ''
-          if test -f .envrc
-            cat .envrc
-          end
-
           set -f env $argv[1]
           if test -z "$env"
             echo "envrc [env]"

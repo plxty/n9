@@ -49,19 +49,19 @@ def main():
         {
             "name": "ThroughJapan",
             "proxies": [
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 01",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 02",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 03",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 04",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 05",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 06",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 07",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 08",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 09",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 10",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 11",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 12",
-                "\U0001F1FA\U0001F1F8 \u7F8E\u56FD 13",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 01",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 02",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 03",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 04",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 05",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 06",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 07",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 08",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 09",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 10",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 11",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 12",
+                "\U0001f1fa\U0001f1f8 \u7f8e\u56fd 13",
             ],
             "type": "select",
         },
@@ -79,7 +79,14 @@ def main():
 
 
 if __name__ == "__main__":
+    __return__ = 0
     try:
         __return__ = main()
     except Exception:
-        print(f"error={__return__}", traceback.format_exc())
+        print(traceback.format_exc())
+
+    # Always ignore the error, try not to block the mihomo.
+    # When we failed, we may still reuse the old configurations.
+    if __return__ != 0:
+        print("ERROR returns", __return__)
+    exit(0)

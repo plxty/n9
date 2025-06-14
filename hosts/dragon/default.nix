@@ -6,6 +6,11 @@
       {
         imports = [ inputs.nixos-x1e.nixosModules.x1e ];
         hardware.asus-vivobook-s15.enable = true;
+        boot.initrd.kernelModules = [
+          "dm_mod" # https://github.com/NixOS/nixpkgs/blob/9b5ac7ad45298d58640540d0323ca217f32a6762/nixos/modules/system/boot/kernel.nix#L343
+          "i2c_qcom_geni" # MUST load it first before other i2c
+          "i2c_hid_of" # Enable keyboard debug early
+        ];
       }
     )
     {
@@ -24,7 +29,12 @@
       # sudo chmod 400 /etc/nixos/keys/byte/passwd
       # sudo reboot
       n9.hardware.disk.nvme0n1.type = "btrfs";
-      n9.network.clash.enable = true;
+
+      # Re-use the subscribe from iris:
+      n9.network.clash = {
+        enable = true;
+        subscribe = "../iris/subscribe";
+      };
 
       n9.users.byte.imports = [
         (
@@ -36,6 +46,27 @@
           }
         )
         {
+          programs.fish.functions = {
+            proxy = ''
+              if test "$(dconf read /system/proxy/mode)" = "manual"
+                dconf write /system/proxy/mode "none"
+                echo "proxy off"
+              else
+                dconf write /system/proxy/http/host "127.0.0.1"
+                dconf write /system/proxy/http/port 7890
+                dconf write /system/proxy/https/host "127.0.0.1"
+                dconf write /system/proxy/https/port 7890
+                dconf write /system/proxy/mode "manual"
+                echo "proxy on"
+              end
+            '';
+
+            windows = ''
+              sudo bootctl set-oneshot auto-windows
+              echo "will boot Windows on next reboot (oneshot)"
+            '';
+          };
+
           n9.environment.gnome = {
             enable = true;
             swapCtrlCaps = true;

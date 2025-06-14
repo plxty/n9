@@ -25,7 +25,7 @@
             n9.flatMap (import ./lib/nixos inputs) [
               ./hosts/evil
               ./hosts/iris
-              ./hosts/coffee
+              ./hosts/subsys
               ./hosts/dragon
             ]
           )

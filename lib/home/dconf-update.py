@@ -197,6 +197,26 @@ EXCLUDIND = [
             "window-width",  # 600
         ],
     ),
+    (
+        "system/proxy",
+        [
+            "mode",  # 'manual'
+        ],
+    ),
+    (
+        "system/proxy/http",
+        [
+            "host",  # '127.0.0.1'
+            "port",  # 7890
+        ],
+    ),
+    (
+        "system/proxy/https",
+        [
+            "host",  # '127.0.0.1'
+            "port",  # 7890
+        ],
+    ),
 ]
 
 
