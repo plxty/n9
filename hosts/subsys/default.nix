@@ -1,27 +1,7 @@
 {
-  # WSL2
   n9.os.subsys.imports = [
-    (
-      { lib, inputs, ... }:
-      {
-        imports = [ inputs.nixos-wsl.nixosModules.default ];
-
-        # sudo nix build '.#nixosConfigurations.subsys.config.system.build.tarballBuilder'
-        wsl = {
-          enable = true;
-          defaultUser = "byte";
-        };
-
-        # @see NixOS-WSL/modules/wsl-distro.nix
-        security.sudo.wheelNeedsPassword = true;
-
-        # Against lib/nixos/essential.nix:
-        boot.loader.systemd-boot.enable = lib.mkForce false;
-      }
-    )
     {
-      # After username changes, please do follow:
-      # https://nix-community.github.io/NixOS-WSL/how-to/change-username.html
+      # 
       n9.users.byte.imports = [
         {
           n9.security.ssh-key = {

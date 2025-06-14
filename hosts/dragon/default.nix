@@ -17,16 +17,27 @@
       # The xelite machine MUST keep some OEM partitions, therefore don't run
       # disko, and instead part and format the disk yourself, and rename the
       # partition label to:
-      # - /efi : disk-first-ESP (can reuse the Windows EFI for dual-boot)
-      # - swap : disk-first-swap (48G for suspend to disk + real swap)
-      # - / : disk-first-root (three btrfs subvol /mnt/@root /mnt/@home /mnt/@nix)
+      # - nvme0n1p12: disk-first-ESP (can reuse the Windows EFI for dual-boot)
+      # - nvme0n1p15: disk-first-swap (48G for suspend to disk + real swap)
+      # - nvme0n1p16: disk-first-root (three btrfs subvol /mnt/@root /mnt/@home /mnt/@nix)
+      #
+      # Make btrfs subvolumes:
+      # sudo mount /dev/nvme0n1p16 /mnt
+      # sudo btrfs subvolume create /mnt/@root /mnt/@home /mnt/@nix
+      # sudo umount /mnt
+      #
+      # And the mountpoint as:
+      # sudo mount -o subvol=@root,compress=zstd /dev/nvme0n1p16 /mnt
+      # sudo mkdir -p /mnt/{efi,home,nix}
+      # sudo mount /dev/nvme0n1p12 /mnt/efi
+      # sudo mount -o subvol=@home,compress=zstd /dev/nvme0n1p16 /mnt/home
+      # sudo mount -o subvol=@nix,compress=zstd,noatime /dev/nvme0n1p16 /mnt/nix
       #
       # To manually install a system:
-      # sudo part-disk-and-mount-yourself
       # sudo nixos-install --flake ".#dragon" --root /mnt --no-root-password
-      # sudo mkdir -p -m 600 /etc/nixos/keys/byte
-      # mkpasswd | sudo tee /etc/nixos/keys/byte/passwd
-      # sudo chmod 400 /etc/nixos/keys/byte/passwd
+      # sudo mkdir -p -m 600 /mnt/etc/nixos/keys/byte
+      # mkpasswd | sudo tee /mnt/etc/nixos/keys/byte/passwd
+      # sudo chmod 400 /mnt/etc/nixos/keys/byte/passwd
       # sudo reboot
       n9.hardware.disk.nvme0n1.type = "btrfs";
 

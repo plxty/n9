@@ -3,38 +3,47 @@
 
 {
   outputs =
-    { nixpkgs, colmena, ... }@allInputs:
+    {
+      nixpkgs,
+      colmena,
+      nix-darwin,
+      ...
+    }@inputs:
     let
       # Unify the arguments, keep only libraries and inputs:
       inherit (nixpkgs) lib;
-      n9 = import ./lib/lib.nix inputs;
-      inputs = {
-        inherit lib n9;
-        inputs = allInputs;
-      };
+      n9 = import ./lib/lib.nix args;
+      args = { inherit lib n9 inputs; };
+
+      # Helpers:
+      oses =
+        type: initial: list:
+        lib.fold lib.recursiveUpdate initial (n9.flatMap (import ./lib/nixos args type) list);
 
       # Systems:
       colmenaHive = colmena.lib.makeHive (
         # @see lib/nixos/default.nix, meta.nixpkgs will be overridden:
-        lib.fold lib.recursiveUpdate
+        oses "linux"
           {
             meta.nixpkgs.lib = lib;
-            meta.specialArgs = inputs;
+            meta.specialArgs = args;
           }
-          (
-            n9.flatMap (import ./lib/nixos inputs) [
-              ./hosts/evil
-              ./hosts/iris
-              ./hosts/subsys
-              ./hosts/dragon
-            ]
-          )
+          [
+            ./hosts/iris
+            ./hosts/evil
+            ./hosts/dragon
+          ]
+      );
+
+      # Non-colmena, nix-darwin now:
+      darwinConfigurations = lib.mapAttrs (_: nix-darwin.lib.darwinSystem) (
+        oses "darwin" { } [ ./hosts/subsys ]
       );
 
       # Develop shells:
       mkShells =
         system:
-        ((import ./lib/shell (inputs // { pkgs = n9.mkPkgs system; })) [
+        ((import ./lib/shell (args // { pkgs = n9.mkPkgs system; })) [
           ./shells/burn.nix
           ./shells/resume.nix
           ./shells/asterinas.nix
@@ -42,7 +51,7 @@
         ]);
     in
     {
-      inherit colmenaHive;
+      inherit colmenaHive darwinConfigurations;
       nixosConfigurations = colmenaHive.nodes; # compatible
 
       # @see nix/flake.nix
@@ -57,6 +66,7 @@
     # Relavant changes if version bumped:
     # * home-manager
     # * nix-channel (burn)
+    # * nix-darwin
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-25.05";
 
     colmena = {
@@ -91,14 +101,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    nixos-wsl = {
-      url = "github:nix-community/NixOS-WSL";
-      inputs = {
-        nixpkgs.follows = "nixpkgs";
-        flake-compat.follows = "";
-      };
-    };
-
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -106,6 +108,11 @@
 
     nixos-x1e = {
       url = "github:plxty/nixos-x1e";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nix-darwin = {
+      url = "github:nix-darwin/nix-darwin/nix-darwin-25.05";
       inputs.nixpkgs.follows = "nixpkgs";
     };
   };
