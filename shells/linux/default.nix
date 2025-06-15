@@ -3,13 +3,15 @@
 let
   shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
 
+  # TODO: Other platform...
   make = {
     # Make my own version of some config:
     defconfig = ''
       ${pkgs.gnumake}/bin/make defconfig "$@"
       exec ./scripts/config \
         -d COMPAT \
-        -e ISO9660_FS -e JOLIET -e ZISOFS
+        -e ISO9660_FS -e JOLIET -e ZISOFS \
+        -e 9P_FS_POSIX_ACL
     '';
 
     compdb = ''exec ./scripts/clang-tools/gen_compile_commands.py "$@"'';
@@ -23,7 +25,6 @@ let
       fi
 
       # https://cloudinit.readthedocs.io/en/latest/howto/launch_qemu.html
-      # To speed up later boot, run "doas apk del cloud-init".
       seed=seed.img.i
       if [[ ! -f "$seed" ]]; then
         touch network-config meta-data
@@ -33,13 +34,20 @@ let
       chpasswd:
         expire: False
       ssh_pwauth: True
+      bootcmd:
+      - echo "snap /snap 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab
+      - mount -m 777 -t 9p -o trans=virtio,version=9p2000.L snap /snap
+      runcmd:
+      - apk del cloud-init chrony
       EOF
         ${pkgs.cdrkit}/bin/genisoimage -output "$seed" -volid cidata -rational-rock -joliet \
           user-data meta-data network-config
         rm -f user-data meta-data network-config
       fi
 
-      # TODO: Other platform...
+      # 9pfs
+      mkdir -p snap
+
       exec qemu-kvm \
         -machine virt \
         -cpu max \
@@ -47,6 +55,7 @@ let
         -m 4096 \
         -drive "file=$image,index=0,format=qcow2,media=disk" \
         -drive "file=$seed,index=1,media=cdrom" \
+        -virtfs local,path=./snap,mount_tag=snap,security_model=mapped-file \
         -kernel ./arch/arm64/boot/Image.gz \
         -append root=/dev/vda2 \
         -nographic \
