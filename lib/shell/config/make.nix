@@ -23,6 +23,7 @@ in
               shift 1
               set -uex
               ${value}
+              exit $?
             fi
           '') cfg)
           ++ [ ''exec "${pkgs.gnumake}/bin/make" "$@"'' ]

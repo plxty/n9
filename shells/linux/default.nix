@@ -7,10 +7,51 @@ let
     # Make my own version of some config:
     defconfig = ''
       ${pkgs.gnumake}/bin/make defconfig "$@"
-      exec ./scripts/config -u COMPAT_VDSO
+      exec ./scripts/config \
+        -d COMPAT \
+        -e ISO9660_FS -e JOLIET -e ZISOFS
     '';
 
     compdb = ''exec ./scripts/clang-tools/gen_compile_commands.py "$@"'';
+
+    qemu = ''
+      image=alpine.qcow2.i
+      if [[ ! -f "$image" ]]; then
+        wget -O "$image" \
+          'https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.22/releases/cloud/nocloud_alpine-3.22.0-aarch64-uefi-cloudinit-r0.qcow2'
+        qemu-img resize "$image" 8G
+      fi
+
+      # https://cloudinit.readthedocs.io/en/latest/howto/launch_qemu.html
+      # To speed up later boot, run "doas apk del cloud-init".
+      seed=seed.img.i
+      if [[ ! -f "$seed" ]]; then
+        touch network-config meta-data
+        cat >user-data <<EOF
+      #cloud-config
+      password: alpine
+      chpasswd:
+        expire: False
+      ssh_pwauth: True
+      EOF
+        ${pkgs.cdrkit}/bin/genisoimage -output "$seed" -volid cidata -rational-rock -joliet \
+          user-data meta-data network-config
+        rm -f user-data meta-data network-config
+      fi
+
+      # TODO: Other platform...
+      exec qemu-kvm \
+        -machine virt \
+        -cpu max \
+        -smp 4 \
+        -m 4096 \
+        -drive "file=$image,index=0,format=qcow2,media=disk" \
+        -drive "file=$seed,index=1,media=cdrom" \
+        -kernel ./arch/arm64/boot/Image.gz \
+        -append root=/dev/vda2 \
+        -nographic \
+        "$@"
+    '';
   };
 
   clang = {
