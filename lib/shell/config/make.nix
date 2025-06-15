@@ -15,11 +15,11 @@ in
   };
 
   config = lib.mkIf (cfg != { }) {
-    packages = [
+    packages = lib.mkBefore [
       (pkgs.writers.writeBashBin "make" (
         lib.concatStringsSep "\n" (
           (lib.mapAttrsToList (name: value: ''
-            if [[ "$1" == "${name}" ]]; then
+            if [[ -f Makefile && "$1" == "${name}" ]]; then
               shift 1
               set -uex
               ${value}

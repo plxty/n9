@@ -56,7 +56,7 @@
           ./shells/burn.nix
           ./shells/resume.nix
           ./shells/asterinas.nix
-          ./shells/linux.nix
+          ./shells/linux
         ]);
     in
     {

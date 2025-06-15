@@ -80,8 +80,20 @@ let
       pkgsCross,
       ...
     }:
+    let
+      pkgs' = if pkgs.system == config.target then pkgs else pkgsCross;
+      mkShell =
+        if (!config.gcc.enable && config.clang.enable) then
+          # prefer to use the clang env, it makes clang detects the build inputs.
+          # TODO: add an option of stdenv?
+          lib.trace "shell: selecting clang stdenv" (
+            pkgs'.mkShellNoCC.override { stdenv = pkgs'.clangStdenv; }
+          )
+        else
+          lib.trace "shell: selecting default stdenv" pkgs'.mkShellNoCC;
+    in
     {
-      config.drv = (if pkgs.system == config.target then pkgs.mkShellNoCC else pkgsCross.mkShellNoCC) {
+      config.drv = mkShell {
         inherit name;
         inherit (config)
           depsBuildBuild

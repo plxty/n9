@@ -20,6 +20,10 @@ let
   # 2. NixOS wrapped clang in stdenv for both cross and non-cross
   # 3. They can't coexists due to linux hardcoded the host clang and target
   #
+  # The wrapped version of compiler will resolve the libraries in Nix correctly,
+  # thus you can use and link them. The unwrapped version, on the contrast, has
+  # no library support and can only build for bare-metal code.
+  #
   # P.S. The stdenv.cc.cc is the unwrapped drv of compiler, use at risk.
   # P.P.S. GCC might still be imported...
   # TODO: Judge the --target if is current platform?
