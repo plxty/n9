@@ -29,7 +29,7 @@ let
   # TODO: Judge the --target if is current platform?
   clangWrapper = pkgs.writers.writeBashBin "clang" ''
     for __clang_arg in "$@"; do
-      if [[ "$__clang_arg" == "--target="* ]]; then
+      if [[ "$__clang_arg" == "-target" || "$__clang_arg" == "--target="* ]]; then
         exec "${clangCross}" "$@"
       fi
     done
@@ -48,10 +48,13 @@ in
   };
 
   config = lib.mkIf cfg.enable {
-    depsBuildBuild = with pkgs; [
-      clangWrapper # it's multi-target, altough nix don't like
-      lld
-      libllvm
-    ];
+    depsBuildBuild = lib.mkBefore (
+      with pkgs;
+      [
+        clangWrapper # it's multi-target, altough nix don't like
+        lld
+        libllvm
+      ]
+    );
   };
 }

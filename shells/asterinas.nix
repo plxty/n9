@@ -23,7 +23,6 @@ in
       channel = "nightly";
       version = "2025-02-01";
       extensions = [
-        "rust-src"
         "rustc-dev"
         "llvm-tools-preview"
       ];
@@ -33,16 +32,9 @@ in
       makeWrapper
     ];
 
-    # To prevent from mixing targets with container rust, only for indexing:
     shellHooks = [
-      ''
-        export CARGO_TARGET_DIR="target.rs.bk"
-        mkdir -p .helix
-        {
-          echo "[language-server.rust-analyzer]"
-          echo "config = { cargo = { \"target\" = \"x86_64-unknown-none\" } }"
-        } > .helix/languages.toml
-      ''
+      # To prevent from mixing targets with container rust, only for indexing:
+      ''export CARGO_TARGET_DIR="target.rs.bk"''
     ];
   };
 }
