@@ -38,6 +38,7 @@ let
       - echo "snap /snap 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab
       - mount -m 777 -t 9p -o trans=virtio,version=9p2000.L snap /snap
       runcmd:
+      - sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
       - apk del cloud-init chrony
       EOF
         ${pkgs.cdrkit}/bin/genisoimage -output "$seed" -volid cidata -rational-rock -joliet \
@@ -48,7 +49,8 @@ let
       # 9pfs
       mkdir -p snap
 
-      exec qemu-kvm \
+      exec qemu-system-aarch64 \
+        -accel hvf \
         -machine virt \
         -cpu max \
         -smp 4 \
