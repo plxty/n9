@@ -54,6 +54,7 @@
         system:
         ((import ./lib/shell (args // { pkgs = n9.mkPkgs system; })) [
           ./shells/burn.nix
+          ./shells/scratch.nix
           ./shells/resume.nix
           ./shells/asterinas.nix
           ./shells/linux
