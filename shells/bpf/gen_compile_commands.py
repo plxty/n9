@@ -10,7 +10,9 @@ except FileNotFoundError:
     exit(0)
 
 # vmlinux.h
-cargo_metadata = subprocess.check_output(["cargo", "metadata"]).decode("utf-8")
+cargo_metadata = subprocess.check_output(
+    ["cargo", "metadata", "--format-version", "1"]
+).decode("utf-8")
 cargo_metadata = json.loads(cargo_metadata)
 vmlinux_inc = next(
     filter(lambda pkg: pkg["name"] == "vmlinux", cargo_metadata["packages"])

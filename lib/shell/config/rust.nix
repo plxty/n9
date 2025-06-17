@@ -63,23 +63,27 @@ in
     shellHooks = lib.optionals isDarwinCross [
       # https://github.com/rust-lang/rust/issues/34282#issuecomment-796182029
       ''
-        mkdir -p .cargo
-        {
-          echo "[build]"
-          echo 'target = "${config.triplet}"'
-          echo ""
-          echo "[target.${config.triplet}]"
-          echo 'linker = "${config.triplet}-gcc"'
-        } > .cargo/config.toml
+        if [[ ! -f .cargo/config.toml ]]; then
+          mkdir -p .cargo
+          {
+            echo "[build]"
+            echo 'target = "${config.triplet}"'
+            echo ""
+            echo "[target.${config.triplet}]"
+            echo 'linker = "${config.triplet}-gcc"'
+          } > .cargo/config.toml
+        fi
       ''
 
       # To config it automatically:
       ''
-        mkdir -p .helix
-        {
-          echo "[language-server.rust-analyzer]"
-          echo "config = { cargo = { \"target\" = \"${config.triplet}\" } }"
-        } > .helix/languages.toml
+        if [[ ! -f .helix/languages.toml ]]; then
+          mkdir -p .helix
+          {
+            echo "[language-server.rust-analyzer]"
+            echo "config = { cargo = { \"target\" = \"${config.triplet}\" } }"
+          } > .helix/languages.toml
+        fi
       ''
     ];
   };

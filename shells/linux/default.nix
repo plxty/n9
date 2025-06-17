@@ -1,7 +1,22 @@
 { lib, pkgs, ... }:
 
 let
-  shellHooks = [ ''export MAKEFLAGS="-j$(nproc --ignore 3)"'' ];
+  shellHooks = [
+    ''export MAKEFLAGS="-j$(nproc --ignore 3)"''
+
+    # Force a path mapping for clangd, to avoid some unwanted symbol link:
+    # TODO: It can be a simple config now.
+    ''
+      if [[ ! -f .helix/languages.toml ]]; then
+        mkdir -p .helix
+        {
+          echo "[language-server.clangd]"
+          echo 'command = "clangd"'
+          echo "args = [\"--path-mappings\", \"''${DIRSTACK[1]}=$(realpath .)\"]"
+        } > .helix/languages.toml
+      fi
+    ''
+  ];
 
   # TODO: Other platform...
   make = {
@@ -14,6 +29,7 @@ let
         -e 9P_FS_POSIX_ACL
     '';
 
+    # TODO: make compile_commands.json
     compdb = ''exec ./scripts/clang-tools/gen_compile_commands.py "$@"'';
 
     qemu = lib.readFile ./qemu.sh;
