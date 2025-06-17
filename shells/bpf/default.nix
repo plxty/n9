@@ -6,7 +6,11 @@
       { config, pkgsCross, ... }:
       {
         triplet = "aarch64-unknown-linux-gnu";
-        rust.enable = true;
+
+        rust = {
+          enable = true;
+          static = true;
+        };
         clang = {
           enable = true;
           unwrapped = true;

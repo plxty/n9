@@ -33,6 +33,9 @@ in
         "rust-analyzer"
       ];
     };
+
+    # https://doc.rust-lang.org/reference/linkage.html#static-and-dynamic-c-runtimes
+    static = lib.mkEnableOption "static";
   };
 
   config = lib.mkIf cfg.enable {
@@ -71,6 +74,7 @@ in
             echo ""
             echo "[target.${config.triplet}]"
             echo 'linker = "${config.triplet}-gcc"'
+            ${lib.optionalString cfg.static ''echo 'rustflags = ["-C", "target-feature=+crt-static"]''\'''}
           } > .cargo/config.toml
         fi
       ''
