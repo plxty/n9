@@ -15,9 +15,42 @@
                   wrapProgram "$PWD/Brave Browser" --add-flag "--sync-url=https://brave-sync.pteno.cn/v2"
                 '';
               }))
+
               vscode
               qemu
+
+              # https://github.com/nix-darwin/nix-darwin/issues/1182#issuecomment-2963620315
+              docker
+              colima
             ];
+
+            # use "colima template" for all options:
+            home.file.".colima/default/colima.yaml".source = pkgs.writers.writeYAML "colima.yaml" {
+              # virt-hardware
+              vmType = "qemu";
+              cpuType = "host";
+              arch = "host";
+              cpu = 2;
+              disk = 100;
+              memory = 2;
+
+              # runtime
+              runtime = "docker";
+              hostname = "subsys";
+              mountType = "sshfs";
+
+              # misc
+              kubernetes.enabled = false;
+              autoActivate = true;
+              sshConfig = false;
+
+              mounts = [
+                {
+                  location = "/Volumes/Ice";
+                  writable = true;
+                }
+              ];
+            };
           }
         )
       ];

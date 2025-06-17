@@ -47,14 +47,16 @@ in
     };
   };
 
-  config = lib.mkIf cfg.enable {
-    depsBuildBuild = lib.mkBefore (
-      with pkgs;
-      [
-        clangWrapper # it's multi-target, altough nix don't like
-        lld
-        libllvm
-      ]
-    );
-  };
+  config = lib.mkIf cfg.enable (
+    lib.mkMerge [
+      # it's multi-target, altough nix don't like
+      { depsBuildBuild = lib.mkBefore [ clangWrapper ]; }
+      {
+        depsBuildBuild = with pkgs; [
+          lld
+          libllvm
+        ];
+      }
+    ]
+  );
 }
