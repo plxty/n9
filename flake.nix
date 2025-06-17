@@ -56,8 +56,8 @@
           ./shells/burn.nix
           ./shells/resume.nix
           ./shells/asterinas.nix
-          ./shells/linux
-          ./shells/bpf
+          ./shells/linux.nix
+          ./shells/bpf.nix
         ]);
     in
     {
