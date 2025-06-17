@@ -24,6 +24,14 @@
               colima
             ];
 
+            # ssh kerberos, run kinit then ssh:
+            programs.ssh.extraConfig = ''
+              GSSAPIAuthentication yes
+              GSSAPIDelegateCredentials no
+              HostKeyAlgorithms +ssh-rsa
+              PubkeyAcceptedKeyTypes +ssh-rsa
+            '';
+
             # use "colima template" for all options:
             home.file.".colima/default/colima.yaml".source = pkgs.writers.writeYAML "colima.yaml" {
               # virt-hardware

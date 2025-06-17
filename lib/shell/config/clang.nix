@@ -30,10 +30,10 @@ let
   clangWrapper = pkgs.writers.writeBashBin "clang" ''
     for __clang_arg in "$@"; do
       if [[ "$__clang_arg" == "-target" || "$__clang_arg" == "--target="* ]]; then
-        exec "${clangCross}" "$@"
+        exec "${clangCross}" "$@" ${cfg.arguments}
       fi
     done
-    exec "${pkgs.clangStdenv.cc}/bin/clang" "$@"
+    exec "${pkgs.clangStdenv.cc}/bin/clang" "$@" ${cfg.arguments}
   '';
 in
 {
@@ -44,6 +44,12 @@ in
     unwrapped = lib.mkOption {
       type = lib.types.bool;
       default = false;
+    };
+
+    arguments = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      default = [ ];
+      apply = lib.concatStringsSep " ";
     };
   };
 
