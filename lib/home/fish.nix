@@ -2,7 +2,7 @@
 
 let
   plugin = pkg: { inherit (pkg) name src; };
-  tideToken = "1";
+  tideToken = "42";
 in
 {
   home.packages = with pkgs; [
@@ -60,28 +60,46 @@ in
           end
         '';
 
+        tide_reload = ''
+          set -eU (set -U | awk '/tide/ {print $1}')
+
+          # what `tide configure` shows:
+          tide configure --auto --style=Lean --prompt_colors='True color' --show_time='24-hour format' --lean_prompt_height='Two lines' --prompt_connection=Disconnected --prompt_spacing=Sparse --icons='Few icons' --transient=Yes
+
+          # customized items:
+          set -U tide_orbstack_bg_color normal
+          set -U tide_orbstack_color 74BF5E
+          set -U tide_orbstack_icon
+          set -U --prepend _tide_left_items orbstack
+        '';
+
         # https://github.com/IlanCosman/tide/blob/main/functions/_tide_item_nix_shell.fish
         # https://github.com/haslersn/any-nix-shell/blob/master/bin/nix-shell-info
         # The nix-shell will introdue some nix build environment in here, such
         # as $name or else, the mkDerivation just works like that :/
-        _tide_item_nix_shell = {
-          body = ''
-            if test -z "$IN_NIX_SHELL" -a -z "$IN_NIX_RUN"
-              return
-            end
+        _tide_item_nix_shell = ''
+          if test -z "$IN_NIX_SHELL" -a -z "$IN_NIX_RUN"
+            return
+          end
 
-            set -f pkgs $ANY_NIX_SHELL_PKGS
-            if test -n "$name" -a "$name" != "shell"
-              set -a pkgs " $name"
-            end
-            if test -n "$pkgs"
-              set pkgs (echo "$pkgs $additional_pkgs" | xargs)
-              set pkgs " ($pkgs)"
-            end
+          set -f pkgs $ANY_NIX_SHELL_PKGS
+          if test -n "$name" -a "$name" != "shell"
+            set -a pkgs " $name"
+          end
+          if test -n "$pkgs"
+            set pkgs (echo "$pkgs $additional_pkgs" | xargs)
+            set pkgs " ($pkgs)"
+          end
 
-            _tide_print_item nix_shell $tide_nix_shell_icon' ' "$IN_NIX_SHELL$pkgs"
-          '';
-        };
+          _tide_print_item nix_shell $tide_nix_shell_icon' ' "$IN_NIX_SHELL$pkgs"
+        '';
+
+        # To indicate we're in orbstack:
+        _tide_item_orbstack = ''
+          if test "$SSH_AUTH_SOCK" = "/opt/orbstack-guest/run/host-ssh-agent.sock"
+            _tide_print_item orbstack $tide_orbstack_icon' ' "orb %"
+          end
+        '';
       };
 
       shellInit = ''
@@ -94,10 +112,7 @@ in
 
       interactiveShellInit = ''
         if test "$tide_configure_token" != "${tideToken}"
-          set -eU (set -U | awk '/tide/ {print $1}')
-
-          # what `tide configure` shows:
-          tide configure --auto --style=Lean --prompt_colors='True color' --show_time='24-hour format' --lean_prompt_height='Two lines' --prompt_connection=Disconnected --prompt_spacing=Sparse --icons='Few icons' --transient=Yes
+          tide_reload
           set -U tide_configure_token ${tideToken}
         end
 

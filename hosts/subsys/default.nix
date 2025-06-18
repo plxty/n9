@@ -1,5 +1,17 @@
 {
   n9.os.subsys.imports = [
+    (
+      { pkgs, ... }:
+      {
+        # TODO: Merge with @see lib/nixos/config/gnome.nix
+        fonts.packages = with pkgs; [
+          jetbrains-mono
+          source-code-pro
+          nerd-fonts.symbols-only
+        ];
+      }
+    )
+
     {
       n9.users.byte.imports = [
         (
@@ -19,16 +31,20 @@
               vscode
               qemu
             ];
-
-            # ssh kerberos, run kinit then ssh:
-            programs.ssh.extraConfig = ''
-              GSSAPIAuthentication yes
-              GSSAPIDelegateCredentials no
-              HostKeyAlgorithms +ssh-rsa
-              PubkeyAcceptedKeyTypes +ssh-rsa
-            '';
           }
         )
+
+        {
+          # ssh kerberos, run kinit then ssh:
+          programs.ssh.extraConfig = ''
+            GSSAPIAuthentication yes
+            GSSAPIDelegateCredentials no
+            HostKeyAlgorithms +ssh-rsa
+            PubkeyAcceptedKeyTypes +ssh-rsa
+          '';
+
+          programs.fish.shellAliases.ve = "orb -m vexas exec fish";
+        }
       ];
     }
   ];

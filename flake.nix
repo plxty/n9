@@ -41,6 +41,7 @@
             ./hosts/iris
             ./hosts/evil
             ./hosts/dragon
+            ./hosts/vexas
           ]
       );
 

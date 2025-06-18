@@ -58,35 +58,14 @@ in
       cargo
     ];
 
-    # Needed for cross, "cargo build --target=...":
-    gcc.enable = lib.mkIf isDarwinCross (
-      lib.mkForce (lib.trace "rust with cross compile (on darwin) must enable gcc" true)
-    );
-
-    shellHooks = lib.optionals isDarwinCross [
-      # https://github.com/rust-lang/rust/issues/34282#issuecomment-796182029
+    shellHooks = lib.mkIf cfg.static [
       ''
         if [[ ! -f .cargo/config.toml ]]; then
           mkdir -p .cargo
           {
-            echo "[build]"
-            echo 'target = "${config.triplet}"'
-            echo ""
-            echo "[target.${config.triplet}]"
-            echo 'linker = "${config.triplet}-gcc"'
-            ${lib.optionalString cfg.static ''echo 'rustflags = ["-C", "target-feature=+crt-static"]''\'''}
+            echo '[target.${config.triplet}]'
+            echo 'rustflags = ["-C", "target-feature=+crt-static"]''\''
           } > .cargo/config.toml
-        fi
-      ''
-
-      # To config it automatically:
-      ''
-        if [[ ! -f .helix/languages.toml ]]; then
-          mkdir -p .helix
-          {
-            echo "[language-server.rust-analyzer]"
-            echo "config = { cargo = { \"target\" = \"${config.triplet}\" } }"
-          } > .helix/languages.toml
         fi
       ''
     ];

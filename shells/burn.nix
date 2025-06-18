@@ -10,6 +10,7 @@ let
 
   # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
   # It can be an overlay of nixpkgs, however for simplicity...
+  # TODO: Remove colmena, and use our own controlled version.
   colmenaPackage = n9.patch inputs.colmena.packages.${system}.colmena "colmena-nix-store-sign";
 
   preBurn = ''
@@ -89,8 +90,16 @@ let
         trap 'pkill -P $$ sleep' EXIT
 
         # For hosts that mismatch with local, suggest `sudo hostname xxx`:
-        mkdir -p "hosts/$B_THIS"
-        "''${B_HWCONF[@]}" > "hosts/$B_THIS/hardware-configuration.nix"
+        B_HWCONF="$("''${B_HWCONF[@]}" || true)"
+        if [[ "$B_HWCONF" != "" ]]; then
+          mkdir -p "hosts/$B_THIS"
+          echo "$B_HWCONF" > "hosts/$B_THIS/hardware-configuration.nix"
+        fi
+        if [[ -f /etc/nixos/configuration.nix ]]; then
+          mkdir -p "hosts/$B_THIS/inherit"
+          cp -a /etc/nixos/*.nix "hosts/$B_THIS/inherit/"
+        fi
+
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
 
         if $B_UP; then

@@ -53,7 +53,7 @@ in
   config = lib.mkIf (cfg != { }) {
     users.groups = lib.mapAttrs (_: _: { }) cfg;
     users.users = lib.mapAttrs (userName: _: {
-      isNormalUser = true;
+      isNormalUser = lib.mkDefault true;
       group = userName;
       extraGroups = [ "wheel" ];
     }) cfg;
