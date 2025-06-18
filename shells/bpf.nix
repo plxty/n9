@@ -63,6 +63,16 @@ let
           })
         ]
       );
+
+      make = {
+        build = "exec cargo build";
+
+        # only for vexas:
+        push = ''
+          bin="$(tomlq -r '.package.name' Cargo.toml)"
+          exec macctl push "target/${config.triplet}/debug/$bin" /var/lib/images/share
+        '';
+      };
     };
 in
 {

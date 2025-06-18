@@ -34,16 +34,6 @@
       }
     )
 
-    {
-      n9.users.byte.imports = [
-        {
-          # coop with shell/linux and "make qemu":
-          programs.fish.functions.share = ''
-            set -f fish_trace 1
-            macctl push $argv[1] /var/lib/images/share
-          '';
-        }
-      ];
-    }
+    { n9.users.byte = { }; }
   ];
 }
