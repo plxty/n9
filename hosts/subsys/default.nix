@@ -4,13 +4,19 @@
       { pkgs, ... }:
       {
         # TODO: Merge with @see lib/nixos/config/gnome.nix
+        # Nerd fonts can be installed by iterm2.
         fonts.packages = with pkgs; [
           jetbrains-mono
           source-code-pro
-          nerd-fonts.symbols-only
         ];
       }
     )
+
+    {
+      system.defaults.CustomUserPreferences = {
+        BraveSyncUrl = "https://brave-sync.pteno.cn/v2";
+      };
+    }
 
     {
       n9.users.byte.imports = [
@@ -19,7 +25,6 @@
           {
             home.packages = with pkgs; [
               # FIXME: https://github.com/brave/brave-browser/issues/43181
-              # system.defaults.CustomUserPreferences = { BraveSyncUrl = ... }
               # Downside: launchpad will not show, passkey is broken as well, but for working, it's okay now.
               (brave.overrideAttrs (prev: {
                 postInstall = ''
@@ -30,6 +35,7 @@
 
               vscode
               qemu
+              # iterm2
             ];
           }
         )

@@ -31,6 +31,7 @@ let
             x86_64-unknown-none = "x86_64-linux";
             x86_64-linux-gnu = "x86_64-linux";
             aarch64-unknown-linux-gnu = "aarch64-linux";
+            aarch64-unknown-linux-musl = "aarch64-linux";
             aarch64-linux-gnu = "aarch64-linux";
             riscv64-unknown-linux-gnu = "riscv64-linux";
             arm64-apple-darwin = "aarch64-darwin";
@@ -38,9 +39,9 @@ let
         in
         lib.trace "shell: selecting ${target} for ${name}" target;
 
-      # for shorthand:
+      # for shorthand: also treat as cross compile if not gnu, i.e. musl.
       options.cross = lib.mkEnableOption "cross";
-      config.cross = pkgs.system != config.target;
+      config.cross = pkgs.stdenv.buildPlatform.config != config.triplet;
 
       # shorthand of depsBuildBuild:
       options.depsBuildBuild = lib.mkOption {

@@ -3,18 +3,14 @@ ALT_ARCH=
 KERNEL_DIR="$PWD"
 DATA_DIR="/var/lib/images"
 MAPPING_DIR="$DATA_DIR"
-PREFIX=
+PREFIX=()
 QEMU_ARGS=()
 shift 1
 
 if [[ "$SSH_AUTH_SOCK" == "/opt/orbstack-guest/run/host-ssh-agent.sock" ]]; then
-  PREFIX="mac"
+  PREFIX=(macctl run -p)
   KERNEL_DIR="/Users/$(whoami)/OrbStack/$(hostname)$KERNEL_DIR"
   MAPPING_DIR="/mnt/mac$DATA_DIR"
-fi
-
-if [[ "$("$PREFIX" uname -sm)" == "Darwin $ALT_ARCH" ]]; then
-  QEMU_ARGS+=(-accel hvf)
 fi
 
 case "$ARCH" in
@@ -31,16 +27,20 @@ case "$ARCH" in
   ;;
 esac
 
+if [[ "$("${PREFIX[@]}" uname -sm)" == "Darwin $ALT_ARCH" ]]; then
+  QEMU_ARGS+=(-accel hvf)
+fi
+
 if [[ ! -d "$MAPPING_DIR" ]]; then
-  "$PREFIX" sudo mkdir -p -m 777 "$DATA_DIR"
+  "${PREFIX[@]}" sudo mkdir -p -m 777 "$DATA_DIR"
 fi
 cd "$MAPPING_DIR"
 
-image=alpine.qcow2
+image="alpine-$ARCH".qcow2
 if [[ ! -f "$image" ]]; then
-  "$PREFIX" wget -O "$image" \
+  "${PREFIX[@]}" wget -O "$image" \
     "https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.22/releases/cloud/nocloud_alpine-3.22.0-$ARCH-uefi-cloudinit-r0.qcow2"
-  "$PREFIX" qemu-img resize "$image" 8G
+  "${PREFIX[@]}" qemu-img resize "$image" 8G
 fi
 
 # https://cloudinit.readthedocs.io/en/latest/howto/launch_qemu.html
@@ -66,10 +66,9 @@ EOF
 fi
 
 # 9pfs
-"$PREFIX" mkdir -p share
+"${PREFIX[@]}" mkdir -p share
 
-# TODO: Multiplaform?
-exec "$PREFIX" "qemu-system-$ARCH" \
+exec "${PREFIX[@]}" "qemu-system-$ARCH" \
   "${QEMU_ARGS[@]}" \
   -cpu max \
   -smp 4 \
@@ -78,8 +77,8 @@ exec "$PREFIX" "qemu-system-$ARCH" \
   -drive "file=$seed,index=1,media=cdrom" \
   -virtfs "local,path=$DATA_DIR/share,mount_tag=share,security_model=mapped-file" \
   -kernel "$KERNEL_DIR/arch/$ALT_ARCH/boot/Image" \
-  -append root=/dev/vda2 \
-  -netdev user,id=net0,hostfwd=tcp::41322-:22,hostfwd=tcp::41380-:80,hostfwd=tcp::41390-:9090 \
+  -append "root=/dev/vda2" \
+  -netdev user,id=net0,net=172.20.48.0/24,hostfwd=tcp::41322-:22,hostfwd=tcp::41380-:80,hostfwd=tcp::41390-:9090 \
   -device virtio-net,netdev=net0 \
   -nographic \
   "$@"
