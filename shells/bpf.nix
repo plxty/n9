@@ -20,8 +20,7 @@ let
 
       shellHooks = [
         # bug: https://github.com/libbpf/bpftool/issues/152
-        # The zstd has no static version, therefore it's still dynamic linked.
-        ''export NIX_LDFLAGS="$NIX_LDFLAGS -lzstd"''
+        ''export NIX_LDFLAGS="$NIX_LDFLAGS -lzstd -lc"''
 
         # bug: https://github.com/rust-lang/rust/issues/89626#issuecomment-1642423512
         (lib.optionalString (
@@ -44,7 +43,7 @@ let
         [
           # The glic static is hard to link, we use musl to make our life easier.
           zlib.static
-          zstd
+          pkgsStatic.zstd
 
           # bug: https://github.com/NixOS/nixpkgs/issues/373516
           (elfutils.overrideAttrs rec {

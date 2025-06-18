@@ -4,6 +4,7 @@ KERNEL_DIR="$PWD"
 DATA_DIR="/var/lib/images"
 MAPPING_DIR="$DATA_DIR"
 PREFIX=()
+PRIVILEGE_PREFIX=()
 QEMU_ARGS=()
 shift 1
 
@@ -28,7 +29,11 @@ case "$ARCH" in
 esac
 
 if [[ "$("${PREFIX[@]}" uname -sm)" == "Darwin $ALT_ARCH" ]]; then
-  QEMU_ARGS+=(-accel hvf)
+  # slirp seems conflict with the orbstack, it can't work after installed...
+  PRIVILEGE_PREFIX=(sudo)
+  QEMU_ARGS+=(-accel hvf -netdev "vmnet-bridged,id=net0,ifname=en0")
+else
+  QEMU_ARGS+=(-netdev "user,id=net0,net=172.20.48.0/24,hostfwd=tcp::41322-:22,hostfwd=tcp::41380-:80,hostfwd=tcp::41390-:9090")
 fi
 
 if [[ ! -d "$MAPPING_DIR" ]]; then
@@ -55,10 +60,10 @@ chpasswd:
 ssh_pwauth: True
 bootcmd:
 - echo "share /share 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab
-- mount -m 777 -t 9p -o trans=virtio,version=9p2000.L share /share
 runcmd:
 - sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
 - apk del cloud-init chrony
+- reboot
 EOF
   genisoimage -output "$seed" -volid cidata -rational-rock -joliet \
     user-data meta-data network-config
@@ -68,7 +73,8 @@ fi
 # 9pfs
 "${PREFIX[@]}" mkdir -p share
 
-exec "${PREFIX[@]}" "qemu-system-$ARCH" \
+# sudo reason: https://gitlab.com/qemu-project/qemu/-/issues/1364
+exec "${PREFIX[@]}" "${PRIVILEGE_PREFIX[@]}" "qemu-system-$ARCH" \
   "${QEMU_ARGS[@]}" \
   -cpu max \
   -smp 4 \
@@ -78,7 +84,6 @@ exec "${PREFIX[@]}" "qemu-system-$ARCH" \
   -virtfs "local,path=$DATA_DIR/share,mount_tag=share,security_model=mapped-file" \
   -kernel "$KERNEL_DIR/arch/$ALT_ARCH/boot/Image" \
   -append "root=/dev/vda2" \
-  -netdev user,id=net0,net=172.20.48.0/24,hostfwd=tcp::41322-:22,hostfwd=tcp::41380-:80,hostfwd=tcp::41390-:9090 \
   -device virtio-net,netdev=net0 \
   -nographic \
   "$@"
