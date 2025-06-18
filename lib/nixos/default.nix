@@ -1,4 +1,4 @@
-{ n9, ... }@args:
+{ n9, inputs, ... }@args:
 
 let
   fn =
@@ -10,7 +10,7 @@ let
       modules,
     }:
     {
-      meta.nodeNixpkgs.${hostName} = n9.mkPkgs system;
+      meta.nodeNixpkgs.${hostName} = n9.mkNixpkgs inputs.nixpkgs system;
       meta.nodeSpecialArgs.${hostName} = specialArgs;
 
       ${hostName} = n9.recursiveMerge [

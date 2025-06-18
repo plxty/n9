@@ -19,8 +19,9 @@ in
 
   # TODO: More common libraries here.
   config = lib.mkIf cfg.enable {
-    depsBuildBuild =
-      (with pkgs; [
+    depsBuildBuild = (
+      with pkgs;
+      [
         gcc
         gdb
         gnumake
@@ -30,18 +31,16 @@ in
         cmake
         flex
         bison
-      ])
-      ++ lib.optionals (pkgs.system != config.target) (
-        with pkgsCross;
-        [
-          buildPackages.gcc # stdenv.cc
-          buildPackages.gdb
-        ]
-      );
+      ]
+    );
 
-    # TODO: is it neccessary?
-    shellHooks = lib.optional (pkgs.system != config.target) ''
-      export CROSS_COMPILE="${pkgsCross.stdenv.cc.targetPrefix}"
-    '';
+    # Cross gcc should be in host, dont' race the packages with build!
+    packages = lib.mkIf config.cross (
+      with pkgsCross;
+      [
+        buildPackages.gcc # stdenv.cc
+        buildPackages.gdb
+      ]
+    );
   };
 }

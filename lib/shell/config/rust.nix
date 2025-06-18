@@ -10,7 +10,14 @@
 let
   cfg = config.rust;
   rust = pkgs.extend inputs.rust-overlay.overlays.default;
-  isDarwinCross = pkgs.stdenv.isDarwin && (pkgs.system != config.target);
+  isStatic =
+    (
+      if (cfg.static && !(lib.hasSuffix "-musl" config.triplet)) then
+        lib.trace "rust static is better well played with musl-c, glibc may cause issues"
+      else
+        lib.id
+    )
+      cfg.static;
 in
 {
   options.rust = {
@@ -58,16 +65,43 @@ in
       cargo
     ];
 
-    shellHooks = lib.mkIf cfg.static [
-      ''
-        if [[ ! -f .cargo/config.toml ]]; then
-          mkdir -p .cargo
-          {
-            echo '[target.${config.triplet}]'
-            echo 'rustflags = ["-C", "target-feature=+crt-static"]''\''
-          } > .cargo/config.toml
-        fi
-      ''
+    shellHooks = lib.mkMerge [
+      (lib.mkIf (config.cross || isStatic) [
+        ''
+          if [[ ! -f .cargo/config.toml ]]; then
+            mkdir -p .cargo
+            {
+              ${lib.optionalString config.cross ''
+                echo "[build]"
+                echo 'target = "${config.triplet}"'
+                echo ""
+              ''}
+              echo '[target.${config.triplet}]'
+              ${lib.optionalString config.cross
+                # https://github.com/rust-lang/rust/issues/34282#issuecomment-796182029
+                ''
+                  echo 'linker = "${config.triplet}-gcc"'
+                ''
+              }
+              ${lib.optionalString isStatic ''
+                echo 'rustflags = ["-C", "target-feature=+crt-static"]''\'
+              ''}
+            } > .cargo/config.toml
+          fi
+        ''
+      ])
+
+      (lib.mkIf config.cross [
+        ''
+          if [[ ! -f .helix/languages.toml ]]; then
+            mkdir -p .helix
+            {
+              echo "[language-server.rust-analyzer]"
+              echo 'config = { cargo = { "target" = "${config.triplet}" } }'
+            } > .helix/languages.toml
+          fi
+        ''
+      ])
     ];
   };
 }

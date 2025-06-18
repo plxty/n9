@@ -70,7 +70,7 @@ in
           set -U tide_orbstack_bg_color normal
           set -U tide_orbstack_color 74BF5E
           set -U tide_orbstack_icon
-          set -U --prepend _tide_left_items orbstack
+          set -U --prepend tide_left_prompt_items orbstack
         '';
 
         # https://github.com/IlanCosman/tide/blob/main/functions/_tide_item_nix_shell.fish

@@ -53,11 +53,11 @@
       # Develop shells:
       mkShells =
         system:
-        ((import ./lib/shell (args // { pkgs = n9.mkPkgs system; })) [
+        ((import ./lib/shell (args // { pkgs = n9.mkNixpkgs nixpkgs system; })) [
           ./shells/burn.nix
           ./shells/resume.nix
           ./shells/asterinas.nix
-          ./shells/linux.nix
+          ./shells/linux
           ./shells/bpf.nix
         ]);
     in

@@ -9,11 +9,11 @@
 let
   cfg = config.clang;
 
-  clangCross =
+  clangPrefix =
     if cfg.unwrapped then
-      "${pkgsCross.clangStdenv.cc.cc}/bin/clang"
+      "${pkgsCross.clangStdenv.cc.cc}/bin/"
     else
-      "${pkgsCross.clangStdenv.cc}/bin/${config.triplet}-clang";
+      "${pkgsCross.clangStdenv.cc}/bin/${config.triplet}-";
 
   # LLVM cross compile is quite annoying, especially in Linux:
   # 1. The linux uses clang for both depsBuildBuild and depsBuildHost
@@ -27,14 +27,16 @@ let
   # P.S. The stdenv.cc.cc is the unwrapped drv of compiler, use at risk.
   # P.P.S. GCC might still be imported...
   # TODO: Judge the --target if is current platform?
-  clangWrapper = pkgs.writers.writeBashBin "clang" ''
-    for __clang_arg in "$@"; do
-      if [[ "$__clang_arg" == "-target" || "$__clang_arg" == "--target="* ]]; then
-        exec "${clangCross}" "$@" ${cfg.arguments}
-      fi
-    done
-    exec "${pkgs.clangStdenv.cc}/bin/clang" "$@" ${cfg.arguments}
-  '';
+  clangWrapper =
+    name:
+    pkgs.writers.writeBashBin name ''
+      for __clang_arg in "$@"; do
+        if [[ "$__clang_arg" == "-target" || "$__clang_arg" == "--target="* ]]; then
+          exec "${clangPrefix}${name}" "$@" ${cfg.arguments}
+        fi
+      done
+      exec "${pkgs.clangStdenv.cc}/bin/${name}" "$@" ${cfg.arguments}
+    '';
 in
 {
   options.clang = {
@@ -56,7 +58,12 @@ in
   config = lib.mkIf cfg.enable (
     lib.mkMerge [
       # it's multi-target, altough nix don't like
-      { depsBuildBuild = lib.mkBefore [ clangWrapper ]; }
+      {
+        depsBuildBuild = lib.mkBefore [
+          (clangWrapper "clang")
+          (clangWrapper "clang++")
+        ];
+      }
       {
         depsBuildBuild = with pkgs; [
           lld

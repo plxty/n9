@@ -1,4 +1,4 @@
-{ inputs, lib, ... }@args:
+{ lib, ... }@args:
 
 rec {
   # Helpers of mine:
@@ -74,11 +74,19 @@ rec {
   mkIfUsers = testFn: cfg: lib.mkIf (lib.any testFn (lib.attrValues cfg));
 
   # Replacing legacyPackages, for consistency. TODO: overriding in flake?
-  mkPkgs =
-    system:
-    import inputs.nixpkgs {
+  mkNixpkgs =
+    nixpkgs: system:
+    import nixpkgs {
       inherit system;
       overlays = [ (import ../pkgs/overlay.nix args) ];
+    };
+
+  mkCrossNixpkgs =
+    nixpkgs: system: target:
+    import nixpkgs {
+      inherit system;
+      overlays = [ (import ../pkgs/overlay.nix args) ];
+      crossSystem.config = target;
     };
 
   # Network, maybe:
