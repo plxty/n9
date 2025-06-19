@@ -28,23 +28,6 @@
             private = "id_ed25519"; # n9/asterisk/evil/byte/id_ed25519
             public = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICw9akIf3We4wbAwVfaqr8ANZYHLbtQ5sQGz1W5ZUE8Y byte@evil";
           };
-
-          n9.security.keys.".config/git/work".source = "git";
-          programs.git.includes = [
-            {
-              path = "~/.config/git/work";
-              # The git will separate `/` for sure, making `ssh://` and `git@`
-              # hard to match in one condition.
-              condition = "hasconfig:remote.*.url:*://*.alibaba-inc.com:*/**";
-            }
-            {
-              path = "~/.config/git/work";
-              condition = "hasconfig:remote.*.url:*.alibaba-inc.com:*/**";
-            }
-          ];
-
-          n9.security.keys.".ssh/config.d/hosts".source = "ssh";
-          programs.ssh.includes = [ "config.d/hosts" ];
         }
       ];
 

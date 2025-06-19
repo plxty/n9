@@ -34,6 +34,19 @@
       }
     )
 
-    { n9.users.byte = { }; }
+    {
+      n9.users.byte = {
+        n9.security.keys.".config/git/work".source = "git";
+        programs.git.includes = [
+          {
+            path = "~/.config/git/work";
+            condition = "hasconfig:remote.*.url:git@code.byted.org:*/**";
+          }
+        ];
+
+        # n9.security.keys.".ssh/config.d/hosts".source = "ssh";
+        # programs.ssh.includes = [ "config.d/hosts" ];
+      };
+    }
   ];
 }

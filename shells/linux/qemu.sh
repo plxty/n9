@@ -1,3 +1,7 @@
+if [[ "${DEBUG:-}" == "" ]]; then
+  set +x
+fi
+
 ARCH="$1"
 ALT_ARCH=
 KERNEL_DIR="$PWD"
@@ -20,7 +24,7 @@ case "$ARCH" in
     QEMU_ARGS+=(-machine virt)
   ;;
   "x86_64")
-    ALT_ARCH="x86"
+    # ALT_ARCH="x86" # FIXME: Broken
     QEMU_ARGS+=(-machine q35)
   ;;
   *)
@@ -43,37 +47,20 @@ if [[ ! -d "$MAPPING_DIR" ]]; then
 fi
 cd "$MAPPING_DIR"
 
-image="alpine-$ARCH".qcow2
+image="debian-$ARCH".qcow2
 if [[ ! -f "$image" ]]; then
   "${PREFIX[@]}" wget -O "$image" \
-    "https://mirrors.tuna.tsinghua.edu.cn/alpine/v3.22/releases/cloud/nocloud_alpine-3.22.0-$ARCH-uefi-cloudinit-r0.qcow2"
+    "https://cdimage.debian.org/images/cloud/sid/daily/latest/debian-sid-nocloud-$ALT_ARCH-daily.qcow2"
   "${PREFIX[@]}" qemu-img resize "$image" 8G
-fi
-
-# https://cloudinit.readthedocs.io/en/latest/howto/launch_qemu.html
-seed=seed.img
-if [[ ! -f "$seed" ]]; then
-  touch network-config meta-data
-  cat >user-data <<EOF
-#cloud-config
-password: alpine
-chpasswd:
-  expire: False
-ssh_pwauth: True
-bootcmd:
-- echo "share /share 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab
-runcmd:
-- sed -i 's#https\?://dl-cdn.alpinelinux.org/alpine#https://mirrors.tuna.tsinghua.edu.cn/alpine#g' /etc/apk/repositories
-- apk del cloud-init chrony
-- reboot
-EOF
-  genisoimage -output "$seed" -volid cidata -rational-rock -joliet \
-    user-data meta-data network-config
-  rm -f user-data meta-data network-config
 fi
 
 # 9pfs
 "${PREFIX[@]}" mkdir -p share
+echo "To enable 9pfs, you should run it yourself:"
+echo '  echo "share /share 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab'
+echo '  mount -a'
+
+set -x
 
 # sudo reason: https://gitlab.com/qemu-project/qemu/-/issues/1364
 exec "${PREFIX[@]}" "${PRIVILEGE_PREFIX[@]}" "qemu-system-$ARCH" \
@@ -82,10 +69,9 @@ exec "${PREFIX[@]}" "${PRIVILEGE_PREFIX[@]}" "qemu-system-$ARCH" \
   -smp 4 \
   -m 4096 \
   -drive "file=$image,index=0,format=qcow2,media=disk" \
-  -drive "file=$seed,index=1,media=cdrom" \
   -virtfs "local,path=$DATA_DIR/share,mount_tag=share,security_model=mapped-file" \
   -kernel "$KERNEL_DIR/arch/$ALT_ARCH/boot/Image" \
-  -append "root=/dev/vda2" \
+  -append "root=/dev/vda1" \
   -device virtio-net,netdev=net0 \
   -nographic \
   "$@"
