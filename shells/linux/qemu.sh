@@ -30,8 +30,10 @@ esac
 
 if [[ "$("${PREFIX[@]}" uname -sm)" == "Darwin $ALT_ARCH" ]]; then
   # slirp seems conflict with the orbstack, it can't work after installed...
+  # @see /Library/Preferences/SystemConfiguration/com.apple.vmnet.plist
+  # vmnet-bridged,ifname=...
   PRIVILEGE_PREFIX=(sudo)
-  QEMU_ARGS+=(-accel hvf -netdev "vmnet-bridged,id=net0,ifname=en0")
+  QEMU_ARGS+=(-accel hvf -netdev "vmnet-shared,id=net0")
 else
   QEMU_ARGS+=(-netdev "user,id=net0,net=172.20.48.0/24,hostfwd=tcp::41322-:22,hostfwd=tcp::41380-:80,hostfwd=tcp::41390-:9090")
 fi

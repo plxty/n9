@@ -29,40 +29,37 @@ let
       ];
 
       depsBuildBuild = with pkgs; [
-        pkg-config
-        python3
-
         # need for build-dependencies:
         elfutils
       ];
 
       # Hmmm using packages (nativeBuildInputs) will not work, the offset is
       # kind of confusing for me now...
-      buildInputs = lib.mkIf config.cross (
-        with pkgsCross;
-        [
-          # The glic static is hard to link, we use musl to make our life easier.
-          zlib.static
-          pkgsStatic.zstd
+      buildInputs = with pkgsCross; [
+        # The glic static is hard to link, we use musl to make our life easier.
+        zlib.static
+        pkgsStatic.zstd
 
-          # bug: https://github.com/NixOS/nixpkgs/issues/373516
-          (elfutils.overrideAttrs rec {
-            version = "0.193";
-            src = fetchurl {
-              url = "https://sourceware.org/elfutils/ftp/${version}/elfutils-${version}.tar.bz2";
-              hash = "sha256-eFf0S2JPTY1CHfhRqq57FALP5rzdLYBJ8V/AfT3edjU=";
-            };
+        # bug: https://github.com/NixOS/nixpkgs/issues/373516
+        (elfutils.overrideAttrs rec {
+          version = "0.193";
+          src = fetchurl {
+            url = "https://sourceware.org/elfutils/ftp/${version}/elfutils-${version}.tar.bz2";
+            hash = "sha256-eFf0S2JPTY1CHfhRqq57FALP5rzdLYBJ8V/AfT3edjU=";
+          };
 
-            preCheck = ''
-              # Workaround lack of rpath linking:
-              #   ./dwarf_srclang_check: error while loading shared libraries:
-              #     libelf.so.1: cannot open shared object file: No such file or directory
-              # Remove once https://sourceware.org/PR32929 is fixed.
-              export LD_LIBRARY_PATH="$PWD/libelf:$LD_LIBRARY_PATH"
-            '';
-          })
-        ]
-      );
+          preCheck = ''
+            # Workaround lack of rpath linking:
+            #   ./dwarf_srclang_check: error while loading shared libraries:
+            #     libelf.so.1: cannot open shared object file: No such file or directory
+            # Remove once https://sourceware.org/PR32929 is fixed.
+            export LD_LIBRARY_PATH="$PWD/libelf:$LD_LIBRARY_PATH"
+          '';
+        })
+
+        # only for indexing
+        libbpf
+      ];
 
       make = {
         build = "exec cargo build";

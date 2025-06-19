@@ -24,6 +24,7 @@ in
       [
         gcc
         gdb
+        pkg-config
         gnumake
         autoconf
         meson
@@ -39,6 +40,9 @@ in
       with pkgsCross;
       [
         buildPackages.gcc # stdenv.cc
+        buildPackages.pkg-config
+
+        # TODO: Avoid "gcc -E -xc" includes the gdb headers.
         buildPackages.gdb
       ]
     );

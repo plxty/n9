@@ -44,19 +44,34 @@ let
       config.cross = pkgs.stdenv.buildPlatform.config != config.triplet;
 
       # shorthand of depsBuildBuild:
+      # https://nixos.org/manual/nixpkgs/stable/#variables-specifying-dependencies
       options.depsBuildBuild = lib.mkOption {
         type = lib.types.listOf lib.types.package;
         default = [ ];
       };
 
       # shorthand of packages (@see nixpkgs/pkgs/build-support/mkshell/default.nix),
-      # the alias of nativeBuildInputs:
+      # the alias of nativeBuildInputs (depsBuildHost):
+      # In most non-compiler case (where you can build a aarch64-gcc, which runs
+      # on riscv64, with builder in x86_64, in this case build=x86_64, host=riscv64,
+      # target=aarch64), build eq. to host, therefore the depsBuildHost will have
+      # the same effect of depsBuildBuild or depsHostHost.
+      #
+      # however, there's one major difference for dpesBuildBuild and depsBuildHost,
+      # is that packages in the depsBuildHost will exposed to depsBuildBuild.
       options.packages = lib.mkOption {
         type = lib.types.listOf lib.types.package;
         default = [ ];
       };
 
-      # shorthand of buildInputs:
+      # shorthand of depsHostHost:
+      options.depsHostHost = lib.mkOption {
+        type = lib.types.listOf lib.types.package;
+        default = [ ];
+      };
+
+      # shorthand of buildInputs (depsHostTarget):
+      # Here's what you really want to put target libraries (and headers).
       options.buildInputs = lib.mkOption {
         type = lib.types.listOf lib.types.package;
         default = [ ];
@@ -100,6 +115,7 @@ let
         inherit (config)
           depsBuildBuild
           packages
+          depsHostHost
           buildInputs
           ;
         shellHook = lib.concatStringsSep "\n" (
