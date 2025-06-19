@@ -2,20 +2,26 @@ if [[ "${DEBUG:-}" == "" ]]; then
   set +x
 fi
 
+# In orbstack, host = macos, guest = linux
+
 ARCH="$1"
-ALT_ARCH=
-KERNEL_DIR="$PWD"
-DATA_DIR="/var/lib/images"
-MAPPING_DIR="$DATA_DIR"
-PREFIX=()
-PRIVILEGE_PREFIX=()
-QEMU_ARGS=()
+ALT_ARCH="$ARCH"
 shift 1
 
+HOST_PREFIX=()
+HOST_KERNEL_DIR="$PWD"
+HOST_DATA_DIR="/var/lib/images"
+
+GUEST_KERNEL_DIR="$HOST_KERNEL_DIR"
+GUEST_DATA_DIR="$HOST_DATA_DIR"
+
+QEMU_SUDO=
+QEMU_ARGS=()
+
 if [[ "$SSH_AUTH_SOCK" == "/opt/orbstack-guest/run/host-ssh-agent.sock" ]]; then
-  PREFIX=(macctl run -p)
-  KERNEL_DIR="/Users/$(whoami)/OrbStack/$(hostname)$KERNEL_DIR"
-  MAPPING_DIR="/mnt/mac$DATA_DIR"
+  HOST_PREFIX=(macctl run -p)
+  HOST_KERNEL_DIR="/Users/$(whoami)/OrbStack/$(hostname)$GUEST_KERNEL_DIR"
+  GUEST_DATA_DIR="/mnt/mac$HOST_DATA_DIR"
 fi
 
 case "$ARCH" in
@@ -27,50 +33,52 @@ case "$ARCH" in
     # ALT_ARCH="x86" # FIXME: Broken
     QEMU_ARGS+=(-machine q35)
   ;;
-  *)
-    ALT_ARCH="$ARCH"
-  ;;
 esac
 
-if [[ "$("${PREFIX[@]}" uname -sm)" == "Darwin $ALT_ARCH" ]]; then
+if [[ "$("${HOST_PREFIX[@]}" uname -sm)" == "Darwin $ALT_ARCH" ]]; then
   # slirp seems conflict with the orbstack, it can't work after installed...
   # @see /Library/Preferences/SystemConfiguration/com.apple.vmnet.plist
   # vmnet-bridged,ifname=...
-  PRIVILEGE_PREFIX=(sudo)
+  QEMU_SUDO=sudo
   QEMU_ARGS+=(-accel hvf -netdev "vmnet-shared,id=net0")
 else
   QEMU_ARGS+=(-netdev "user,id=net0,net=172.20.48.0/24,hostfwd=tcp::41322-:22,hostfwd=tcp::41380-:80,hostfwd=tcp::41390-:9090")
 fi
 
-if [[ ! -d "$MAPPING_DIR" ]]; then
-  "${PREFIX[@]}" sudo mkdir -p -m 777 "$DATA_DIR"
+if [[ ! -d "$GUEST_DATA_DIR" ]]; then
+  "${HOST_PREFIX[@]}" sudo mkdir -p -m 777 "$HOST_DATA_DIR"
 fi
-cd "$MAPPING_DIR"
+cd "$GUEST_DATA_DIR"
 
 image="debian-$ARCH".qcow2
 if [[ ! -f "$image" ]]; then
-  "${PREFIX[@]}" wget -O "$image" \
+  "${HOST_PREFIX[@]}" wget -O "$image" \
     "https://cdimage.debian.org/images/cloud/sid/daily/latest/debian-sid-nocloud-$ALT_ARCH-daily.qcow2"
-  "${PREFIX[@]}" qemu-img resize "$image" 8G
+  "${HOST_PREFIX[@]}" qemu-img resize "$image" 8G
 fi
 
 # 9pfs
-"${PREFIX[@]}" mkdir -p share
+"${HOST_PREFIX[@]}" mkdir -p share
 echo "To enable 9pfs, you should run it yourself:"
+echo '  mkdir /share'
 echo '  echo "share /share 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab'
+if [[ -d "$HOST_KERNEL_DIR/debian/lib/modules" ]]; then
+  QEMU_ARGS+=(-virtfs "local,path=$HOST_KERNEL_DIR/debian/lib/modules,mount_tag=modules,security_model=mapped-file")
+  echo '  echo "modules /lib/modules 9p trans=virtio,version=9p2000.L 0 0" >> /etc/fstab'
+fi
 echo '  mount -a'
 
 set -x
 
 # sudo reason: https://gitlab.com/qemu-project/qemu/-/issues/1364
-exec "${PREFIX[@]}" "${PRIVILEGE_PREFIX[@]}" "qemu-system-$ARCH" \
+exec "${HOST_PREFIX[@]}" "$QEMU_SUDO" "qemu-system-$ARCH" \
   "${QEMU_ARGS[@]}" \
   -cpu max \
   -smp 4 \
   -m 4096 \
   -drive "file=$image,index=0,format=qcow2,media=disk" \
-  -virtfs "local,path=$DATA_DIR/share,mount_tag=share,security_model=mapped-file" \
-  -kernel "$KERNEL_DIR/arch/$ALT_ARCH/boot/Image" \
+  -virtfs "local,path=$HOST_DATA_DIR/share,mount_tag=share,security_model=mapped-file" \
+  -kernel "$HOST_KERNEL_DIR/arch/$ALT_ARCH/boot/Image" \
   -append "root=/dev/vda1" \
   -device virtio-net,netdev=net0 \
   -nographic \

@@ -19,6 +19,10 @@ in
 
   # TODO: More common libraries here.
   config = lib.mkIf cfg.enable {
+    shellHooks = [
+      ''export MAKEFLAGS="-j$(nproc --ignore 3)"''
+    ];
+
     depsBuildBuild = (
       with pkgs;
       [
