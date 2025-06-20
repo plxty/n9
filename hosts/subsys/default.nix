@@ -14,7 +14,9 @@
 
     {
       system.defaults.CustomUserPreferences = {
-        BraveSyncUrl = "https://brave-sync.pteno.cn/v2";
+        "com.brave.Browser" = {
+          BraveSyncUrl = "https://brave-sync.pteno.cn/v2";
+        };
       };
     }
 
@@ -41,15 +43,20 @@
         )
 
         {
-          # ssh kerberos, run kinit then ssh:
-          programs.ssh.extraConfig = ''
-            GSSAPIAuthentication yes
-            GSSAPIDelegateCredentials no
-            HostKeyAlgorithms +ssh-rsa
-            PubkeyAcceptedKeyTypes +ssh-rsa
-          '';
-
           programs.fish.shellAliases.ve = "orb -m vexas exec fish";
+
+          # n9.security.keys.".ssh/config.d/hosts".source = "ssh";
+          programs.ssh = {
+            includes = [ "config.d/hosts" ];
+
+            # ssh kerberos, run kinit then ssh:
+            extraConfig = ''
+              GSSAPIAuthentication yes
+              GSSAPIDelegateCredentials no
+              HostKeyAlgorithms +ssh-rsa
+              PubkeyAcceptedKeyTypes +ssh-rsa
+            '';
+          };
         }
       ];
     }

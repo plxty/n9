@@ -66,6 +66,17 @@ in
     ];
 
     shellHooks = lib.mkMerge [
+      [
+        # If target changed, refresh the environment
+        ''
+          if [[ ! -f .direnv/rust-target || "$(< .direnv/rust-target)" != "${config.triplet}" ]]
+          then
+            rm -f .cargo/config.toml .helix/languages.toml
+            echo "${config.triplet}" > .direnv/rust-target
+          fi
+        ''
+      ]
+
       (lib.mkIf (config.cross || isStatic) [
         ''
           if [[ ! -f .cargo/config.toml ]]; then
