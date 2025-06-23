@@ -1,42 +1,53 @@
-{ n9, inputs, ... }@args:
+{
+  lib,
+  n9,
+  inputs,
+  ...
+}:
 
-let
-  fn =
-    {
-      hostName,
-      system,
-      specialArgs,
-      hwModule,
-      modules,
-    }:
-    {
-      meta.nodeNixpkgs.${hostName} = n9.mkNixpkgs inputs.nixpkgs system;
-      meta.nodeSpecialArgs.${hostName} = specialArgs;
+whereHosts:
 
-      ${hostName} = n9.recursiveMerge [
+(lib.evalModules {
+  modules = [
+    ../shared/config/os.nix
+    {
+      n9.map =
         {
-          imports = [
-            # nixos (linux) modules
-            ./config/disk.nix
-            ./config/network.nix
-            ./config/sshd.nix
-            ../generic/config/users.nix
-            ./config/users.nix
-            ../generic/config/keys.nix
-            ./config/keys.nix
-            ./config/passwd.nix
-            ./config/ssh-key.nix
-            ./config/gnome.nix
-            ./config/boxes.nix
+          system,
+          specialArgs,
+          modules,
+        }:
+        {
+          meta.nixpkgs.lib = lib;
+          meta.nodeNixpkgs.${specialArgs.hostName} = n9.mkNixpkgs inputs.nixpkgs system;
+          meta.nodeSpecialArgs.${specialArgs.hostName} = specialArgs;
 
-            # configs
-            hwModule
-            ../generic/essential.nix
-            ./essential.nix
+          ${specialArgs.hostName} = n9.recursiveMerge [
+            {
+              imports = [
+                # nixos (linux) modules
+                ./config/disk.nix
+                ./config/network.nix
+                ./config/sshd.nix
+                ../generic/config/users.nix
+                ./config/users.nix
+                ../generic/config/keys.nix
+                ./config/keys.nix
+                ./config/passwd.nix
+                ./config/ssh-key.nix
+                ./config/gnome.nix
+                ./config/boxes.nix
+
+                # configs
+                ../generic/essential.nix
+                ./essential.nix
+              ];
+            }
+            modules
           ];
-        }
-        modules
-      ];
-    };
-in
-import ../generic args fn
+        };
+
+      n9.final = attrs: inputs.colmena.lib.makeHive attrs;
+    }
+  ] ++ whereHosts;
+}).config.n9.os

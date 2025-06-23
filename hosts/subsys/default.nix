@@ -18,6 +18,13 @@
           BraveSyncUrl = "https://brave-sync.pteno.cn/v2";
         };
       };
+
+      system.defaults.CustomSystemPreferences = {
+        # https://github.com/runjuu/InputSourcePro/issues/24#issuecomment-2978745464
+        "/Library/Preferences/FeatureFlags/Domain/UIKit.plist" = {
+          redesigned_text_cursor.Enabled = false;
+        };
+      };
     }
 
     {

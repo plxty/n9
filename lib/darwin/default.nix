@@ -1,33 +1,37 @@
-{ n9, ... }@args:
+{
+  lib,
+  n9,
+  inputs,
+  ...
+}@args:
 
-let
-  fn =
+whereHosts:
+
+(lib.evalModules {
+  modules = [
+    ../shared/config/os.nix
     {
-      hostName,
-      specialArgs,
-      hwModule,
-      modules,
-      ...
-    }:
-    {
-      # suit for darwinSystem argument, TODO: better way? make home?
-      ${hostName} = n9.recursiveMerge [
+      n9.map =
         {
-          specialArgs = args // specialArgs;
+          system,
+          specialArgs,
+          modules,
+          ...
+        }:
+        {
+          ${specialArgs.hostName} = inputs.nix-darwin.lib.darwinSystem {
+            # Specify pkgs early to prevent from evalModules lookup config._module.args,
+            # which will cause the infinite loop when evaluating.
+            # @see https://github.com/NixOS/nixpkgs/blob/b367269ff3a9a6747a1e63b05be1c297364ba5bc/nixos/lib/eval-config-minimal.nix#L18
+            specialArgs = { pkgs = n9.mkNixpkgs inputs.nixpkgs system; } // args // specialArgs;
 
-          modules = [
-            # nix-darwin (macos) modules
-            ../generic/config/users.nix
-            ./config/users.nix
-
-            # configs
-            hwModule
-            ../generic/essential.nix
-            ./essential.nix
-            modules
-          ];
-        }
-      ];
-    };
-in
-import ../generic args fn
+            modules = [
+              ../shared/config/essentials.nix
+              ./config/essentials.nix
+              ../home/config/users.nix
+            ] ++ modules;
+          };
+        };
+    }
+  ] ++ whereHosts;
+}).config.n9.os

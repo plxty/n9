@@ -3,52 +3,25 @@
 
 {
   outputs =
-    {
-      nixpkgs,
-      colmena,
-      nix-darwin,
-      ...
-    }@inputs:
+    { nixpkgs, ... }@inputs:
     let
       # Unify the arguments, keep only libraries and inputs:
       inherit (nixpkgs) lib;
       n9 = import ./lib/lib.nix args;
       args = { inherit lib n9 inputs; };
 
-      # Helpers:
-      oses =
-        type: initial: list:
-        lib.fold lib.recursiveUpdate initial (
-          n9.flatMap (
-            if type == "linux" then
-              import ./lib/nixos args
-            else if type == "darwin" then
-              import ./lib/darwin args
-            else
-              abort "unsupported os?"
-          ) list
-        );
-
       # Systems:
-      colmenaHive = colmena.lib.makeHive (
-        # @see lib/nixos/default.nix, meta.nixpkgs will be overridden:
-        oses "linux"
-          {
-            meta.nixpkgs.lib = lib;
-            meta.specialArgs = args;
-          }
-          [
-            ./hosts/iris
-            ./hosts/evil
-            ./hosts/dragon
-            ./hosts/vexas
-          ]
-      );
+      colmenaHive = (import ./lib/nixos args) [
+        ./hosts/iris
+        ./hosts/evil
+        ./hosts/dragon
+        ./hosts/vexas
+      ];
 
       # Non-colmena, nix-darwin now:
-      darwinConfigurations = lib.mapAttrs (_: nix-darwin.lib.darwinSystem) (
-        oses "darwin" { } [ ./hosts/subsys ]
-      );
+      darwinConfigurations = (import ./lib/darwin args) [
+        ./hosts/subsys
+      ];
 
       # Develop shells:
       mkShells =
@@ -59,6 +32,7 @@
           ./shells/asterinas.nix
           ./shells/linux
           ./shells/bpf.nix
+          ./shells/bpfd.nix
         ]);
     in
     {

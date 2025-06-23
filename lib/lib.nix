@@ -79,6 +79,7 @@ rec {
     import nixpkgs {
       inherit system;
       overlays = [ (import ../pkgs/overlay.nix args) ];
+      config.allowUnfree = true;
     };
 
   mkCrossNixpkgs =

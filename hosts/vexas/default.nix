@@ -35,18 +35,16 @@
     )
 
     {
-      n9.users.byte.imports = [
-        {
-          # TODO: To subsys, when "keys" work:
-          n9.security.keys.".config/git/work".source = "git";
-          programs.git.includes = [
-            {
-              path = "~/.config/git/work";
-              condition = "hasconfig:remote.*.url:git@code.byted.org:*/**";
-            }
-          ];
-        }
-      ];
+      n9.users.byte = {
+        # TODO: To subsys, when "keys" work:
+        n9.security.keys.".config/git/work".source = "git";
+        programs.git.includes = [
+          {
+            path = "~/.config/git/work";
+            condition = "hasconfig:remote.*.url:git@code.byted.org:*/**";
+          }
+        ];
+      };
     }
   ];
 }
