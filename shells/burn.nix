@@ -29,6 +29,10 @@ let
       fi
     fi
 
+    if [[ -f asterisk/github/public ]]; then
+      B_NIX+=(--option access-tokens "github.com=$(< asterisk/github/public)")
+    fi
+
     if [[ "$B_THAT" != "" ]]; then
       B_DEPLOY=".#colmenaHive.deploymentConfig.$B_THAT"
       read -r B_USER B_HOST B_PORT < \
