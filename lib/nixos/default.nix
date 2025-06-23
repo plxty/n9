@@ -3,7 +3,7 @@
   n9,
   inputs,
   ...
-}:
+}@args:
 
 whereHosts:
 
@@ -19,32 +19,29 @@ whereHosts:
         }:
         {
           meta.nixpkgs.lib = lib;
+          meta.specialArgs = args;
+
           meta.nodeNixpkgs.${specialArgs.hostName} = n9.mkNixpkgs inputs.nixpkgs system;
-          meta.nodeSpecialArgs.${specialArgs.hostName} = specialArgs;
+          meta.nodeSpecialArgs.${specialArgs.hostName} = specialArgs // {
+            this = "nixos";
+          };
 
-          ${specialArgs.hostName} = n9.recursiveMerge [
-            {
-              imports = [
-                # nixos (linux) modules
-                ./config/disk.nix
-                ./config/network.nix
-                ./config/sshd.nix
-                ../generic/config/users.nix
-                ./config/users.nix
-                ../generic/config/keys.nix
-                ./config/keys.nix
-                ./config/passwd.nix
-                ./config/ssh-key.nix
-                ./config/gnome.nix
-                ./config/boxes.nix
-
-                # configs
-                ../generic/essential.nix
-                ./essential.nix
-              ];
-            }
-            modules
-          ];
+          ${specialArgs.hostName} = {
+            imports = [
+              ./config/disk.nix
+              ./config/network
+              ./config/sshd.nix
+              ../home/config/users.nix
+              ../shared/config/keys.nix
+              ./config/keys.nix
+              ./config/passwd.nix
+              ./config/ssh-key.nix
+              ./config/gnome.nix
+              ./config/boxes.nix
+              ../shared/config/essentials.nix
+              ./config/essentials.nix
+            ] ++ modules;
+          };
         };
 
       n9.final = attrs: inputs.colmena.lib.makeHive attrs;

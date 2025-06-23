@@ -28,6 +28,12 @@ let
         userName = null; # make some "generic" modules working
         osOptions = opt.os.${hostName};
         osConfig = cfg.os.${hostName};
+
+        # Try to avoid putting pkgs into specialArgs, which will cause a warning,
+        # altough it's harmless :)
+        # Possible values are "nixos", "darwin" and "home". TODO: Enum like?
+        # To confirm, 'rg "this =="'
+        this = null;
       };
     in
     cfg.map {

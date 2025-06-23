@@ -8,7 +8,7 @@
 
 let
   cfg = config.n9.environment.gnome;
-  dconf = import ../dconf-gnome.nix { inherit lib; };
+  dconf = import ./dconf.nix { inherit lib; };
   ext = package: { inherit package; };
 in
 {

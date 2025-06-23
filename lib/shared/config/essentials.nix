@@ -42,10 +42,6 @@ in
       options = "--delete-older-than 29d";
     };
 
-    # Because we override the pkgs everywhere, thus all of the nixpkgs options
-    # is getting overriden (ignored), if you want to change some of them,
-    # @see lib/lib.nix mkNixpkgs
-    # Also, the nixpkgs.hostPlatform is ignored.
-    # nixpkgs.config.allowUnfree = true;
+    nixpkgs.config.allowUnfree = true;
   };
 }

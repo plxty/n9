@@ -3,6 +3,7 @@
   osConfig,
   lib,
   pkgs,
+  this,
   ...
 }:
 
@@ -79,7 +80,7 @@ in
       }
 
       # Don't use mkIf here due to the mkIf will try to resolve what doesn't exists.
-      (lib.optionalAttrs pkgs.stdenv.isLinux {
+      (lib.optionalAttrs (this == "nixos") {
         home.packages = with pkgs; [
           strace
           sysstat
@@ -92,7 +93,7 @@ in
         services.ssh-agent.enable = true;
       })
 
-      (lib.optionalAttrs pkgs.stdenv.isDarwin {
+      (lib.optionalAttrs (this == "darwin") {
         home.packages = with pkgs; [
           coreutils
         ];

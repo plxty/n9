@@ -1,10 +1,11 @@
 {
   options,
   config,
-  pkgs,
   lib,
   n9,
   inputs,
+  hostName,
+  this,
   ...
 }:
 
@@ -18,16 +19,21 @@ let
   cfg = config.n9.users;
 in
 {
-  # FIXME: Identify the standalone version, how?
   imports = [
-    inputs.home-manager.${if pkgs.stdenv.isLinux then "nixosModules" else "darwinModules"}.default
+    inputs.home-manager.${if this == "nixos" then "nixosModules" else "darwinModules"}.default
   ];
 
   options.home-manager.users = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submoduleWith {
-        # We also place the pkgs here, as what lib/darwin/default.nix explains.
-        specialArgs = { inherit pkgs n9 inputs; };
+        specialArgs = {
+          inherit
+            n9
+            inputs
+            hostName
+            this
+            ;
+        };
         modules =
           [
             (
@@ -42,7 +48,7 @@ in
             ./fish.nix
             ./helix.nix
           ]
-          ++ lib.optionals pkgs.stdenv.isLinux [
+          ++ lib.optionals (this == "nixos") [
             ../../shared/config/keys.nix
             ./passwd.nix
             ./ssh-key.nix
@@ -68,7 +74,7 @@ in
         home-manager.users = lib.mkAliasDefinitions options.n9.users;
       }
 
-      (lib.optionalAttrs pkgs.stdenv.isLinux {
+      (lib.optionalAttrs (this == "nixos") {
         users.groups = lib.mapAttrs (_: _: { }) cfg;
         users.users = lib.mapAttrs (userName: _: {
           isNormalUser = lib.mkDefault true;
@@ -77,7 +83,7 @@ in
         }) cfg;
       })
 
-      (lib.optionalAttrs pkgs.stdenv.isDarwin {
+      (lib.optionalAttrs (this == "darwin") {
         assertions = [
           {
             assertion = (lib.length (lib.attrNames cfg)) == 1;

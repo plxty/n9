@@ -74,7 +74,7 @@ let
       if [[ "$(uname -s)" == "Darwin" ]]; then
         # Why darwin-rebuild won't show the activation script?
         B_SYSTEM="$(readlink /run/current-system)"
-        sudo darwin-rebuild switch --verbose --flake ".#$B_THIS"
+        sudo darwin-rebuild switch --show-trace --verbose --flake ".#$B_THIS"
         if [[ "$B_SYSTEM" != "" ]]; then
           nvd diff "$B_SYSTEM" /run/current-system
         fi
