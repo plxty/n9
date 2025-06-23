@@ -21,7 +21,7 @@ rec {
   # Match or default:
   match =
     name: attrs: default:
-    if default == null || builtins.hasAttr name attrs then attrs.${name} else default;
+    if (default == null || builtins.hasAttr name attrs) then attrs.${name} else default;
 
   # Like recursiveUpdate, but also handle the lists concation:
   # When using mergeAttrs, recursiveUpdate or other merging functions, you'd
@@ -79,6 +79,9 @@ rec {
     import nixpkgs {
       inherit system;
       overlays = [ (import ../pkgs/overlay.nix args) ];
+
+      # It will get overriden by essentials, here just to help the shells.
+      config.allowUnfree = true;
     };
 
   mkCrossNixpkgs =

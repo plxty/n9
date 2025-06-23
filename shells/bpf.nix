@@ -36,7 +36,7 @@ let
       # Hmmm using packages (nativeBuildInputs) will not work, the offset is
       # kind of confusing for me now...
       buildInputs = with pkgsCross; [
-        # The glic static is hard to link, we use musl to make our life easier.
+        # The glibc static is hard to link, we use musl to make our life easier.
         zlib.static
         pkgsStatic.zstd
 
