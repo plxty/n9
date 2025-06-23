@@ -83,100 +83,95 @@ let
         default = [ ];
       };
 
-      # TODO: Better organize?
-      options.drv = lib.mkOption {
-        type = lib.types.package;
+      options.pkgsCross = lib.mkOption {
+        type = lib.types.unspecified;
       };
 
-      config._module.args.pkgsCross =
+      config.pkgsCross =
         if config.cross then n9.mkCrossNixpkgs inputs.nixpkgs pkgs.system config.triplet else pkgs;
+
+      config._module.args.pkgsCross = config.pkgsCross;
     };
 
-  drv =
-    {
-      config,
-      name,
-      pkgsCross,
-      ...
-    }:
-    let
-      mkShellNoCC =
-        if (!config.gcc.enable && config.clang.enable) then
-          # prefer to use the clang env, it makes clang detects the build inputs.
-          lib.trace "shell: selecting clang stdenv" (
-            pkgsCross.mkShellNoCC.override { stdenv = pkgsCross.clangStdenvNoCC; }
-          )
-        else
-          lib.trace "shell: selecting default stdenv" pkgsCross.mkShellNoCC;
-    in
-    {
-      config.drv = mkShellNoCC {
-        inherit name;
-        inherit (config)
-          depsBuildBuild
-          packages
-          depsHostHost
-          buildInputs
-          ;
-        shellHook = lib.concatStringsSep "\n" (
-          [
-            # The mkShellNoCC still exports CC/AR/..., we'd better unset them.
-            # @see nixpkgs/pkgs/build-support/cc-wrapper/setup-hooks.sh
-            ''
-              export -n \
-                AR AR_FOR_BUILD \
-                AS AS_FOR_BUILD \
-                CC CC_FOR_BUILD \
-                CXX CXX_FOR_BUILD \
-                LD LD_FOR_BUILD \
-                NM NM_FOR_BUILD \
-                OBJCOPY OBJCOPY_FOR_BUILD \
-                OBJDUMP OBJDUMP_FOR_BUILD \
-                PKG_CONFIG PKG_CONFIG_FOR_BUILD \
-                RANLIB RANLIB_FOR_BUILD \
-                READELF READELF_FOR_BUILD \
-                SIZE SIZE_FOR_BUILD \
-                STRINGS STRINGS_FOR_BUILD \
-                STRIP STRIP_FOR_BUILD
-            ''
-          ]
-          ++ config.shellHooks
-        );
-      };
-    };
+  modules =
+    (lib.evalModules {
+      modules = [
+        {
+          options.n9.shell = lib.mkOption {
+            type = lib.types.attrsOf (
+              lib.types.submoduleWith {
+                modules = [
+                  essential
+                  ./config/make.nix
+                  ./config/gcc.nix
+                  ./config/clang.nix
+                  ./config/rust.nix
+                  ./config/golang.nix
+                  ./config/tex.nix
+                ];
+                specialArgs = {
+                  inherit
+                    n9
+                    inputs
+                    lib
+                    pkgs
+                    ;
+                };
+              }
+            );
+            default = { };
+          };
+        }
+      ] ++ shells;
+      specialArgs = args;
+    }).config.n9.shell;
 in
-lib.mapAttrs (_: cfg: cfg.drv)
-  (lib.evalModules {
-    modules = [
-      {
-        options.n9.shell = lib.mkOption {
-          type = lib.types.attrsOf (
-            lib.types.submoduleWith {
-              modules = [
-                # modules
-                essential
-                ./config/make.nix
-                ./config/gcc.nix
-                ./config/clang.nix
-                ./config/rust.nix
-                ./config/tex.nix
+lib.mapAttrs (
+  name: config:
+  let
+    # TODO: Fetch from _module.args directly?
+    inherit (config) pkgsCross;
 
-                # config
-                drv
-              ];
-              specialArgs = {
-                inherit
-                  n9
-                  inputs
-                  lib
-                  pkgs
-                  ;
-              };
-            }
-          );
-          default = { };
-        };
-      }
-    ] ++ shells;
-    specialArgs = args;
-  }).config.n9.shell
+    mkShellNoCC =
+      if (!config.gcc.enable && config.clang.enable) then
+        # prefer to use the clang env, it makes clang detects the build inputs.
+        lib.trace "shell: selecting clang stdenv" (
+          pkgsCross.mkShellNoCC.override { stdenv = pkgsCross.clangStdenvNoCC; }
+        )
+      else
+        lib.trace "shell: selecting default stdenv" pkgsCross.mkShellNoCC;
+  in
+  mkShellNoCC {
+    inherit name;
+    inherit (config)
+      depsBuildBuild
+      packages
+      depsHostHost
+      buildInputs
+      ;
+    shellHook = lib.concatStringsSep "\n" (
+      [
+        # The mkShellNoCC still exports CC/AR/..., we'd better unset them.
+        # @see nixpkgs/pkgs/build-support/cc-wrapper/setup-hooks.sh
+        ''
+          export -n \
+            AR AR_FOR_BUILD \
+            AS AS_FOR_BUILD \
+            CC CC_FOR_BUILD \
+            CXX CXX_FOR_BUILD \
+            LD LD_FOR_BUILD \
+            NM NM_FOR_BUILD \
+            OBJCOPY OBJCOPY_FOR_BUILD \
+            OBJDUMP OBJDUMP_FOR_BUILD \
+            PKG_CONFIG PKG_CONFIG_FOR_BUILD \
+            RANLIB RANLIB_FOR_BUILD \
+            READELF READELF_FOR_BUILD \
+            SIZE SIZE_FOR_BUILD \
+            STRINGS STRINGS_FOR_BUILD \
+            STRIP STRIP_FOR_BUILD
+        ''
+      ]
+      ++ config.shellHooks
+    );
+  }
+) modules
