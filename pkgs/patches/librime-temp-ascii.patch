@@ -1,5 +1,11 @@
+commit 16d2381e9ee0048841535cc267d0849d424ef666
+Author: Zigit Zo <byte@pen.guru>
+Date:   Tue Jun 24 21:47:30 2025 +0800
+
+    taste
+
 diff --git a/src/rime/gear/ascii_composer.cc b/src/rime/gear/ascii_composer.cc
-index a9e333b..7a33c7b 100644
+index a9e333b9..51c01312 100644
 --- a/src/rime/gear/ascii_composer.cc
 +++ b/src/rime/gear/ascii_composer.cc
 @@ -12,6 +12,7 @@
@@ -10,7 +16,7 @@ index a9e333b..7a33c7b 100644
  
  namespace rime {
  
-@@ -55,6 +56,127 @@ AsciiComposer::~AsciiComposer() {
+@@ -55,6 +56,129 @@ AsciiComposer::~AsciiComposer() {
    connection_.disconnect();
  }
  
@@ -31,6 +37,8 @@ index a9e333b..7a33c7b 100644
 +
 +static inline void TempAsciiOff(Context* ctx) {
 +  ctx->set_option("temp_ascii", false);
++  // To send one more ascii_mode notification, make the frontend aware.
++  ctx->set_option("ascii_mode", ctx->get_option("ascii_mode"));
 +  ctx->commit_history().clear();
 +}
 +
@@ -138,7 +146,7 @@ index a9e333b..7a33c7b 100644
  ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
    if ((key_event.shift() && key_event.ctrl()) || key_event.alt() ||
        key_event.super()) {
-@@ -104,10 +226,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+@@ -104,10 +228,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
    }
    // other keys
    shift_key_pressed_ = ctrl_key_pressed_ = false;
@@ -149,7 +157,7 @@ index a9e333b..7a33c7b 100644
    Context* ctx = engine_->context();
    bool ascii_mode = ctx->get_option("ascii_mode");
    if (ascii_mode) {
-@@ -120,7 +238,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+@@ -120,7 +240,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
        return kAccepted;
      }
    }
@@ -158,7 +166,7 @@ index a9e333b..7a33c7b 100644
  }
  
  ProcessResult AsciiComposer::ProcessCapsLock(const KeyEvent& key_event) {
-@@ -205,8 +323,11 @@ bool AsciiComposer::ToggleAsciiModeWithKey(int key_code) {
+@@ -205,8 +325,11 @@ bool AsciiComposer::ToggleAsciiModeWithKey(int key_code) {
      return false;
    AsciiModeSwitchStyle style = it->second;
    Context* ctx = engine_->context();
@@ -172,7 +180,7 @@ index a9e333b..7a33c7b 100644
    return true;
  }
 diff --git a/src/rime/gear/punctuator.cc b/src/rime/gear/punctuator.cc
-index 435babc..5303beb 100644
+index 435babc0..5303bebc 100644
 --- a/src/rime/gear/punctuator.cc
 +++ b/src/rime/gear/punctuator.cc
 @@ -128,6 +128,9 @@ ProcessResult Punctuator::ProcessKeyEvent(const KeyEvent& key_event) {
@@ -186,7 +194,7 @@ index 435babc..5303beb 100644
  }
  
 diff --git a/src/rime_api.h b/src/rime_api.h
-index 2fccde0..91fd50a 100644
+index 2fccde0f..91fd50a9 100644
 --- a/src/rime_api.h
 +++ b/src/rime_api.h
 @@ -177,6 +177,7 @@ typedef struct RIME_FLAVORED(rime_status_t) {
@@ -198,7 +206,7 @@ index 2fccde0..91fd50a 100644
  
  typedef struct rime_candidate_list_iterator_t {
 diff --git a/src/rime_api_impl.h b/src/rime_api_impl.h
-index 6e906cf..22fb027 100644
+index 6e906cfe..22fb027c 100644
 --- a/src/rime_api_impl.h
 +++ b/src/rime_api_impl.h
 @@ -351,6 +351,7 @@ RIME_DEPRECATED Bool RimeGetStatus(RimeSessionId session_id,

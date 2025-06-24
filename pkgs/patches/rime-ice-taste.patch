@@ -1,6 +1,6 @@
-commit 896e44ce817f4cca980f15a889106b4641a0c7ab
+commit af588350c8569b0b01bdebd9f4d6b8d8bd472e26
 Author: Zigit Zo <byte@pen.guru>
-Date:   Tue Jun 24 20:55:02 2025 +0800
+Date:   Tue Jun 24 21:47:13 2025 +0800
 
     taste
 
@@ -108,7 +108,7 @@ index 58feb8b..e0ea452 100644
      # 翻页 [ ]  ⚠️ 开启时请修改上面以词定字的快捷键
      # - { when: paging, accept: bracketleft, send: Page_Up }
 diff --git a/double_pinyin_abc.schema.yaml b/double_pinyin_abc.schema.yaml
-index d5e9d50..f0feea5 100644
+index d5e9d50..888cc51 100644
 --- a/double_pinyin_abc.schema.yaml
 +++ b/double_pinyin_abc.schema.yaml
 @@ -32,9 +32,12 @@ schema:
@@ -120,7 +120,7 @@ index d5e9d50..f0feea5 100644
    - name: ascii_mode
      states: [ 中, Ａ ]
 +  - name: temp_ascii
-+    states: [ 中, I ]
++    states: [ I, I ]
    - name: ascii_punct  # 中英标点
      states: [ ¥, $ ]
    - name: traditionalization
