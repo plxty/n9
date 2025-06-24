@@ -30,6 +30,8 @@ in
           nix-tree
           pstree
           binutils
+          coreutils
+          moreutils
           file
           dig
           binwalk
@@ -43,6 +45,7 @@ in
           enable = true;
           addKeysToAgent = "9h";
           forwardAgent = true;
+          includes = [ "config.d/hosts" ];
         };
 
         programs.git = {
@@ -91,12 +94,6 @@ in
         ];
 
         services.ssh-agent.enable = true;
-      })
-
-      (lib.optionalAttrs (this == "darwin") {
-        home.packages = with pkgs; [
-          coreutils
-        ];
       })
     ]
   );

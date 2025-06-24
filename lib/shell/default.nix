@@ -132,16 +132,16 @@ lib.mapAttrs (
     # TODO: Fetch from _module.args directly?
     inherit (config) pkgsCross;
 
-    mkShellNoCC =
+    mkShell =
       if (!config.gcc.enable && config.clang.enable) then
         # prefer to use the clang env, it makes clang detects the build inputs.
         lib.trace "shell: selecting clang stdenv" (
-          pkgsCross.mkShellNoCC.override { stdenv = pkgsCross.clangStdenvNoCC; }
+          pkgsCross.mkShell.override { stdenv = pkgsCross.clangStdenv; }
         )
       else
-        lib.trace "shell: selecting default stdenv" pkgsCross.mkShellNoCC;
+        lib.trace "shell: selecting default stdenv" pkgsCross.mkShell;
   in
-  mkShellNoCC {
+  mkShell {
     inherit name;
     inherit (config)
       depsBuildBuild

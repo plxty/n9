@@ -33,6 +33,7 @@
           ./shells/linux
           ./shells/bpf.nix
           ./shells/bpfd.nix
+          ./shells/squirrel.nix
         ]);
     in
     {

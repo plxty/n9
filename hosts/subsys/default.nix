@@ -45,7 +45,14 @@
               vscode
               qemu
               # iterm2
+              mos
             ];
+
+            home.file."Library/Rime" = {
+              source = "${pkgs.rime-ice}/share/rime-data";
+              recursive = true;
+              force = true;
+            };
           }
         )
 
@@ -54,8 +61,6 @@
 
           # n9.security.keys.".ssh/config.d/hosts".source = "ssh";
           programs.ssh = {
-            includes = [ "config.d/hosts" ];
-
             # ssh kerberos, run kinit then ssh:
             extraConfig = ''
               GSSAPIAuthentication yes

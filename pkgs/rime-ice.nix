@@ -7,13 +7,12 @@
   lib,
   stdenv,
   fetchFromGitHub,
-  librime,
   ...
 }:
 
 let
   pname = "rime-ice";
-  version = "face4fabbe9d2ab01e73ec3cc6253924cca5e2f7";
+  version = "bd514e4e788f216d25fcc74516f7bf4a82e74163";
 in
 stdenv.mkDerivation {
   inherit pname version;
@@ -22,13 +21,11 @@ stdenv.mkDerivation {
     owner = "iDvel";
     repo = "rime-ice";
     rev = version;
-    hash = "sha256-K+xYo4SBDws5oPKVkxkfosw8sizzFO9DWxWEu7PRPQ0=";
+    hash = "sha256-CTZoJeTuVr2n3U69p/0V3RvAFzpYGqds7stPGXSTj7s=";
   };
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
   patches = [ ../pkgs/patches/rime-ice-taste.patch ];
-
-  buildInputs = [ librime ];
 
   # https://discourse.nixos.org/t/what-does-runhook-do/13861/3
   # Reference other package with `${}` which will expands in nix,

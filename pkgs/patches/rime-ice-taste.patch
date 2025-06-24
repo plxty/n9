@@ -1,49 +1,12 @@
-From 662be70ff5acbbc0a054b096cc44dbb2fb925966 Mon Sep 17 00:00:00 2001
-From: Zigit Zo <ptr@ffi.fyi>
-Date: Thu, 16 Jan 2025 14:59:07 +0800
-Subject: [PATCH] feat: rime-ice
+commit 896e44ce817f4cca980f15a889106b4641a0c7ab
+Author: Zigit Zo <byte@pen.guru>
+Date:   Tue Jun 24 20:55:02 2025 +0800
 
----
- .gitignore                    |   5 +-
- custom_phrase_double.txt      |  10 +
- default.yaml                  |  33 +--
- double_pinyin_abc.schema.yaml |  28 +--
- ibus_rime.yaml                |  29 +++
- lua/lunar.lua                 |   8 +-
- lua/number_translator.lua     |   6 +-
- symbols_u.yaml                | 454 ++++++++++++++++++++++++++++++++++
- weasel.custom.yaml            |  43 ++++
- 9 files changed, 567 insertions(+), 49 deletions(-)
- create mode 100644 custom_phrase_double.txt
- create mode 100644 ibus_rime.yaml
- create mode 100644 symbols_u.yaml
- create mode 100644 weasel.custom.yaml
+    taste
 
-diff --git a/.gitignore b/.gitignore
-index 51ae5854d..2a302d6c2 100644
---- a/.gitignore
-+++ b/.gitignore
-@@ -8,10 +8,7 @@ sync/
- *.userdb/
- installation.yaml
- user.yaml
--*.custom.yaml
--!others/**/*.custom.yaml
- 
--custom_phrase_double.txt
- others/script/scel2txt/out/*
- others/script/scel2txt/scel/*
- cn_dicts/temp.txt
-@@ -20,4 +17,4 @@ cn_dicts/temp.txt
- 
- rime_console
- rime_deployer
--rime_patch
-\ No newline at end of file
-+rime_patch
 diff --git a/custom_phrase_double.txt b/custom_phrase_double.txt
 new file mode 100644
-index 000000000..29bf5247b
+index 0000000..29bf524
 --- /dev/null
 +++ b/custom_phrase_double.txt
 @@ -0,0 +1,10 @@
@@ -58,10 +21,10 @@ index 000000000..29bf5247b
 +——	poae
 +……	vglm
 diff --git a/default.yaml b/default.yaml
-index 5f60fabb1..6b36d7852 100644
+index 58feb8b..e0ea452 100644
 --- a/default.yaml
 +++ b/default.yaml
-@@ -10,19 +10,12 @@ config_version: '2024-02-05'
+@@ -10,20 +10,11 @@ config_version: '2025-02-24'
  schema_list:
    # 可以直接删除或注释不需要的方案，对应的 *.schema.yaml 方案文件也可以直接删除
    # 除了 t9，它依赖于 rime_ice，用九宫格别删 rime_ice.schema.yaml
@@ -73,7 +36,8 @@ index 5f60fabb1..6b36d7852 100644
 -  - schema: double_pinyin_sogou    # 搜狗双拼
 -  - schema: double_pinyin_flypy    # 小鹤双拼
 -  - schema: double_pinyin_ziguang  # 紫光双拼
- 
+-  - schema: double_pinyin_jiajia   # 拼音加加双拼
+-
  
  # 菜单
  menu:
@@ -82,7 +46,7 @@ index 5f60fabb1..6b36d7852 100644
    # alternative_select_labels: [ ①, ②, ③, ④, ⑤, ⑥, ⑦, ⑧, ⑨, ⑩ ]  # 修改候选项标签
    # alternative_select_keys: ASDFGHJKL  # 如编码字符占用数字键，则需另设选字键（注意在雾凇中，大写字母也作为编码了）
  
-@@ -65,7 +58,7 @@ ascii_composer:
+@@ -66,7 +57,7 @@ ascii_composer:
    switch_key:
      Caps_Lock: clear      # commit_code | commit_text | clear
      Shift_L: commit_code  # commit_code | commit_text | inline_ascii | clear | noop
@@ -91,7 +55,7 @@ index 5f60fabb1..6b36d7852 100644
      Control_L: noop       # commit_code | commit_text | inline_ascii | clear | noop
      Control_R: noop       # commit_code | commit_text | inline_ascii | clear | noop
  
-@@ -128,7 +121,7 @@ punctuator:
+@@ -131,7 +122,7 @@ punctuator:
      '?' : '？'
      ';' : '；'
      ':' : '：'
@@ -100,7 +64,7 @@ index 5f60fabb1..6b36d7852 100644
      '"' : { pair: [ '“', '”' ] }
      '\' : '、'
      '|' : '|'
-@@ -138,20 +131,20 @@ punctuator:
+@@ -141,20 +132,20 @@ punctuator:
      '@' : '@'
      '#' : '#'
      '%' : '%'
@@ -127,7 +91,7 @@ index 5f60fabb1..6b36d7852 100644
  
  
  # 处理符合特定规则的输入码，如网址、反查
-@@ -183,13 +176,9 @@ key_binder:
+@@ -186,13 +177,9 @@ key_binder:
      - { when: composing, accept: Alt+Left, send: Shift+Left }
      - { when: composing, accept: Alt+Right, send: Shift+Right }
  
@@ -144,10 +108,23 @@ index 5f60fabb1..6b36d7852 100644
      # 翻页 [ ]  ⚠️ 开启时请修改上面以词定字的快捷键
      # - { when: paging, accept: bracketleft, send: Page_Up }
 diff --git a/double_pinyin_abc.schema.yaml b/double_pinyin_abc.schema.yaml
-index 0f7b9841d..6470a0f08 100644
+index d5e9d50..f0feea5 100644
 --- a/double_pinyin_abc.schema.yaml
 +++ b/double_pinyin_abc.schema.yaml
-@@ -65,31 +65,25 @@ engine:
+@@ -32,9 +32,12 @@ schema:
+ # reset: 默认状态。注释掉后，切换窗口时不会重置到默认状态。
+ # states: 方案选单显示的名称。可以注释掉，仍可以通过快捷键切换。
+ # abbrev: 默认的缩写取 states 的第一个字符，abbrev 可自定义一个字符
++# @see RimeGetStateLabelAbbreviated
+ switches:
+   - name: ascii_mode
+     states: [ 中, Ａ ]
++  - name: temp_ascii
++    states: [ 中, I ]
+   - name: ascii_punct  # 中英标点
+     states: [ ¥, $ ]
+   - name: traditionalization
+@@ -65,31 +68,24 @@ engine:
      - ascii_segmentor
      - matcher
      - abc_segmentor
@@ -177,11 +154,10 @@ index 0f7b9841d..6470a0f08 100644
      - simplifier@emoji                               # Emoji
 -    - simplifier@traditionalize                      # 简繁切换
 -    - lua_filter@*search@radical_pinyin              # 部件拆字辅码
-+    # - simplifier@traditionalize                      # 简繁切换
      - uniquifier                                     # 去重
  
  
-@@ -257,7 +251,7 @@ punctuator:
+@@ -260,7 +256,7 @@ punctuator:
    half_shape:
      __include: default:/punctuator/half_shape  # 从 default.yaml 导入配置
    symbols:
@@ -190,7 +166,7 @@ index 0f7b9841d..6470a0f08 100644
  
  
  # 部件拆字反查
-@@ -284,13 +278,15 @@ radical_reverse_lookup:
+@@ -287,13 +283,15 @@ radical_reverse_lookup:
  
  recognizer:
    import_preset: default                # 从 default.yaml 继承通用的
@@ -215,7 +191,7 @@ index 0f7b9841d..6470a0f08 100644
  # 从 default 继承快捷键
 diff --git a/ibus_rime.yaml b/ibus_rime.yaml
 new file mode 100644
-index 000000000..7601ba9fa
+index 0000000..7601ba9
 --- /dev/null
 +++ b/ibus_rime.yaml
 @@ -0,0 +1,29 @@
@@ -249,7 +225,7 @@ index 000000000..7601ba9fa
 +  color_scheme: ~
 +  # color_scheme: aqua
 diff --git a/lua/lunar.lua b/lua/lunar.lua
-index 4a849fac3..699098c9d 100755
+index 4a849fa..699098c 100755
 --- a/lua/lunar.lua
 +++ b/lua/lunar.lua
 @@ -646,12 +646,12 @@ end
@@ -279,7 +255,7 @@ index 4a849fac3..699098c9d 100755
          lunar_ymd.quality = 999
          yield(lunar_ymd)
 diff --git a/lua/number_translator.lua b/lua/number_translator.lua
-index d21b89d72..df7b8044c 100644
+index d21b89d..df7b804 100644
 --- a/lua/number_translator.lua
 +++ b/lua/number_translator.lua
 @@ -144,11 +144,11 @@ local function number_translatorFunc(num)
@@ -299,7 +275,7 @@ index d21b89d72..df7b8044c 100644
          if str and #str > 0 and #numberPart > 0 then
 diff --git a/symbols_u.yaml b/symbols_u.yaml
 new file mode 100644
-index 000000000..f61cfcda0
+index 0000000..1c127f4
 --- /dev/null
 +++ b/symbols_u.yaml
 @@ -0,0 +1,454 @@
@@ -351,7 +327,7 @@ index 000000000..f61cfcda0
 +#箭头
 +  'ujt': [ ↑, ↓, ←, →, ↕, ↔, ↖, ↗, ↙, ↘, ↚, ↛, ↮, ↜, ↝, ↞, ↟, ↠, ↡, ↢, ↣, ↤, ↥, ↦, ↧, ↨, ↩, ↪, ↫, ↬, ↭, ↯, ↰, ↱, ↲, ↳, ↴, ↵, ↶, ↷, ↸, ↹, ↺, ↻, ↼, ↽, ↾, ↿, ⇀, ⇁, ⇂, ⇃, ⇄, ⇅, ⇆, ⇇, ⇈, ⇉, ⇊, ⇋, ⇌, ⇐, ⇍, ⇑, ⇒, ⇏, ⇓, ⇔, ⇎, ⇕, ⇖, ⇗, ⇘, ⇙, ⇚, ⇛, ⇜, ⇝, ⇞, ⇟, ⇠, ⇡, ⇢, ⇣, ⇤, ⇥, ⇦, ⇧, ⇨, ⇩, ⇪, ⇫, ⇬, ⇭, ⇮, ⇯, ⇰, ⇱, ⇲, ⇳, ⇴, ⇵, ⇶, ⇷, ⇸, ⇹, ⇺, ⇻, ⇼, ⇽, ➔, ➘, ➙, ➚, ➛, ➜, ➝, ➞, ➟, ➠, ➡, ➢, ➣, ➤, ➥, ➦, ➧, ➨, ➩, ➪, ➫, ➬, ➭, ➮, ➱, ➲, ➳, ➴, ➵, ➶, ➷, ➸, ➹, ➺, ➻, ➼, ➽, ➾ ]
 +#数学
-+  'usx': [ ±, ÷, ×, ∈, ∏, ∑, －, ＋, ＜, ≮, ＝, ≠, ＞, ≯, ∕, √, ∝, ∞, ∟, ∠, ∥, ∧, ∨, ∩, ∪, ∫, ∮, ∴, ∵, ∷, ∽, ≈, ≌, ≒, ≡, ≤, ≥, ≦, ≧, ⊕, ⊙, ⊥, ⊿, ㏑, ㏒ ]
++  'usx': [ ±, ÷, ×, ∈, ∏, ∑, －, ＋, ＜, ≮, ＝, ≠, ＞, ≯, ∕, √, ∝, ∞, ∟, ∠, ∥, ∧, ∨, ∩, ∪, ∫, ∮, ∴, ∵, ∷, ∽, ≈, ≌, ≒, ≡, ≤, ≥, ≦, ≧, ⊕, ⊖, ⊗, ⊙, ⊥, ⊿, ㏑, ㏒ ]
 +#数字+圆v弧v点
 +  'uszq': [ ⓪, ①, ②, ③, ④, ⑤, ⑥, ⑦, ⑧, ⑨, ⑩, ⑪, ⑫, ⑬, ⑭, ⑮, ⑯, ⑰, ⑱, ⑲, ⑳, ㉑, ㉒, ㉓, ㉔, ㉕, ㉖, ㉗, ㉘, ㉙, ㉚, ㉛, ㉜, ㉝, ㉞, ㉟, ㊱, ㊲, ㊳, ㊴, ㊵, ㊶, ㊷, ㊸, ㊹, ㊺, ㊻, ㊼, ㊽, ㊾, ㊿, ⓿, ❶, ❷, ❸, ❹, ❺, ❻, ❼, ❽, ❾, ❿, ⓫, ⓬, ⓭, ⓮, ⓯, ⓰, ⓱, ⓲, ⓳, ⓴ ]
 +  'uszh': [ ⑴, ⑵, ⑶, ⑷, ⑸, ⑹, ⑺, ⑻, ⑼, ⑽, ⑾, ⑿, ⒀, ⒁, ⒂, ⒃, ⒄, ⒅, ⒆, ⒇ ]
@@ -506,7 +482,7 @@ index 000000000..f61cfcda0
 +#货币
 +  'uhb': [ ￥, ¥, ¤, ￠, ＄, $, ￡, £, ৳, ฿, ₠, ₡, ₢, ₣, ₤, ₥, ₦, ₧, ₩, ₪, ₫, €, ₭, ₮, ₯, ₰, ₱, ₲, ₳, ₴, ₵, ₶, ₷, ₸, ₹, ₺, ₨, ﷼ ]
 +#结构、偏旁、康熙（部首）、笔画、标点
-+  'ujg': [ ⿰, ⿱, ⿲, ⿳, ⿴, ⿵, ⿶, ⿷, ⿸, ⿹, ⿺, ⿻, 〾 ]
++  'ujg': [ ⿰, ⿱, ⿲, ⿳, ⿴, ⿵, ⿶, ⿷, ⿼, ⿸, ⿹, ⿺, ⿽, ⿻, ⿾, ⿿, 〾 ]
 +  'upp': [ 乛, 冫, 丷, 龹, ⺌, 龸, 亻, 亼, 亽, 仒, 冖, 冂, 冃, 冄, 宀, 罒, 㓁, 罓, 冈, 凵, 厶, 刂, 勹, 匚, 匸, 卩, 阝, 厂, 丆, 广, 壬, 訁, 讠, 釒, 钅, 飠, 饣, 龺, 攵, 夂, 夊, 尢, 尣, 兂, 旡, 巜, 巛, 彐, 彑, 彡, 彳, 龰, 辶, 廴, 㞢, 忄, 㣺, 扌, 爫, 龵, 廾, 歺, 癶, 氵, 氺, 火, 灬, 爿, 丬, 疒, 牜, ⺶, 犭, 豕, 豸, 虍, 艹, 卝, 龷, 丗, 龶, 芈, 丵, 菐, 黹, 礻, 衤, 糸, 糹, 纟, 龻, 镸, 髟, 襾, 覀, 吅, 㗊, 㠭, 㸚, 叕]
 +  'ukx': [ 一, 丨, 丶, 丿, 乙, 亅, 二, 亠, 人, 儿, 入, 八, 冂, 冖, 冫, 几, 凵, 刀, 力, 勹, 匕, 匚, 匸, 十, 卜, 卩, 厂, 厶, 又, 口, 囗, 土, 士, 夂, 夊, 夕, 大, 女, 子, 宀, 寸, 小, 尢, 尸, 屮, 山, 巛, 工, 己, 巾, 干, 幺, 广, 廴, 廾, 弋, 弓, 彐, 彡, 彳, 心, 戈, 戶, 手, 支, 攴, 文, 斗, 斤, 方, 无, 日, 曰, 月, 木, 欠, 止, 歹, 殳, 毋, 比, 毛, 氏, 气, 水, 火, 爪, 父, 爻, 爿, 片, 牙, 牛, 犬, 玄, 玉, 瓜, 瓦, 甘, 生, 用, 田, 疋, 疒, 癶, 白, 皮, 皿, 目, 矛, 矢, 石, 示, 禸, 禾, 穴, 立, 竹, 米, 糸, 缶, 网, 羊, 羽, 老, 而, 耒, 耳, 聿, 肉, 臣, 自, 至, 臼, 舌, 舛, 舟, 艮, 色, 艸, 虍, 虫, 血, 行, 衣, 襾, 見, 角, 言, 谷, 豆, 豕, 豸, 貝, 赤, 走, 足, 身, 車, 辛, 辰, 辵, 邑, 酉, 釆, 里, 金, 長, 門, 阜, 隶, 隹, 雨, 靑, 非, 面, 革, 韋, 韭, 音, 頁, 風, 飛, 食, 首, 香, 馬, 骨, 高, 髟, 鬥, 鬯, 鬲, 鬼, 魚, 鳥, 鹵, 鹿, 麥, 麻, 黃, 黍, 黑, 黹, 黽, 鼎, 鼓, 鼠, 鼻, 齊, 齒, 龍, 龜, 龠 ]
 +  'ubh': [ ㇀, ㇁, ㇂, ㇃, ㇄, ㇅, ㇆, ㇇, ㇈, ㇉, ㇊, ㇋, ㇌, ㇍, ㇎, ㇏, ㇐, ㇑, ㇒, ㇓, ㇔, ㇕, ㇖, ㇗, ㇘, ㇙, ㇚, ㇛, ㇜, ㇝, ㇞, ㇟, ㇠, ㇡, ㇢, ㇣ ]
@@ -757,52 +733,3 @@ index 000000000..f61cfcda0
 +  'uyuan': [圆]
 +  'uyinwei': [∵]
 +  'usuoyi': [∴]
-diff --git a/weasel.custom.yaml b/weasel.custom.yaml
-new file mode 100644
-index 000000000..cb565441b
---- /dev/null
-+++ b/weasel.custom.yaml
-@@ -0,0 +1,43 @@
-+patch:
-+  style/+:
-+    label_format: "%s"
-+    inline_preedit: true
-+    font_point: 12
-+    label_font_point: 12
-+    comment_font_point: 12
-+    horizontal: true
-+    color_scheme: win11light
-+    color_scheme_dark: win11dark
-+    layout:
-+      min_width: 10
-+      margin_x: 16
-+      margin_y: 8
-+      border: 2
-+      candidate_spacing: 22
-+      hilite_spacing: 6
-+      hilite_padding: 2
-+      hilite_padding_x: 8
-+      corner_radius: 10
-+      round_corner: 8
-+      shadow_radius: 8
-+  preset_color_schemes/+:
-+    win11light:
-+      name: " Win11浅色 / Win11light"
-+      text_color: 0x191919
-+      label_color: 0x191919
-+      hilited_label_color: 0x191919
-+      back_color: 0xf9f9f9
-+      border_color: 0x009e5a00
-+      hilited_mark_color: 0xc06700
-+      hilited_candidate_back_color: 0xf0f0f0
-+      shadow_color: 0x20000000
-+    win11dark:
-+      name: "Win11暗色 / Win11Dark"
-+      text_color: 0xf9f9f9
-+      label_color: 0xf9f9f9
-+      back_color: 0x2C2C2C
-+      hilited_label_color: 0xf9f9f9
-+      border_color: 0x002C2C2C
-+      hilited_mark_color: 0xFFC24C
-+      hilited_candidate_back_color: 0x383838
-+      shadow_color: 0x20000000

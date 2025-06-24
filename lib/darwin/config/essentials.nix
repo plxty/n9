@@ -1,4 +1,4 @@
-{ config, lib, ... }:
+{ config, lib, ... }@args:
 
 let
   cfg = config.n9.essentials.darwin;
@@ -21,6 +21,9 @@ in
 
     # TODO: @see lib/nixos/config/essentials.nix
     nix.optimise.automatic = true;
+
+    # TODO: Use flake's nixpkgs for consistency.
+    nixpkgs.overlays = [ (import ../../../pkgs/overlay.nix args) ];
 
     # For the ~/Applications issues:
     # https://github.com/nix-darwin/nix-darwin/commit/fbe795f39dbcc242ddc6f7ab01689617746d9402

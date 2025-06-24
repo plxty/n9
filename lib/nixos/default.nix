@@ -19,12 +19,12 @@ whereHosts:
         }:
         {
           meta.nixpkgs.lib = lib;
-          meta.specialArgs = args;
-
-          meta.nodeNixpkgs.${specialArgs.hostName} = n9.mkNixpkgs inputs.nixpkgs system;
-          meta.nodeSpecialArgs.${specialArgs.hostName} = specialArgs // {
+          meta.specialArgs = args // {
             this = "nixos";
           };
+
+          meta.nodeNixpkgs.${specialArgs.hostName} = n9.mkNixpkgs inputs.nixpkgs system;
+          meta.nodeSpecialArgs.${specialArgs.hostName} = specialArgs;
 
           ${specialArgs.hostName} = {
             imports = [

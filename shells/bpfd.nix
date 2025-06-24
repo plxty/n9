@@ -41,6 +41,26 @@ let
         # Seems like the pkgsStatic isn't play well in nix, we need to specify
         # every indirect dependencies of that static libaray we actually want.
         ''export NIX_LDFLAGS="$NIX_LDFLAGS -lnl-3 -lnl-genl-3"''
+
+        # https://clangd.llvm.org/installation#compile_flagstxt
+        # @see pkg/compiler/clang.go
+        ''
+          (
+            echo "--target=bpf"
+            echo "-std=gnu89"
+            echo "-nostdinc"
+            echo "-Wall"
+            echo "-Wextra"
+            echo "-Werror"
+            echo "-Wshadow"
+            echo "-Wno-address-of-packed-member"
+            echo "-Wno-unknown-warning-option"
+            echo "-Wno-gnu-variable-sized-type-not-at-end"
+            echo "-Wdeclaration-after-statement"
+            echo "-I$PWD/bpf/lib"
+            echo "-I$PWD/bpf/include"
+          ) > compile_flags.txt
+        ''
       ];
 
       make = {
@@ -53,8 +73,9 @@ let
           export OS="$GOOS"
           export CC="${config.triplet}-gcc"
 
-          mkdir -p "$(go env GOPATH)/src/code.byted.org/sys"
-          ln -Tsf $PWD "$(go env GOPATH)/src/code.byted.org/sys/bpfd"
+          gopath="$(go env GOPATH)"
+          mkdir -p "$gopath/src/code.byted.org/sys"
+          ln -Tsf $PWD "$gopath/src/code.byted.org/sys/bpfd"
 
           for bin in bpfd bpfd-metrics; do
             BIN="$bin" bash ./build/build.sh
