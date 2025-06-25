@@ -216,20 +216,24 @@ in
       ".config/helix/runtime/grammars/kconfig.so".source =
         "${kconfig-ts-pkg}/lib/libtree-sitter-kconfig.so";
 
-      ".config/clangd/config.yaml".text = ''
-        CompileFlags:
-          Add:
-            - -ferror-limit=0
-          Remove:
-            - -march=*
-            - -mabi=*
-            - -mcpu=*
-            - -fno-allow-store-data-races
-            - -fconserve-stack
-            - --no-sysroot-suffix
-            - -fmin-function-alignment=*
-            - -femit-struct-debug-baseonly
-      '';
+      ".config/clangd/config.yaml".source = pkgs.writers.writeYAML "config.yaml" {
+        CompileFlags = {
+          Add = [ "-ferror-limit=0" ];
+          Remove = [
+            "-march=*"
+            "-mabi=*"
+            "-mcpu=*"
+            "-fno-allow-store-data-races"
+            "-fconserve-stack"
+            "--no-sysroot-suffix"
+            "-fmin-function-alignment=*"
+            "-femit-struct-debug-baseonly"
+          ];
+        };
+        Completion = {
+          HeaderInsertion = "Never";
+        };
+      };
     };
   };
 }

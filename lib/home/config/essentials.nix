@@ -39,6 +39,7 @@ in
           bc
           ncdu
           nix-prefetch-scripts
+          rsync
         ];
 
         programs.ssh = {

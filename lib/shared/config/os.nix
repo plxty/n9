@@ -33,7 +33,8 @@ let
         # altough it's harmless :)
         # Possible values are "nixos", "darwin" and "home". TODO: Enum like?
         # To confirm, 'rg "this =="'
-        this = null;
+        # We want to make nix fail if "this" is undefined:
+        # this = null;
       };
     in
     cfg.map {
