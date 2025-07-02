@@ -16,7 +16,7 @@ rec {
   flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
 
   # Path of me:
-  dir = "/Users/byte/.n9";
+  dir = import ./dir.nix;
 
   # Match or default:
   match =

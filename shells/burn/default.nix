@@ -60,7 +60,7 @@ let
     fi
 
     # Das template:
-    sed -i -E 's!(dir = )[^;]+\;$!\1"'"$PWD"'";!' lib/lib.nix
+    echo "\"$PWD\"" > lib/dir.nix
   '';
 
   postBurn = ''

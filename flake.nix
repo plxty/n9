@@ -14,6 +14,7 @@
       colmenaHive = (import ./lib/nixos args) [
         ./hosts/iris
         ./hosts/evil
+        ./hosts/wyvern
         ./hosts/dragon
         ./hosts/vexas
       ];
@@ -90,6 +91,11 @@
 
     rust-overlay = {
       url = "github:oxalica/rust-overlay";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+
+    nixos-wsl = {
+      url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
