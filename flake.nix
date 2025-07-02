@@ -27,7 +27,7 @@
       mkShells =
         system:
         ((import ./lib/shell (args // { pkgs = n9.mkNixpkgs nixpkgs system; })) [
-          ./shells/burn.nix
+          ./shells/burn
           ./shells/resume.nix
           ./shells/asterinas.nix
           ./shells/linux

@@ -49,6 +49,7 @@ let
         cdrkit
         zlib
         kmod
+        # crash # it crashes on nixos
       ];
     };
 
