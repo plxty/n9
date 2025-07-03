@@ -72,7 +72,7 @@ rec {
   dir = import ./dir.nix;
 
   # Niv sources:
-  sources = import ../nix/sources.nix;
+  sources = import ./sources.nix;
 
   # Match or default:
   match =

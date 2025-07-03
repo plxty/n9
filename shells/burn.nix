@@ -62,7 +62,7 @@ let
     fi
 
     # Das template:
-    echo "\"$PWD\"" > lib/dir.nix
+    echo "\"$PWD\"" > nix/dir.nix
   '';
 
   postBurn = ''

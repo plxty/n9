@@ -7,7 +7,7 @@
     let
       # Unify the arguments, keep only libraries and inputs:
       inherit (nixpkgs) lib;
-      n9 = import ./lib/lib.nix args;
+      n9 = import ./nix/lib.nix args;
       args = { inherit lib n9 inputs; };
 
       # NixOS:
