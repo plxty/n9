@@ -11,6 +11,11 @@ let
   cfg = config.n9.essentials.home;
 in
 {
+  imports = [
+    ./helix.nix
+    ./fish.nix
+  ];
+
   options.n9.essentials.home.enable = lib.mkOption {
     type = lib.types.bool;
     default = true;
@@ -95,7 +100,7 @@ in
             # using osConfig.nix.settings.substituters directly will introduce an
             # extra defult cache.nixos.org, we use this way to avoid it... TODO
             # make a osOptions to obtain the raw values?
-            inherit ((import ../../../flake.nix).nixConfig) substituters;
+            inherit ((import ../../flake.nix).nixConfig) substituters;
           in
           {
             text = ''

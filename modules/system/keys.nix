@@ -82,38 +82,20 @@ in
     default = { };
   };
 
-  config = lib.optionalAttrs (!(this ? usersModule)) (
-    lib.mkMerge [
-      {
-        deployment.keys = lib.mkMerge (
-          lib.map (v: {
-            ${builtins.baseNameOf v.target} = {
-              inherit (v)
-                user
-                group
-                permissions
-                uploadAt
-                ;
-              keyFile = v.source;
-              destDir = builtins.dirOf v.target;
-            };
-          }) keys
-        );
-      }
-
-      (lib.optionalAttrs (this ? nixos) {
-        # have no much usage now... @see keyServiceModule
-        systemd.paths = lib.mkMerge (
-          lib.map (v: {
-            "${builtins.baseNameOf v.target}-key".enable = v.service;
-          }) keys
-        );
-        systemd.services = lib.mkMerge (
-          lib.map (v: {
-            "${builtins.baseNameOf v.target}-key".enable = lib.mkForce v.service;
-          }) keys
-        );
-      })
-    ]
-  );
+  config = lib.optionalAttrs (!(this ? usersModule)) {
+    deployment.keys = lib.mkMerge (
+      lib.map (v: {
+        ${builtins.baseNameOf v.target} = {
+          inherit (v)
+            user
+            group
+            permissions
+            uploadAt
+            ;
+          keyFile = v.source;
+          destDir = builtins.dirOf v.target;
+        };
+      }) keys
+    );
+  };
 }

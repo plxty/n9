@@ -15,9 +15,7 @@ let
     ./users.nix
     ./keys.nix
     ./ssh-key.nix
-
-    # TODO: Handled by the "nix" module?
-    ../nix/essentials.nix
+    ../nix
   ];
 in
 {

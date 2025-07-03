@@ -12,15 +12,15 @@
 
       # NixOS:
       nixosConfigurations = n9.systems "nixos" [
-        ./hosts/iris
-        ./hosts/evil
-        ./hosts/wyvern
-        ./hosts/vexas
+        ./config/hosts/iris
+        ./config/hosts/evil
+        ./config/hosts/wyvern
+        ./config/hosts/vexas
       ];
 
       # Nix Darwin:
       darwinConfigurations = n9.systems "darwin" [
-        ./hosts/subsys
+        ./config/hosts/subsys
       ];
 
       # Burn apply:
@@ -28,13 +28,13 @@
 
       # Develop shells:
       shellConfigurations = n9.hells nixpkgs [
-        ./shells/burn.nix
-        ./shells/resume.nix
-        ./shells/asterinas.nix
-        ./shells/linux
-        ./shells/bpf.nix
-        ./shells/bpfd.nix
-        ./shells/squirrel.nix
+        ./config/shells/burn.nix
+        ./config/shells/resume.nix
+        ./config/shells/asterinas.nix
+        ./config/shells/linux
+        ./config/shells/bpf.nix
+        ./config/shells/bpfd.nix
+        ./config/shells/squirrel.nix
       ];
     in
     {

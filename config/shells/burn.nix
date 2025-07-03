@@ -85,8 +85,8 @@ let
 
         # Maybe a pre-defined distro, e.g. orbstack
         if [[ -f /etc/nixos/configuration.nix ]]; then
-          mkdir -p "hosts/$B_THIS/inherit"
-          cp -a /etc/nixos/*.nix "hosts/$B_THIS/inherit/"
+          mkdir -p "config/hosts/$B_THIS/inherit"
+          cp -a /etc/nixos/*.nix "config/hosts/$B_THIS/inherit/"
         fi
 
         # For hosts that mismatch with local, suggest `sudo hostname xxx`:

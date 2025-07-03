@@ -27,11 +27,7 @@ let
     )
     ./keys.nix
     ./ssh-key.nix
-
-    # TODO: Handled by the "users" module?
-    ../users/helix.nix
-    ../users/fish.nix
-    ../users/essentials.nix
+    ../users
   ];
 
   p =

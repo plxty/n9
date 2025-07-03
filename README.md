@@ -28,4 +28,4 @@ burn evil
 fire iris
 ```
 
-Checkout `hosts` directory for my own builds, using [colmena](https://github.com/zhaofengli/colmena).
+Checkout `config/hosts` directory for my own builds, with [colmena](https://github.com/zhaofengli/colmena).

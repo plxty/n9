@@ -19,7 +19,7 @@ rec {
         this.${type} = abort "gotcha";
       };
       modules = [
-        ./modules/system
+        ../modules/system
       ] ++ hosts;
     }).config.n9.system;
 
@@ -60,7 +60,7 @@ rec {
         pkgs = mkNixpkgs nixpkgs system;
       };
       modules = [
-        ./modules/shell
+        ../modules/shell
       ] ++ shells;
     }).config.n9.shell;
 

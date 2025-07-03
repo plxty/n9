@@ -21,7 +21,7 @@ in
         "nix-command"
         "flakes"
       ];
-      inherit ((import ../../../flake.nix).nixConfig) substituters;
+      inherit ((import ../../flake.nix).nixConfig) substituters;
     };
 
     nix.extraOptions = ''
