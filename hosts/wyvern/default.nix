@@ -1,6 +1,7 @@
 {
   # WSL2
   n9.system.wyvern.imports = [
+    ./hardware-configuration.nix
     (
       { lib, inputs, ... }:
       {

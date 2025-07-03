@@ -16,6 +16,7 @@ let
     inputs.colmena.nixosModules.deploymentOptions
     ../../home/config/users.nix
     ./keys.nix
+    ./ssh-key.nix
     ./essentials.nix
   ];
 
@@ -23,7 +24,6 @@ let
     ../../nixos/config/disk.nix
     ../../nixos/config/network
     ../../nixos/config/sshd.nix
-    ../../nixos/config/keys.nix
     ../../nixos/config/passwd.nix
     ../../nixos/config/ssh-key.nix
     ../../nixos/config/gnome.nix
@@ -61,7 +61,6 @@ in
             # To satisfy the colmena...
             config._module.args.name = hostName;
           }
-          ../../../hosts/${hostName}/hardware-configuration.nix
           modules
         ];
       in

@@ -26,6 +26,7 @@ let
       }
     )
     ../../shared/config/keys.nix
+    ../../shared/config/ssh-key.nix
     ./essentials.nix
     ./fish.nix
     ./helix.nix
@@ -33,22 +34,23 @@ let
 
   nixosModules = [
     ./passwd.nix
-    ./ssh-key.nix
     ./gnome
     ./boxes.nix
   ];
 
   darwinModules = [
   ];
-
-  # standalone home-manager:
-  homeModules = [
-    ../../shared/config/essentials.nix
-  ];
 in
 {
   imports = [
-    inputs.home-manager.${if this == "nixos" then "nixosModules" else "darwinModules"}.default
+    inputs.home-manager.${
+      if this ? nixos then
+        "nixosModules"
+      else if this ? darwin then
+        "darwinModules"
+      else
+        abort "no supported home-manager!"
+    }.default
   ];
 
   options.home-manager.users = lib.mkOption {
@@ -59,19 +61,26 @@ in
             n9
             inputs
             hostName
-            this
             ;
+          # You'd better not to access "userName" in the if statement.
+          # We have some cases of the "this" value:
+          # * nixos/nix-darwin/home-manager standalone,
+          # * home-manager as module,
+          # Only access usercfg if !(this ? homeModule), i.e. you have users.
+          this = this // {
+            homeModule = abort "yonah";
+          };
         };
 
         modules =
           commonModules
           ++ (
-            if this == "nixos" then
+            if this ? nixos then
               nixosModules
-            else if this == "darwin" then
+            else if this ? darwin then
               darwinModules
             else
-              homeModules
+              abort "no supported modules in users!"
           );
       }
     );
@@ -92,7 +101,7 @@ in
         home-manager.users = lib.mkAliasDefinitions options.n9.users;
       }
 
-      (lib.optionalAttrs (this == "nixos") {
+      (lib.optionalAttrs (this ? nixos) {
         users.groups = lib.mapAttrs (_: _: { }) cfg;
         users.users = lib.mapAttrs (userName: _: {
           isNormalUser = lib.mkDefault true;
@@ -101,7 +110,7 @@ in
         }) cfg;
       })
 
-      (lib.optionalAttrs (this == "darwin") {
+      (lib.optionalAttrs (this ? darwin) {
         assertions = [
           {
             assertion = (lib.length (lib.attrNames cfg)) == 1;

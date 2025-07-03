@@ -47,6 +47,14 @@ in
           addKeysToAgent = "9h";
           forwardAgent = true;
           includes = [ "config.d/hosts" ];
+
+          # ssh kerberos, run kinit then ssh:
+          extraConfig = ''
+            GSSAPIAuthentication yes
+            GSSAPIDelegateCredentials no
+            HostKeyAlgorithms +ssh-rsa
+            PubkeyAcceptedKeyTypes +ssh-rsa
+          '';
         };
 
         programs.git = {
@@ -58,6 +66,24 @@ in
             user.useConfigOnly = true;
             init.defaultBranch = "main";
           };
+
+          # set projects up:
+          includes =
+            let
+              work = {
+                user.email = "zuozhijie@bytedance.com";
+              };
+            in
+            [
+              {
+                condition = "hasconfig:remote.*.url:git@code.byted.org:*/**";
+                contents = work;
+              }
+              {
+                condition = "gitdir/i:**/bytedance/**";
+                contents = work;
+              }
+            ];
         };
 
         home.file.".config/nixpkgs/config.nix".text = ''
@@ -84,7 +110,7 @@ in
       }
 
       # Don't use mkIf here due to the mkIf will try to resolve what doesn't exists.
-      (lib.optionalAttrs (this == "nixos") {
+      (lib.optionalAttrs (this ? nixos) {
         home.packages = with pkgs; [
           strace
           sysstat

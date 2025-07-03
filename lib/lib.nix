@@ -13,14 +13,10 @@ rec {
 
   # Like makeHive of colmena, and we call it hives :)
   hives =
-    this: hosts:
+    type: hosts:
     (lib.evalModules {
       specialArgs = args // {
-        # Try to avoid putting pkgs into specialArgs, which will cause a warning,
-        # altough it's harmless :)
-        # Possible values are "nixos", "darwin" and "home". TODO: Enum like?
-        # To confirm, 'rg "this =="'
-        inherit this;
+        this.${type} = abort "gotcha";
       };
       modules = [
         ./shared/config/system.nix

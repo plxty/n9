@@ -1,14 +1,22 @@
 {
+  config,
+  osConfig,
   lib,
   n9,
+  this,
   hostName,
   userName,
-  osConfig,
   ...
 }:
 
+let
+  cfg = config.n9.security.keys;
+  usercfg = n9.users "keys" (v: v.n9.security.keys) config;
+  keys =
+    lib.mapAttrsToList (_: lib.id) cfg
+    ++ lib.flatten (lib.mapAttrsToList (_: lib.mapAttrsToList (_: lib.id)) usercfg);
+in
 {
-  # only options here, config is defined in lib/nixos/config/keys.nix:
   options.n9.security.keys = lib.mkOption {
     type = lib.types.attrsOf (
       # @see home-manager/modules/lib/file-type.nix
@@ -41,7 +49,13 @@
 
             group = lib.mkOption {
               type = lib.types.str;
-              default = if userName == null then "root" else userName;
+              default =
+                if userName == null then
+                  "root"
+                else if this ? darwin then
+                  "staff"
+                else
+                  userName;
             };
 
             permissions = lib.mkOption {
@@ -67,4 +81,39 @@
     );
     default = { };
   };
+
+  config = lib.optionalAttrs (!(this ? homeModule)) (
+    lib.mkMerge [
+      {
+        deployment.keys = lib.mkMerge (
+          lib.map (v: {
+            ${builtins.baseNameOf v.target} = {
+              inherit (v)
+                user
+                group
+                permissions
+                uploadAt
+                ;
+              keyFile = v.source;
+              destDir = builtins.dirOf v.target;
+            };
+          }) keys
+        );
+      }
+
+      (lib.optionalAttrs (this ? nixos) {
+        # have no much usage now... @see keyServiceModule
+        systemd.paths = lib.mkMerge (
+          lib.map (v: {
+            "${builtins.baseNameOf v.target}-key".enable = v.service;
+          }) keys
+        );
+        systemd.services = lib.mkMerge (
+          lib.map (v: {
+            "${builtins.baseNameOf v.target}-key".enable = lib.mkForce v.service;
+          }) keys
+        );
+      })
+    ]
+  );
 }

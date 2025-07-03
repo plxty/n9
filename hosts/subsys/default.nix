@@ -1,18 +1,8 @@
 {
   n9.system.subsys.imports = [
-    (
-      { pkgs, ... }:
-      {
-        # TODO: Merge with @see lib/nixos/config/gnome.nix
-        # Nerd fonts can be installed by iterm2.
-        fonts.packages = with pkgs; [
-          jetbrains-mono
-          source-code-pro
-        ];
-      }
-    )
-
     {
+      nixpkgs.hostPlatform = "aarch64-darwin";
+
       system.defaults.CustomUserPreferences =
         let
           # BUG: https://community.brave.com/t/bug-report-brave-on-macos-ignores-braveaichatenabled-and-bravewalletdisabled-group-policy-rules/625130
@@ -31,16 +21,6 @@
           "com.brave.Browser" = brave;
           "com.brave.Browser.nightly" = brave;
         };
-
-      system.defaults.CustomSystemPreferences = {
-        # https://github.com/runjuu/InputSourcePro/issues/24#issuecomment-2978745464
-        "/Library/Preferences/FeatureFlags/Domain/UIKit.plist" = {
-          redesigned_text_cursor.Enabled = false;
-        };
-      };
-
-      # TODO: Merge with @see sshd.nix
-      deployment.allowLocalDeployment = true;
     }
 
     {
@@ -107,25 +87,16 @@
             home.file."Library/Mozilla/NativeMessagingHosts/${eer.filename}".source =
               "${eer.out}/${eer.filename}";
 
+            programs.ssh.matchBlocks.ve = {
+              hostname = "localhost";
+              port = 32222;
+              identityFile = "${config.home.homeDirectory}/.orbstack/ssh/id_ed25519";
+            };
             programs.fish.shellAliases.ve = "orb -m vexas exec fish";
 
-            # n9.security.keys.".ssh/config.d/hosts".source = "ssh";
-            programs.ssh = {
-              matchBlocks = {
-                ve = {
-                  hostname = "localhost";
-                  port = 32222;
-                  identityFile = "${config.home.homeDirectory}/.orbstack/ssh/id_ed25519";
-                };
-              };
-
-              # ssh kerberos, run kinit then ssh:
-              extraConfig = ''
-                GSSAPIAuthentication yes
-                GSSAPIDelegateCredentials no
-                HostKeyAlgorithms +ssh-rsa
-                PubkeyAcceptedKeyTypes +ssh-rsa
-              '';
+            n9.security.ssh-key = {
+              private = "id_ed25519";
+              public = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHseVadGEcUcnDZ7+M8oQeuvEZrbMeEj3PWk/o8LIygX byte@subsys";
             };
           }
         )

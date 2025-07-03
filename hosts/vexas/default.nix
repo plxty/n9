@@ -3,6 +3,10 @@
 
 {
   n9.system.vexas.imports = [
+    {
+      nixpkgs.hostPlatform = "aarch64-linux";
+    }
+
     (
       {
         config,
@@ -36,14 +40,7 @@
 
     {
       n9.users.byte = {
-        # TODO: To subsys, when "keys" work:
-        n9.security.keys.".config/git/work".source = "git";
-        programs.git.includes = [
-          {
-            path = "~/.config/git/work";
-            condition = "hasconfig:remote.*.url:git@code.byted.org:*/**";
-          }
-        ];
+        # Hmm, nothing specials.
       };
     }
   ];

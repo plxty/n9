@@ -29,8 +29,8 @@ let
       fi
     fi
 
-    if [[ -f asterisk/github/public ]]; then
-      B_NIX+=(--option access-tokens "github.com=$(< asterisk/github/public)")
+    if [[ -f asterisk/.github_token ]]; then
+      B_NIX+=(--option access-tokens "github.com=$(< asterisk/.github_token)")
     fi
 
     if [[ "$B_THAT" != "" ]]; then
@@ -146,6 +146,7 @@ in
     gnused
     jq
     inputs.nixos-anywhere.packages.${system}.default
+    getent # upload-keys
     colmenaPackage
 
     # Real stuff:
