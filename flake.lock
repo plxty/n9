@@ -185,26 +185,6 @@
         "type": "github"
       }
     },
-    "nixos-x1e": {
-      "inputs": {
-        "nixpkgs": [
-          "nixpkgs"
-        ]
-      },
-      "locked": {
-        "lastModified": 1749869659,
-        "narHash": "sha256-D3vzzX1Axcw8kteUjtxZP7pyMfULB3ZDp/YgB0yjqhw=",
-        "owner": "plxty",
-        "repo": "nixos-x1e",
-        "rev": "04d34baab8b92130087f776740d9ec2a70d19fe6",
-        "type": "github"
-      },
-      "original": {
-        "owner": "plxty",
-        "repo": "nixos-x1e",
-        "type": "github"
-      }
-    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1751211869,
@@ -229,7 +209,6 @@
         "nix-darwin": "nix-darwin",
         "nixos-anywhere": "nixos-anywhere",
         "nixos-wsl": "nixos-wsl",
-        "nixos-x1e": "nixos-x1e",
         "nixpkgs": "nixpkgs",
         "rust-overlay": "rust-overlay"
       }

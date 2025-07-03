@@ -49,7 +49,7 @@ in
           includes = [ "config.d/hosts" ];
 
           # ssh kerberos, run kinit then ssh:
-          extraConfig = ''
+          extraConfig = lib.optionalString (this ? darwin) ''
             GSSAPIAuthentication yes
             GSSAPIDelegateCredentials no
             HostKeyAlgorithms +ssh-rsa

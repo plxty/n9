@@ -28,7 +28,7 @@
             ];
           }
         )
-        { n9.security.ssh-key.agents = [ "byte@dragon" ]; }
+        { n9.security.ssh-key.agents = [ "byte@wyvern" ]; }
       ];
     }
   ];

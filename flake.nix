@@ -15,7 +15,6 @@
         ./hosts/iris
         ./hosts/evil
         ./hosts/wyvern
-        ./hosts/dragon
         ./hosts/vexas
       ];
 
@@ -101,11 +100,6 @@
 
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
-    nixos-x1e = {
-      url = "github:plxty/nixos-x1e";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
