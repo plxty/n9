@@ -1,6 +1,6 @@
 {
   # Native (For ISO image, use the nixos-x1e repo to build :)
-  n9.os.dragon.imports = [
+  n9.system.dragon.imports = [
     (
       { inputs, ... }:
       {

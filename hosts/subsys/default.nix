@@ -1,5 +1,5 @@
 {
-  n9.os.subsys.imports = [
+  n9.system.subsys.imports = [
     (
       { pkgs, ... }:
       {
@@ -38,6 +38,9 @@
           redesigned_text_cursor.Enabled = false;
         };
       };
+
+      # TODO: Merge with @see sshd.nix
+      deployment.allowLocalDeployment = true;
     }
 
     {

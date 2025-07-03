@@ -8,10 +8,11 @@
 let
   inherit (pkgs) system;
 
-  # https://discourse.nixos.org/t/how-to-add-a-flake-package-to-system-configuration/14460/5
   # It can be an overlay of nixpkgs, however for simplicity...
-  # TODO: Remove colmena, and use our own controlled version.
-  colmenaPackage = n9.patch inputs.colmena.packages.${system}.colmena "colmena-nix-store-sign";
+  colmenaPackage = n9.patches inputs.colmena.packages.${system}.colmena [
+    "colmena-darwin"
+    "colmena-nix-store-sign"
+  ];
 
   preBurn = ''
     set -uex
@@ -19,7 +20,6 @@ let
     B_THIS="$(hostname)"
     B_THAT="''${1:-}"
     B_NIX=(nix --extra-experimental-features "nix-command flakes" --accept-flake-config)
-    B_SSHOPTS=(-o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no)
 
     if [[ ! -d asterisk ]]; then
       cd "$HOME/.n9"
@@ -65,9 +65,6 @@ let
 
   postBurn = ''
     if $B_UP; then
-      # Try updateing the database for command-not-found as well:
-      sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-25.05 nixos
-      sudo nix-channel --update nixos || true
       touch .last
     fi
   '';
@@ -77,17 +74,6 @@ let
     B_COLMENA=(colmena --show-trace)
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
-      if [[ "$(uname -s)" == "Darwin" ]]; then
-        # Why darwin-rebuild won't show the activation script?
-        B_SYSTEM="$(readlink /run/current-system)"
-        sudo darwin-rebuild switch --show-trace --verbose --flake ".#$B_THIS"
-        if [[ "$B_SYSTEM" != "" ]]; then
-          nvd diff "$B_SYSTEM" /run/current-system
-        fi
-        ${postBurn}
-        exit $?
-      fi
-
       # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
       sudo -v
       trap 'pkill -P $$' SIGINT SIGTERM EXIT
@@ -103,6 +89,10 @@ let
 
         # For hosts that mismatch with local, suggest `sudo hostname xxx`:
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
+
+        # Try updateing the database for command-not-found as well:
+        sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-25.05 nixos
+        sudo nix-channel --update nixos || true
 
         # The `sleep` will be killed whether successful or not...
         ${postBurn}
@@ -157,7 +147,6 @@ in
     jq
     inputs.nixos-anywhere.packages.${system}.default
     colmenaPackage
-    nvd
 
     # Real stuff:
     burnSwitch

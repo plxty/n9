@@ -1,6 +1,7 @@
 {
   config,
   lib,
+  pkgs,
   n9,
   ...
 }:
@@ -40,6 +41,15 @@ in
     nix.gc = {
       automatic = true;
       options = "--delete-older-than 29d";
+    };
+
+    # https://github.com/luishfonseca/nixos-config/blob/main/modules/upgrade-diff.nix
+    # https://github.com/nix-darwin/nix-darwin/blob/e04a388232d9a6ba56967ce5b53a8a6f713cdfcf/modules/system/activation-scripts.nix#L114
+    system.activationScripts.postActivation = {
+      # supportsDryActivation = true; # TODO: doesn't exist in darwin...
+      text = ''
+        ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff /run/current-system "$systemConfig"
+      '';
     };
 
     nixpkgs.config.allowUnfree = true;

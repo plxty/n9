@@ -1,6 +1,6 @@
 {
   # WSL2
-  n9.os.wyvern.imports = [
+  n9.system.wyvern.imports = [
     (
       { lib, inputs, ... }:
       {

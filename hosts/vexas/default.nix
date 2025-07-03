@@ -2,7 +2,7 @@
 # TODO: Make a wine like wrapper?
 
 {
-  n9.os.vexas.imports = [
+  n9.system.vexas.imports = [
     (
       {
         config,

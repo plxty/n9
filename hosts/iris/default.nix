@@ -1,5 +1,5 @@
 {
-  n9.os.iris.imports = [
+  n9.system.iris.imports = [
     ./networking.nix
     {
       boot.initrd.availableKernelModules = [ "usbhid" ];

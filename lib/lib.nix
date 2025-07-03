@@ -11,6 +11,22 @@ rec {
     });
   patch = pkg: attr: patches pkg [ attr ];
 
+  # Like makeHive of colmena, and we call it hives :)
+  hives =
+    this: hosts:
+    (lib.evalModules {
+      specialArgs = args // {
+        # Try to avoid putting pkgs into specialArgs, which will cause a warning,
+        # altough it's harmless :)
+        # Possible values are "nixos", "darwin" and "home". TODO: Enum like?
+        # To confirm, 'rg "this =="'
+        inherit this;
+      };
+      modules = [
+        ./shared/config/system.nix
+      ] ++ hosts;
+    }).config.n9.system;
+
   # Hmm, why not?
   flatMap = fn: list: lib.flatten (lib.map fn list);
   flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
@@ -65,10 +81,7 @@ rec {
   # TODO: Fetch the name in a smarter way?
   users =
     name: attrFn: config:
-    let
-      val = lib.mapAttrs (_: attrFn) config.n9.users;
-    in
-    lib.traceSeq [ name val ] val;
+    lib.mapAttrs (_: attrFn) config.n9.users;
 
   # Anyone has enabled?
   mkIfUsers = testFn: cfg: lib.mkIf (lib.any testFn (lib.attrValues cfg));

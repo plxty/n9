@@ -1,0 +1,151 @@
+commit 7c2eb7163c90552c14110c9aed35a5edce6f1249
+Author: Zigit Zo <byte@pen.guru>
+Date:   Thu Jul 3 17:29:32 2025 +0800
+
+    feat: darwin
+
+diff --git a/.envrc b/.envrc
+index de3998d..234e89d 100644
+--- a/.envrc
++++ b/.envrc
+@@ -2,4 +2,4 @@ if ! has nix_direnv_version || ! nix_direnv_version 2.1.1; then
+   source_url "https://raw.githubusercontent.com/nix-community/nix-direnv/2.1.1/direnvrc" "sha256-b6qJ4r34rbE23yWjMqbmu3ia2z4b2wIlZUksBke/ol0="
+ fi
+ 
+-use flake
++use flake . --accept-flake-config
+diff --git a/src/cli.rs b/src/cli.rs
+index 3294dde..919cfd0 100644
+--- a/src/cli.rs
++++ b/src/cli.rs
+@@ -175,7 +175,6 @@ struct Opts {
+ enum Command {
+     Apply(command::apply::Opts),
+ 
+-    #[cfg(target_os = "linux")]
+     ApplyLocal(command::apply_local::Opts),
+ 
+     /// Build configurations but not push to remote machines
+@@ -328,7 +327,6 @@ pub async fn run() {
+ 
+     match opts.command {
+         Command::Apply(args) => r(command::apply::run(hive, args), opts.config).await,
+-        #[cfg(target_os = "linux")]
+         Command::ApplyLocal(args) => r(command::apply_local::run(hive, args), opts.config).await,
+         Command::Eval(args) => r(command::eval::run(hive, args), opts.config).await,
+         Command::Exec(args) => r(command::exec::run(hive, args), opts.config).await,
+diff --git a/src/command/apply_local.rs b/src/command/apply_local.rs
+index fedb0de..623461b 100644
+--- a/src/command/apply_local.rs
++++ b/src/command/apply_local.rs
+@@ -1,8 +1,6 @@
+-use regex::Regex;
+ use std::collections::HashMap;
+ 
+ use clap::Args;
+-use tokio::fs;
+ 
+ use crate::error::ColmenaError;
+ 
+@@ -64,18 +62,6 @@ pub async fn run(
+         quit::with_code(1);
+     }
+ 
+-    // Sanity check: Are we running NixOS?
+-    if let Ok(os_release) = fs::read_to_string("/etc/os-release").await {
+-        let re = Regex::new(r#"ID="?nixos"?"#).unwrap();
+-        if !re.is_match(&os_release) {
+-            tracing::error!("\"apply-local\" only works on NixOS machines.");
+-            quit::with_code(5);
+-        }
+-    } else {
+-        tracing::error!("Could not detect the OS version from /etc/os-release.");
+-        quit::with_code(5);
+-    }
+-
+     let verbose = verbose || sudo; // cannot use spinners with interactive sudo
+ 
+     {
+diff --git a/src/command/mod.rs b/src/command/mod.rs
+index cc6c8cb..07f9b9d 100644
+--- a/src/command/mod.rs
++++ b/src/command/mod.rs
+@@ -4,7 +4,6 @@ pub mod exec;
+ pub mod nix_info;
+ pub mod repl;
+ 
+-#[cfg(target_os = "linux")]
+ pub mod apply_local;
+ 
+ #[cfg(debug_assertions)]
+diff --git a/src/nix/profile.rs b/src/nix/profile.rs
+index b71c637..361c978 100644
+--- a/src/nix/profile.rs
++++ b/src/nix/profile.rs
+@@ -13,31 +13,32 @@ pub type ProfileDerivation = StoreDerivation<Profile>;
+ pub struct Profile(StorePath);
+ 
+ impl Profile {
+-    pub fn from_store_path(path: StorePath) -> ColmenaResult<Self> {
+-        if !path.is_dir() || !path.join("bin/switch-to-configuration").exists() {
+-            return Err(ColmenaError::InvalidProfile);
+-        }
+-
+-        if path.to_str().is_none() {
+-            Err(ColmenaError::InvalidProfile)
+-        } else {
+-            Ok(Self(path))
+-        }
+-    }
+-
+     /// Returns the command to activate this profile.
+     pub fn activation_command(&self, goal: Goal) -> Option<Vec<String>> {
+-        if let Some(goal) = goal.as_str() {
+-            let path = self.as_path().join("bin/switch-to-configuration");
+-            let switch_to_configuration = path
+-                .to_str()
+-                .expect("The string should be UTF-8 valid")
+-                .to_string();
+-
+-            Some(vec![switch_to_configuration, goal.to_string()])
+-        } else {
+-            None
++        let goal = match goal.as_str() {
++            Some(goal) => goal,
++            None => return None,
++        };
++
++        let switch = ["bin/switch-to-configuration", "activate"]
++            .into_iter()
++            .find_map(|str| match self.as_path().join(str) {
++                path if path.exists() => Some(path),
++                _ => None,
++            });
++        if let None = switch {
++            tracing::error!("No valid activate command found! Is the profile correct?");
++            tracing::error!("Profile path {:?}", self.as_path().to_str());
++            return None;
+         }
++
++        let switch_to_configuration = switch
++            .unwrap()
++            .to_str()
++            .expect("The string should be UTF-8 valid")
++            .to_string();
++
++        Some(vec![switch_to_configuration, goal.to_string()])
+     }
+ 
+     /// Returns the store path.
+diff --git a/src/util.rs b/src/util.rs
+index ffbfef5..09d4d33 100644
+--- a/src/util.rs
++++ b/src/util.rs
+@@ -39,6 +39,7 @@ pub trait CommandExt {
+         T: DeserializeOwned;
+ 
+     /// Runs the command, capturing a single store path.
++    #[allow(dead_code)]
+     async fn capture_store_path(&mut self) -> ColmenaResult<StorePath>;
+ }
+ 

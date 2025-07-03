@@ -10,8 +10,8 @@
       n9 = import ./lib/lib.nix args;
       args = { inherit lib n9 inputs; };
 
-      # Systems:
-      colmenaHive = (import ./lib/nixos args) [
+      # NixOS
+      nixosConfigurations = n9.hives "nixos" [
         ./hosts/iris
         ./hosts/evil
         ./hosts/wyvern
@@ -19,10 +19,39 @@
         ./hosts/vexas
       ];
 
-      # Non-colmena, nix-darwin now:
-      darwinConfigurations = (import ./lib/darwin args) [
+      # Nix Darwin
+      darwinConfigurations = n9.hives "darwin" [
         ./hosts/subsys
       ];
+
+      # To make us colmena, this is kind of copy paste :)
+      # https://github.com/zhaofengli/colmena/blob/3ceec72cfb396a8a8de5fe96a9d75a9ce88cc18e/src/nix/hive/eval.nix#L184
+      # Some features are missing, e.g. eval, they can be easily replaced by other commands.
+      # TODO: To other config...
+      colmenaHive =
+        let
+          elem = builtins.elem;
+          metaConfigKeys = [
+            "name"
+            "description"
+            "machinesFile"
+            "allowApplyAll"
+          ];
+        in
+        rec {
+          __schema = "v0.5";
+          nodes = nixosConfigurations // darwinConfigurations;
+          toplevel = lib.mapAttrs (_: v: v.config.system.build.toplevel) nodes;
+          deploymentConfig = lib.mapAttrs (_: v: v.config.deployment) nodes;
+          deploymentConfigSelected = names: lib.filterAttrs (name: _: elem name names) deploymentConfig;
+          evalSelected = names: lib.filterAttrs (name: _: elem name names) toplevel;
+          evalSelectedDrvPaths = names: lib.mapAttrs (_: v: v.drvPath) (evalSelected names);
+          metaConfig =
+            lib.filterAttrs (n: v: elem n metaConfigKeys)
+              (lib.evalModules {
+                modules = [ inputs.colmena.nixosModules.metaOptions ];
+              }).config;
+        };
 
       # Develop shells:
       mkShells =
@@ -38,8 +67,12 @@
         ]);
     in
     {
-      inherit colmenaHive darwinConfigurations;
-      nixosConfigurations = colmenaHive.nodes; # compatible
+      # compatible:
+      inherit
+        nixosConfigurations
+        darwinConfigurations
+        colmenaHive
+        ;
 
       # @see nix/flake.nix
       devShells = lib.genAttrs [

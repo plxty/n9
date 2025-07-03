@@ -1,5 +1,5 @@
 {
-  n9.os.evil = {
+  n9.system.evil = {
     n9.hardware.disk."disk/by-id/nvme-eui.002538b231b633a2".type = "zfs";
     n9.services.sshd.enable = true;
     deployment.allowLocalDeployment = true;

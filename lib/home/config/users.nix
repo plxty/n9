@@ -17,6 +17,34 @@ let
   # * home-manager (standalone, currently won't support)
   # Therefore we make the platform specific config here, TODO: is it good?
   cfg = config.n9.users;
+
+  commonModules = [
+    (
+      { name, ... }:
+      {
+        config._module.args.userName = name;
+      }
+    )
+    ../../shared/config/keys.nix
+    ./essentials.nix
+    ./fish.nix
+    ./helix.nix
+  ];
+
+  nixosModules = [
+    ./passwd.nix
+    ./ssh-key.nix
+    ./gnome
+    ./boxes.nix
+  ];
+
+  darwinModules = [
+  ];
+
+  # standalone home-manager:
+  homeModules = [
+    ../../shared/config/essentials.nix
+  ];
 in
 {
   imports = [
@@ -34,27 +62,17 @@ in
             this
             ;
         };
+
         modules =
-          [
-            (
-              { name, ... }:
-              {
-                config._module.args.userName = name;
-              }
-            )
-            ../../shared/config/essentials.nix
-            ./essentials.nix
-            { n9.essentials.shared.enable = false; } # FIXME: Standalone should set
-            ./fish.nix
-            ./helix.nix
-          ]
-          ++ lib.optionals (this == "nixos") [
-            ../../shared/config/keys.nix
-            ./passwd.nix
-            ./ssh-key.nix
-            ./gnome
-            ./boxes.nix
-          ];
+          commonModules
+          ++ (
+            if this == "nixos" then
+              nixosModules
+            else if this == "darwin" then
+              darwinModules
+            else
+              homeModules
+          );
       }
     );
   };
