@@ -12,26 +12,25 @@ let
   opt = options.n9.system;
   cfg = config.n9.system;
 
-  commonModules = [
+  sharedModules = [
     inputs.colmena.nixosModules.deploymentOptions
-    ../../home/config/users.nix
+    ./users.nix
     ./keys.nix
     ./ssh-key.nix
+    ./passwd.nix
+    ./gnome
+    ./boxes.nix
     ./essentials.nix
   ];
 
-  nixosModules = commonModules ++ [
+  nixosModules = sharedModules ++ [
     ../../nixos/config/disk.nix
     ../../nixos/config/network
     ../../nixos/config/sshd.nix
-    ../../nixos/config/passwd.nix
-    ../../nixos/config/ssh-key.nix
-    ../../nixos/config/gnome.nix
-    ../../nixos/config/boxes.nix
     ../../nixos/config/essentials.nix
   ];
 
-  darwinModules = commonModules ++ [
+  darwinModules = sharedModules ++ [
     ../../darwin/config/essentials.nix
   ];
 in
@@ -64,7 +63,7 @@ in
           modules
         ];
       in
-      if this == "nixos" then
+      if this ? nixos then
         (lib.trace "system: selecting nixos for ${hostName}" lib.nixosSystem) {
           inherit specialArgs;
           modules = nixosModules ++ hostModules;

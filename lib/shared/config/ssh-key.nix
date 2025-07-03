@@ -37,25 +37,27 @@ let
   );
 in
 {
-  options.n9.security.ssh-key = {
-    private = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-    };
+  options = lib.optionalAttrs (this ? homeModule) {
+    n9.security.ssh-key = {
+      private = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+      };
 
-    public = lib.mkOption {
-      type = lib.types.nullOr lib.types.str;
-      default = null;
-    };
+      public = lib.mkOption {
+        type = lib.types.nullOr lib.types.str;
+        default = null;
+      };
 
-    authorities = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
-    };
+      authorities = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+      };
 
-    agents = lib.mkOption {
-      type = lib.types.listOf lib.types.str;
-      default = [ ];
+      agents = lib.mkOption {
+        type = lib.types.listOf lib.types.str;
+        default = [ ];
+      };
     };
   };
 

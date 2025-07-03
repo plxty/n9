@@ -18,27 +18,21 @@ let
   # Therefore we make the platform specific config here, TODO: is it good?
   cfg = config.n9.users;
 
-  commonModules = [
+  modules = [
     (
       { name, ... }:
       {
         config._module.args.userName = name;
       }
     )
-    ../../shared/config/keys.nix
-    ../../shared/config/ssh-key.nix
-    ./essentials.nix
-    ./fish.nix
-    ./helix.nix
-  ];
-
-  nixosModules = [
+    ./keys.nix
+    ./ssh-key.nix
     ./passwd.nix
     ./gnome
     ./boxes.nix
-  ];
-
-  darwinModules = [
+    ../../home/config/fish.nix
+    ../../home/config/helix.nix
+    ../../home/config/essentials.nix
   ];
 in
 {
@@ -72,16 +66,7 @@ in
           };
         };
 
-        modules =
-          commonModules
-          ++ (
-            if this ? nixos then
-              nixosModules
-            else if this ? darwin then
-              darwinModules
-            else
-              abort "no supported modules in users!"
-          );
+        inherit modules;
       }
     );
   };

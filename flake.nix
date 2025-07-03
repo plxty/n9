@@ -24,10 +24,9 @@
         ./hosts/subsys
       ];
 
-      # To make us colmena, this is kind of copy paste :)
+      # To make us colmena, this is kind of copy paste :) TODO: To other config...
       # https://github.com/zhaofengli/colmena/blob/3ceec72cfb396a8a8de5fe96a9d75a9ce88cc18e/src/nix/hive/eval.nix#L184
       # Some features are missing, e.g. eval, they can be easily replaced by other commands.
-      # TODO: To other config...
       colmenaHive =
         let
           elem = builtins.elem;
@@ -54,17 +53,15 @@
         };
 
       # Develop shells:
-      mkShells =
-        system:
-        ((import ./lib/shell (args // { pkgs = n9.mkNixpkgs nixpkgs system; })) [
-          ./shells/burn.nix
-          ./shells/resume.nix
-          ./shells/asterinas.nix
-          ./shells/linux
-          ./shells/bpf.nix
-          ./shells/bpfd.nix
-          ./shells/squirrel.nix
-        ]);
+      shellConfigurations = n9.hells nixpkgs [
+        ./shells/burn.nix
+        ./shells/resume.nix
+        ./shells/asterinas.nix
+        ./shells/linux
+        ./shells/bpf.nix
+        ./shells/bpfd.nix
+        ./shells/squirrel.nix
+      ];
     in
     {
       # compatible:
@@ -79,7 +76,7 @@
         "x86_64-linux"
         "aarch64-linux"
         "aarch64-darwin"
-      ] mkShells;
+      ] shellConfigurations;
     };
 
   inputs = {

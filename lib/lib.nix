@@ -27,6 +27,18 @@ rec {
   flatMap = fn: list: lib.flatten (lib.map fn list);
   flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
 
+  # Shells, without S:
+  hells =
+    nixpkgs: shells: system:
+    (lib.evalModules {
+      specialArgs = args // {
+        pkgs = mkNixpkgs nixpkgs system;
+      };
+      modules = [
+        ./shell/config/shell.nix
+      ] ++ shells;
+    }).config.n9.shell;
+
   # Path of me:
   dir = import ./dir.nix;
 
