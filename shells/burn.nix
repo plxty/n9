@@ -65,6 +65,9 @@ let
 
   postBurn = ''
     if $B_UP; then
+      # Try updateing the database for command-not-found as well:
+      sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-25.05 nixos
+      sudo nix-channel --update nixos || true
       touch .last
     fi
   '';
@@ -72,7 +75,6 @@ let
   burnSwitch = pkgs.writers.writeBashBin "burn" ''
     ${preBurn}
     B_COLMENA=(colmena --show-trace)
-    B_HWCONF=(sudo nixos-generate-config --show-hardware-config --no-filesystems)
 
     if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
       if [[ "$(uname -s)" == "Darwin" ]]; then
@@ -93,52 +95,39 @@ let
         # "Wakeup" the sleeping parent when exit normally or abnormally:
         trap 'pkill -P $$ sleep' EXIT
 
-        # For hosts that mismatch with local, suggest `sudo hostname xxx`:
-        B_HWCONF="$("''${B_HWCONF[@]}" || true)"
-        if [[ "$B_HWCONF" != "" ]]; then
-          mkdir -p "hosts/$B_THIS"
-          echo "$B_HWCONF" > "hosts/$B_THIS/hardware-configuration.nix"
-        fi
+        # Maybe a pre-defined distro, e.g. orbstack
         if [[ -f /etc/nixos/configuration.nix ]]; then
           mkdir -p "hosts/$B_THIS/inherit"
           cp -a /etc/nixos/*.nix "hosts/$B_THIS/inherit/"
         fi
 
+        # For hosts that mismatch with local, suggest `sudo hostname xxx`:
         "''${B_COLMENA[@]}" apply-local --sudo --verbose
-
-        if $B_UP; then
-          # Try updateing the database for command-not-found as well:
-          sudo nix-channel --add https://mirrors.ustc.edu.cn/nix-channels/nixos-25.05 nixos
-          sudo nix-channel --update nixos || true
-        fi
 
         # The `sleep` will be killed whether successful or not...
         ${postBurn}
       } &
       while jobs %%; do sudo -v; sleep 180; done
     else
-      ssh "''${B_SSHOPTS[@]}" -p "$B_PORT" "$B_USER@$B_HOST" -- "''${B_HWCONF[@]}" \
-        > "hosts/$B_THAT/hardware-configuration.nix"
       "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
         --no-substitute --sign "asterisk/$B_THIS/nix-key"
       ${postBurn}
     fi
   '';
 
+  # FIXME: Not working now... Make a colmena option --root instead, we just do
+  # the disko work, and that's enough.
   burnInstall = pkgs.writers.writeBashBin "fire" ''
     ${preBurn}
     test -n "$B_THAT"
-
-    B_HWCONF="hosts/$B_THAT/hardware-configuration.nix"
-    if [[ ! -f "$B_HWCONF" ]]; then
-      echo "{ ... }: { }" > "$B_HWCONF"
-    fi
 
     B_KEYS="$("''${B_NIX[@]}" eval --json "$B_DEPLOY.keys" \
       | jq -r 'to_entries[]
         | select(.value.user == "root" and .value.uploadAt == "pre-activation")
         | [.value.keyFile, .value.path] | @tsv')"
 
+    # When the HWCONF generated in the install phase, it seldom get changed.
+    # If that's the case, update it manually, I found it quite rarely.
     B_INSTALL=(nixos-anywhere --target-host "root@$B_HOST" -p "$B_PORT"
       --generate-hardware-config nixos-generate-config "$B_HWCONF" --flake ".#$B_THAT")
 

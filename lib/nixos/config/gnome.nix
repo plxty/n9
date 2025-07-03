@@ -33,13 +33,13 @@ in
       };
 
       systemPackages = with pkgs; [
-        (n9.patch pop-wallpapers "pop-wallpapers-stable-dir")
+        pop-wallpapers
         wl-clipboard
         (brave.override (prev: {
           commandLineArgs = builtins.concatStringsSep " " [
             (prev.commandLineArgs or "")
             "--wayland-text-input-version=3"
-            "--sync-url=https://brave-sync.pteno.cn/v2"
+            "--sync-url=https://brave-sync.pteno.cn/"
           ];
         }))
         ptyxis

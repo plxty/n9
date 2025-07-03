@@ -13,11 +13,24 @@
     )
 
     {
-      system.defaults.CustomUserPreferences = {
-        "com.brave.Browser" = {
-          BraveSyncUrl = "https://brave-sync.pteno.cn/v2";
+      system.defaults.CustomUserPreferences =
+        let
+          # BUG: https://community.brave.com/t/bug-report-brave-on-macos-ignores-braveaichatenabled-and-bravewalletdisabled-group-policy-rules/625130
+          # Policy group is broken for some values. When these options work, the brave://flags may be wiped.
+          brave = {
+            BraveAIChatEnabled = false;
+            BraveWalletDisabled = true;
+            BraveSyncUrl = "https://brave-sync.pteno.cn/";
+
+            # https://superuser.com/a/1896063
+            UpdateCheckEnabled = false;
+            SUAutomaticallyUpdate = false;
+          };
+        in
+        {
+          "com.brave.Browser" = brave;
+          "com.brave.Browser.nightly" = brave;
         };
-      };
 
       system.defaults.CustomSystemPreferences = {
         # https://github.com/runjuu/InputSourcePro/issues/24#issuecomment-2978745464
@@ -33,6 +46,7 @@
           { pkgs, config, ... }:
           let
             # https://github.com/Frederick888/external-editor-revived/wiki/macOS
+            # TODO: home.programs.thunderbird.nativeHost..?
             eer = rec {
               filename = "external_editor_revived.json";
 
@@ -56,15 +70,23 @@
           in
           {
             home.packages = with pkgs; [
-              # FIXME: https://github.com/brave/brave-browser/issues/43181
-              # Waiting for https://github.com/brave/brave-core/pull/28463 to be merged.
-              # Downside: launchpad will not show, passkey is broken as well, acceptable :(
-              (brave.overrideAttrs (prev: {
-                postInstall = ''
-                  cd "$out/Applications/Brave Browser.app/Contents/MacOS"
-                  wrapProgram "$PWD/Brave Browser" --add-flag "--sync-url=https://brave-sync.pteno.cn/v2"
-                '';
-              }))
+              # https://github.com/brave/brave-core/pull/28463
+              # You need to set the sync-url yourself now, the flags seems can't be managed by nix.
+              # brave://flags #brave-override-sync-server-url
+              (brave.overrideAttrs (
+                prev:
+                if lib.versionOlder prev.version "1.82.44" then
+                  {
+                    version = "1.82.44";
+                    src = fetchurl {
+                      url = "https://github.com/brave/brave-browser/releases/download/v1.82.44/brave-v1.82.44-darwin-arm64.zip";
+                      hash = "sha256-ym4fS9W+2ZvtlcRy9Lo7fcCDaZTDSi/uXdTUcJh9tmE=";
+                    };
+                    installPhase = lib.replaceStrings [ "Brave Browser" ] [ "Brave Browser Nightly" ] prev.installPhase;
+                  }
+                else
+                  { }
+              ))
 
               vscode
               qemu
