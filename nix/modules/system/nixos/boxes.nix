@@ -12,14 +12,14 @@ let
   usercfg = n9.users "boxes" (v: v.n9.virtualisation.boxes) config;
 in
 {
-  options = lib.optionalAttrs (this ? homeModule) {
+  options = lib.optionalAttrs (this ? usersModule) {
     n9.virtualisation.boxes = {
       enable = lib.mkEnableOption "boxes";
     };
   };
 
-  config = lib.mkMerge [
-    (lib.optionalAttrs (this ? homeModule) (
+  config =
+    if this ? usersModule then
       lib.mkIf cfg.enable {
         # https://nixos.wiki/wiki/Libvirt /var/lib/libvirt/qemu.conf
         home.packages = [ pkgs.gnome-boxes ];
@@ -32,9 +32,7 @@ in
           ]
         '';
       }
-    ))
-
-    (lib.optionalAttrs (!(this ? homeModule) && (this ? nixos)) (
+    else
       n9.mkIfUsers (v: v.enable) usercfg {
         # https://nixos.wiki/wiki/Libvirt
         virtualisation.libvirtd =
@@ -70,7 +68,5 @@ in
             ];
           }
         ) usercfg;
-      }
-    ))
-  ];
+      };
 }

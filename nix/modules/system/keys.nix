@@ -82,7 +82,7 @@ in
     default = { };
   };
 
-  config = lib.optionalAttrs (!(this ? homeModule)) (
+  config = lib.optionalAttrs (!(this ? usersModule)) (
     lib.mkMerge [
       {
         deployment.keys = lib.mkMerge (

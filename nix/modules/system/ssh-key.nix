@@ -37,7 +37,7 @@ let
   );
 in
 {
-  options = lib.optionalAttrs (this ? homeModule) {
+  options = lib.optionalAttrs (this ? usersModule) {
     n9.security.ssh-key = {
       private = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
@@ -61,8 +61,8 @@ in
     };
   };
 
-  config = lib.mkMerge [
-    (lib.optionalAttrs (this ? homeModule) (
+  config =
+    if (this ? usersModule) then
       lib.mkMerge [
         (lib.mkIf (cfg.private != null) {
           n9.security.keys.".ssh/${builtins.baseNameOf cfg.private}".source = cfg.private;
@@ -72,9 +72,7 @@ in
           home.file.".ssh/${typeOf cfg.public}".text = cfg.public;
         })
       ]
-    ))
-
-    (lib.optionalAttrs (!(this ? homeModule) && (this ? nixos)) (
+    else if (this ? nixos) then
       n9.mkIfUsers (v: v.authorities != [ ] || v.agents != [ ]) usercfg {
         users.users = lib.mapAttrs (
           _: v:
@@ -97,7 +95,6 @@ in
         # Hmmm, no disable.
         n9.services.sshd.enable = true;
       }
-    ))
-  ];
-
+    else
+      { };
 }

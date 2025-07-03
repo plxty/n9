@@ -1,5 +1,4 @@
 {
-  options,
   config,
   lib,
   n9,
@@ -9,7 +8,6 @@
 }:
 
 let
-  opt = options.n9.system;
   cfg = config.n9.system;
 
   sharedModules = [
@@ -17,21 +15,9 @@ let
     ./users.nix
     ./keys.nix
     ./ssh-key.nix
-    ./passwd.nix
-    ./gnome
-    ./boxes.nix
-    ./essentials.nix
-  ];
 
-  nixosModules = sharedModules ++ [
-    ../../nixos/config/disk.nix
-    ../../nixos/config/network
-    ../../nixos/config/sshd.nix
-    ../../nixos/config/essentials.nix
-  ];
-
-  darwinModules = sharedModules ++ [
-    ../../darwin/config/essentials.nix
+    # TODO: Handled by the "nix" module?
+    ../nix/essentials.nix
   ];
 in
 {
@@ -51,7 +37,6 @@ in
             ;
           userName = null; # make some "generic" modules working
           nodes = cfg;
-          osOptions = opt.${hostName};
           osConfig = cfg.${hostName};
         };
 
@@ -66,13 +51,31 @@ in
       if this ? nixos then
         (lib.trace "system: selecting nixos for ${hostName}" lib.nixosSystem) {
           inherit specialArgs;
-          modules = nixosModules ++ hostModules;
+          modules =
+            sharedModules
+            ++ [
+              ./nixos/disk.nix
+              ./nixos/network
+              ./nixos/sshd.nix
+              ./nixos/passwd.nix
+              ./nixos/gnome
+              ./nixos/boxes.nix
+              ./nixos/essentials.nix
+            ]
+            ++ hostModules;
         }
-      else
+      else if this ? darwin then
         (lib.trace "system: selecting darwin for ${hostName}" inputs.nix-darwin.lib.darwinSystem) {
           inherit specialArgs;
-          modules = darwinModules ++ hostModules;
+          modules =
+            sharedModules
+            ++ [
+              ./darwin/essentials.nix
+            ]
+            ++ hostModules;
         }
+      else
+        abort "unsupported system!"
     );
   };
 }

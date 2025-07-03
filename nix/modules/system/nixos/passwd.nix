@@ -11,7 +11,7 @@ let
   usercfg = n9.users "passwd" (v: v.n9.security.passwd) config;
 in
 {
-  options = lib.optionalAttrs (this ? homeModule) {
+  options = lib.optionalAttrs (this ? usersModule) {
     n9.security.passwd = {
       file = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
@@ -20,7 +20,7 @@ in
     };
   };
 
-  config = lib.optionalAttrs (!(this ? homeModule) && (this ? nixos)) (
+  config = lib.optionalAttrs (!(this ? usersModule)) (
     lib.mkMerge [
       (lib.mkIf (usercfg != { }) {
         users.users.root.hashedPassword = "!";

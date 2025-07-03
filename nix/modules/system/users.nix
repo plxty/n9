@@ -18,7 +18,7 @@ let
   # Therefore we make the platform specific config here, TODO: is it good?
   cfg = config.n9.users;
 
-  modules = [
+  sharedModules = [
     (
       { name, ... }:
       {
@@ -27,25 +27,35 @@ let
     )
     ./keys.nix
     ./ssh-key.nix
-    ./passwd.nix
-    ./gnome
-    ./boxes.nix
-    ../../home/config/fish.nix
-    ../../home/config/helix.nix
-    ../../home/config/essentials.nix
+
+    # TODO: Handled by the "users" module?
+    ../users/helix.nix
+    ../users/fish.nix
+    ../users/essentials.nix
   ];
+
+  p =
+    if this ? nixos then
+      {
+        imports = [ inputs.home-manager.nixosModules.default ];
+        modules = sharedModules ++ [
+          ./nixos/passwd.nix
+          ./nixos/gnome
+          ./nixos/boxes.nix
+        ];
+      }
+    else if this ? darwin then
+      {
+        imports = [ inputs.home-manager.darwinModules.default ];
+        modules = sharedModules ++ [
+          # placeholder
+        ];
+      }
+    else
+      abort "unsupported home-manager modules!";
 in
 {
-  imports = [
-    inputs.home-manager.${
-      if this ? nixos then
-        "nixosModules"
-      else if this ? darwin then
-        "darwinModules"
-      else
-        abort "no supported home-manager!"
-    }.default
-  ];
+  inherit (p) imports;
 
   options.home-manager.users = lib.mkOption {
     type = lib.types.attrsOf (
@@ -60,13 +70,13 @@ in
           # We have some cases of the "this" value:
           # * nixos/nix-darwin/home-manager standalone,
           # * home-manager as module,
-          # Only access usercfg if !(this ? homeModule), i.e. you have users.
+          # Only access usercfg if !(this ? usersModule), i.e. you have users.
           this = this // {
-            homeModule = abort "yonah";
+            usersModule = abort "yonah";
           };
         };
 
-        inherit modules;
+        inherit (p) modules;
       }
     );
   };
