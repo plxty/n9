@@ -6,6 +6,13 @@
         "url_template": "https://sourceware.org/elfutils/ftp/<version>/elfutils-<version>.tar.bz2",
         "version": "0.193"
     },
+    "external-editor-revived": {
+        "sha256": "0hkc9hg58yy5kh4ix348whw0r99091686r5nnwycm56xdysv6jr9",
+        "type": "file",
+        "url": "https://github.com/Frederick888/external-editor-revived/releases/download/v1.2.0/macos-latest-universal-native-messaging-host-v1.2.0.zip",
+        "url_template": "https://github.com/Frederick888/external-editor-revived/releases/download/v<version>/macos-latest-universal-native-messaging-host-v<version>.zip",
+        "version": "1.2.0"
+    },
     "rime-ice": {
         "branch": "main",
         "description": "Rime 配置：雾凇拼音 | 长期维护的简体词库",

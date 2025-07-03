@@ -26,29 +26,30 @@
     {
       n9.users.byte.imports = [
         (
-          { pkgs, config, ... }:
+          {
+            pkgs,
+            config,
+            n9,
+            ...
+          }:
           let
             # https://github.com/Frederick888/external-editor-revived/wiki/macOS
             # TODO: home.programs.thunderbird.nativeHost..?
             eer = rec {
               filename = "external_editor_revived.json";
-
-              src = pkgs.fetchzip {
-                url = "https://github.com/Frederick888/external-editor-revived/releases/download/v1.2.0/macos-latest-universal-native-messaging-host-v1.2.0.zip";
-                nativeBuildInputs = with pkgs; [ darwin.xattr ];
-                postFetch = ''
-                  xattr -c "$out/external-editor-revived"
-                  chmod +x "$out/external-editor-revived"
-                '';
-                hash = "sha256-Poje8oM7/qUMeOqBWYL5Kos/3/6iCSPSZo1oPHNQJuw=";
-              };
-
-              # The fetchzip is a fixed-output derivition, which means we can't reference other /nix.
-              out = pkgs.runCommand filename { } ''
-                mkdir -p $out
-                cd $out
-                ${src}/external-editor-revived > ${filename}
-              '';
+              src = n9.sources.external-editor-revived;
+              out =
+                pkgs.runCommand "external-editor-revived"
+                  {
+                    # Niv doesn't support fetchzip, sadly...
+                    nativeBuildInputs = with pkgs; [ unzip ];
+                  }
+                  ''
+                    mkdir -p $out
+                    cd $out
+                    unzip "${src}"
+                    ./external-editor-revived > ${filename}
+                  '';
             };
           in
           {
