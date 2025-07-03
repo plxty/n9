@@ -30,7 +30,8 @@ let
     fi
 
     if [[ -f asterisk/.github_token ]]; then
-      B_NIX+=(--option access-tokens "github.com=$(< asterisk/.github_token)")
+      export NIV_GITHUB_TOKEN="$(< asterisk/.github_token)"
+      B_NIX+=(--option access-tokens "github.com=$NIV_GITHUB_TOKEN")
     fi
 
     if [[ "$B_THAT" != "" ]]; then
@@ -57,6 +58,7 @@ let
       chmod -R g-rwx,o-rwx .
       cd ..
       "''${B_NIX[@]}" flake update || true
+      niv update
     fi
 
     # Das template:
@@ -148,6 +150,7 @@ in
     inputs.nixos-anywhere.packages.${system}.default
     getent # upload-keys
     colmenaPackage
+    niv
 
     # Real stuff:
     burnSwitch

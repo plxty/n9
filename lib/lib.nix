@@ -1,4 +1,4 @@
-{ lib, ... }@args:
+{ lib, inputs, ... }@args:
 
 rec {
   # Helpers of mine:
@@ -11,8 +11,8 @@ rec {
     });
   patch = pkg: attr: patches pkg [ attr ];
 
-  # Like makeHive of colmena, and we call it hives :)
-  hives =
+  # Build the OS:
+  systems =
     type: hosts:
     (lib.evalModules {
       specialArgs = args // {
@@ -23,9 +23,34 @@ rec {
       ] ++ hosts;
     }).config.n9.system;
 
-  # Hmm, why not?
-  flatMap = fn: list: lib.flatten (lib.map fn list);
-  flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
+  # Like makeHive of colmena, and we call it hives :)
+  # https://github.com/zhaofengli/colmena/blob/3ceec72cfb396a8a8de5fe96a9d75a9ce88cc18e/src/nix/hive/eval.nix#L184
+  # Some features are missing, e.g. eval, they can be easily replaced by other commands.
+  hives =
+    nodes:
+    let
+      elem = builtins.elem;
+      metaConfigKeys = [
+        "name"
+        "description"
+        "machinesFile"
+        "allowApplyAll"
+      ];
+    in
+    rec {
+      __schema = "v0.5";
+      inherit nodes;
+      toplevel = lib.mapAttrs (_: v: v.config.system.build.toplevel) nodes;
+      deploymentConfig = lib.mapAttrs (_: v: v.config.deployment) nodes;
+      deploymentConfigSelected = names: lib.filterAttrs (name: _: elem name names) deploymentConfig;
+      evalSelected = names: lib.filterAttrs (name: _: elem name names) toplevel;
+      evalSelectedDrvPaths = names: lib.mapAttrs (_: v: v.drvPath) (evalSelected names);
+      metaConfig =
+        lib.filterAttrs (n: v: elem n metaConfigKeys)
+          (lib.evalModules {
+            modules = [ inputs.colmena.nixosModules.metaOptions ];
+          }).config;
+    };
 
   # Shells, without S:
   hells =
@@ -39,8 +64,15 @@ rec {
       ] ++ shells;
     }).config.n9.shell;
 
+  # Hmm, why not?
+  flatMap = fn: list: lib.flatten (lib.map fn list);
+  flatMapAttrsToList = fn: attrs: lib.flatten (lib.mapAttrsToList fn attrs);
+
   # Path of me:
   dir = import ./dir.nix;
+
+  # Niv sources:
+  sources = import ../nix/sources.nix;
 
   # Match or default:
   match =

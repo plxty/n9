@@ -10,8 +10,8 @@
       n9 = import ./lib/lib.nix args;
       args = { inherit lib n9 inputs; };
 
-      # NixOS
-      nixosConfigurations = n9.hives "nixos" [
+      # NixOS:
+      nixosConfigurations = n9.systems "nixos" [
         ./hosts/iris
         ./hosts/evil
         ./hosts/wyvern
@@ -19,38 +19,13 @@
         ./hosts/vexas
       ];
 
-      # Nix Darwin
-      darwinConfigurations = n9.hives "darwin" [
+      # Nix Darwin:
+      darwinConfigurations = n9.systems "darwin" [
         ./hosts/subsys
       ];
 
-      # To make us colmena, this is kind of copy paste :) TODO: To other config...
-      # https://github.com/zhaofengli/colmena/blob/3ceec72cfb396a8a8de5fe96a9d75a9ce88cc18e/src/nix/hive/eval.nix#L184
-      # Some features are missing, e.g. eval, they can be easily replaced by other commands.
-      colmenaHive =
-        let
-          elem = builtins.elem;
-          metaConfigKeys = [
-            "name"
-            "description"
-            "machinesFile"
-            "allowApplyAll"
-          ];
-        in
-        rec {
-          __schema = "v0.5";
-          nodes = nixosConfigurations // darwinConfigurations;
-          toplevel = lib.mapAttrs (_: v: v.config.system.build.toplevel) nodes;
-          deploymentConfig = lib.mapAttrs (_: v: v.config.deployment) nodes;
-          deploymentConfigSelected = names: lib.filterAttrs (name: _: elem name names) deploymentConfig;
-          evalSelected = names: lib.filterAttrs (name: _: elem name names) toplevel;
-          evalSelectedDrvPaths = names: lib.mapAttrs (_: v: v.drvPath) (evalSelected names);
-          metaConfig =
-            lib.filterAttrs (n: v: elem n metaConfigKeys)
-              (lib.evalModules {
-                modules = [ inputs.colmena.nixosModules.metaOptions ];
-              }).config;
-        };
+      # Burn apply:
+      colmenaHive = n9.hives (nixosConfigurations // darwinConfigurations);
 
       # Develop shells:
       shellConfigurations = n9.hells nixpkgs [

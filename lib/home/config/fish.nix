@@ -2,6 +2,7 @@
   config,
   lib,
   pkgs,
+  n9,
   ...
 }:
 
@@ -33,12 +34,7 @@ in
           (plugin puffer)
           {
             name = "upto";
-            src = pkgs.fetchFromGitHub {
-              owner = "Markcial";
-              repo = "upto";
-              rev = "2d1f35453fb55747d50da8c1cb1809840f99a646";
-              hash = "sha256-Lv2XtP2x9dkIkUUjMBWVpAs/l55Ztu7gIjKYH6ZzK4s=";
-            };
+            src = n9.sources.upto;
           }
         ];
 

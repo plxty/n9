@@ -9,12 +9,7 @@
 let
   cfg = config.n9.programs.helix;
 
-  kconfig-ts-src = pkgs.fetchFromGitHub {
-    owner = "tree-sitter-grammars";
-    repo = "tree-sitter-kconfig";
-    rev = "9ac99fe4c0c27a35dc6f757cef534c646e944881";
-    hash = "sha256-8gZZLGL7giVHQIirjUIfsx3scP1L1VTFIZX7QOyjWvk=";
-  };
+  kconfig-ts-src = n9.sources.tree-sitter-kconfig;
 
   kconfig-ts-pkg = pkgs.callPackage (
     { stdenv, ... }:

@@ -41,12 +41,10 @@ let
         pkgsStatic.zstd
 
         # bug: https://github.com/NixOS/nixpkgs/issues/373516
+        # niv update elfutils -v 0.193
         (elfutils.overrideAttrs rec {
-          version = "0.193";
-          src = fetchurl {
-            url = "https://sourceware.org/elfutils/ftp/${version}/elfutils-${version}.tar.bz2";
-            hash = "sha256-eFf0S2JPTY1CHfhRqq57FALP5rzdLYBJ8V/AfT3edjU=";
-          };
+          version = src.version;
+          src = n9.sources.elfutils;
 
           preCheck = ''
             # Workaround lack of rpath linking:

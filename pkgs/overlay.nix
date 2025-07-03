@@ -2,8 +2,7 @@
 
 final: prev: {
   # New packages:
-  wechat = final.callPackage ./wechat.nix { };
-  rime-ice = final.callPackage ./rime-ice.nix { };
+  rime-ice = final.callPackage ./rime-ice.nix { inherit n9; };
   crash = final.callPackage ./crash.nix { };
 
   # Hack:

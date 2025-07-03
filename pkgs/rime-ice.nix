@@ -6,25 +6,19 @@
 {
   lib,
   stdenv,
-  fetchFromGitHub,
+  n9,
   ...
 }:
 
 let
-  pname = "rime-ice";
-  version = "bd514e4e788f216d25fcc74516f7bf4a82e74163";
+  src = n9.sources.rime-ice;
 in
 stdenv.mkDerivation {
-  inherit pname version;
-
-  src = fetchFromGitHub {
-    owner = "iDvel";
-    repo = "rime-ice";
-    rev = version;
-    hash = "sha256-CTZoJeTuVr2n3U69p/0V3RvAFzpYGqds7stPGXSTj7s=";
-  };
+  pname = "rime-ice";
+  version = src.rev;
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
+  inherit src;
   patches = [ ../pkgs/patches/rime-ice-taste.patch ];
 
   # https://discourse.nixos.org/t/what-does-runhook-do/13861/3

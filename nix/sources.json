@@ -1,0 +1,45 @@
+{
+    "elfutils": {
+        "sha256": "1c2playl5qqs4lhwwcc9ksnhm0fvfgkl2kln0fl54np8mhr88sz3",
+        "type": "tarball",
+        "url": "https://sourceware.org/elfutils/ftp/0.193/elfutils-0.193.tar.bz2",
+        "url_template": "https://sourceware.org/elfutils/ftp/<version>/elfutils-<version>.tar.bz2",
+        "version": "0.193"
+    },
+    "rime-ice": {
+        "branch": "main",
+        "description": "Rime 配置：雾凇拼音 | 长期维护的简体词库",
+        "homepage": "https://dvel.me/posts/rime-ice/",
+        "owner": "iDvel",
+        "repo": "rime-ice",
+        "rev": "bd514e4e788f216d25fcc74516f7bf4a82e74163",
+        "sha256": "1fwgjds1jkybxrnaf6jq78bw06yx2pysggafvnkvsmpfwhjnhdh9",
+        "type": "tarball",
+        "url": "https://github.com/iDvel/rime-ice/archive/bd514e4e788f216d25fcc74516f7bf4a82e74163.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "tree-sitter-kconfig": {
+        "branch": "master",
+        "description": "Kconfig grammar for tree-sitter",
+        "homepage": "",
+        "owner": "tree-sitter-grammars",
+        "repo": "tree-sitter-kconfig",
+        "rev": "9ac99fe4c0c27a35dc6f757cef534c646e944881",
+        "sha256": "1yaslgn41ywm472m9mabzmqfq7dk3x18vaw8813jb0pvc8n5j1pj",
+        "type": "tarball",
+        "url": "https://github.com/tree-sitter-grammars/tree-sitter-kconfig/archive/9ac99fe4c0c27a35dc6f757cef534c646e944881.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "upto": {
+        "branch": "master",
+        "description": "Change to a parent directory by its name based in @driv's upto",
+        "homepage": "",
+        "owner": "Markcial",
+        "repo": "upto",
+        "rev": "2d1f35453fb55747d50da8c1cb1809840f99a646",
+        "sha256": "12rbffk1z61j4bhfxdjrksbky2x4jlak08s5j44dkxdizns9gz9f",
+        "type": "tarball",
+        "url": "https://github.com/Markcial/upto/archive/2d1f35453fb55747d50da8c1cb1809840f99a646.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    }
+}
