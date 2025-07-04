@@ -1,21 +1,11 @@
 {
-  config,
-  lib,
   pkgs,
   n9,
   ...
 }:
 
-let
-  cfg = config.n9.essentials.shared;
-in
 {
-  options.n9.essentials.shared.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-  };
-
-  config = lib.mkIf cfg.enable {
+  config = {
     nix.settings = {
       experimental-features = [
         "nix-command"
@@ -42,6 +32,9 @@ in
       automatic = true;
       options = "--delete-older-than 29d";
     };
+
+    # TODO: The standalone home doesn't support it:
+    nix.optimise.automatic = true;
 
     # https://github.com/luishfonseca/nixos-config/blob/main/modules/upgrade-diff.nix
     # https://github.com/nix-darwin/nix-darwin/blob/e04a388232d9a6ba56967ce5b53a8a6f713cdfcf/modules/system/activation-scripts.nix#L114

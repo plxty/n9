@@ -1,20 +1,10 @@
 {
-  config,
-  lib,
   pkgs,
   ...
 }@args:
 
-let
-  cfg = config.n9.essentials.darwin;
-in
 {
-  options.n9.essentials.darwin.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-  };
-
-  config = lib.mkIf cfg.enable {
+  config = {
     # Make home-manager's fish work, for iterm2 use '/run/current-system/sw/bin/fish' shell.
     programs.fish.enable = true;
 
@@ -30,9 +20,6 @@ in
       mineffect = "scale";
       autohide = true;
     };
-
-    # TODO: @see lib/nixos/config/essentials.nix
-    nix.optimise.automatic = true;
 
     # TODO: Use flake's nixpkgs for consistency.
     nixpkgs.overlays = [ (import ../../../pkgs/overlay.nix args) ];

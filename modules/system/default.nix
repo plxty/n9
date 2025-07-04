@@ -49,28 +49,12 @@ in
       if this ? nixos then
         (lib.trace "system: selecting nixos for ${hostName}" lib.nixosSystem) {
           inherit specialArgs;
-          modules =
-            sharedModules
-            ++ [
-              ./nixos/disk.nix
-              ./nixos/network
-              ./nixos/sshd.nix
-              ./nixos/passwd.nix
-              ./nixos/gnome
-              ./nixos/boxes.nix
-              ./nixos/essentials.nix
-            ]
-            ++ hostModules;
+          modules = sharedModules ++ [ ./nixos ] ++ hostModules;
         }
       else if this ? darwin then
         (lib.trace "system: selecting darwin for ${hostName}" inputs.nix-darwin.lib.darwinSystem) {
           inherit specialArgs;
-          modules =
-            sharedModules
-            ++ [
-              ./darwin/essentials.nix
-            ]
-            ++ hostModules;
+          modules = sharedModules ++ [ ./darwin ] ++ hostModules;
         }
       else
         abort "unsupported system!"

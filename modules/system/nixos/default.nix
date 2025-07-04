@@ -1,21 +1,20 @@
 {
-  config,
   pkgs,
-  lib,
   hostName,
   ...
 }:
 
-let
-  cfg = config.n9.essentials.nixos;
-in
 {
-  options.n9.essentials.nixos.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-  };
+  imports = [
+    ./disk.nix
+    ./passwd.nix
+    ./sshd.nix
+    ./network
+    ./gnome
+    ./boxes.nix
+  ];
 
-  config = lib.mkIf cfg.enable {
+  config = {
     boot.loader = {
       systemd-boot.enable = true;
       efi.canTouchEfiVariables = true;
@@ -57,9 +56,6 @@ in
       dates = "weekly";
       randomizedDelaySec = "3h";
     };
-
-    # TODO: The standalone home doesn't support it:
-    nix.optimise.automatic = true;
 
     system.stateVersion = "25.05";
   };
