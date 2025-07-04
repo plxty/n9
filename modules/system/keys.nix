@@ -4,8 +4,6 @@
   lib,
   n9,
   this,
-  hostName,
-  userName,
   ...
 }:
 
@@ -15,6 +13,9 @@ let
   keys =
     lib.mapAttrsToList (_: lib.id) cfg
     ++ lib.flatten (lib.mapAttrsToList (_: lib.mapAttrsToList (_: lib.id)) usercfg);
+
+  hostName = osConfig.networking.hostName;
+  userName = config.home.username;
 in
 {
   options.n9.security.keys = lib.mkOption {
@@ -33,29 +34,31 @@ in
                   basedir = "${n9.dir}/asterisk/${hostName}";
                 in
                 assert lib.assertMsg (lib.hasPrefix "/" basedir) "wrong secret directory!";
-                if userName == null then "${basedir}/${k}" else "${basedir}/${userName}/${k}";
+                if this ? usersModule then "${basedir}/${userName}/${k}" else "${basedir}/${k}";
             };
 
             target = lib.mkOption {
               type = lib.types.str;
               default = name;
-              apply = v: if userName == null then v else "${osConfig.users.users.${userName}.home}/${v}";
+              apply = v: if this ? usersModule then "${config.home.homeDirectory}/${v}" else v;
             };
 
             user = lib.mkOption {
               type = lib.types.str;
-              default = if userName == null then "root" else userName;
+              default = if this ? usersModule then userName else "root";
             };
 
             group = lib.mkOption {
               type = lib.types.str;
               default =
-                if userName == null then
+                if this ? usersModule then
+                  userName
+                else if this ? nixos then
                   "root"
                 else if this ? darwin then
                   "staff"
                 else
-                  userName;
+                  abort "unsupported user group!";
             };
 
             permissions = lib.mkOption {
@@ -68,7 +71,7 @@ in
                 "pre-activation"
                 "post-activation"
               ];
-              default = if userName == null then "pre-activation" else "post-activation";
+              default = if this ? usersModule then "post-activation" else "pre-activation";
             };
 
             service = lib.mkOption {

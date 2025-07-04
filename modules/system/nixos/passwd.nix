@@ -2,7 +2,6 @@
   config,
   lib,
   n9,
-  userName,
   this,
   ...
 }:
@@ -15,7 +14,7 @@ in
     n9.security.passwd = {
       file = lib.mkOption {
         type = lib.types.nullOr lib.types.str;
-        default = "${userName}/passwd";
+        default = "${config.home.username}/passwd";
       };
     };
   };

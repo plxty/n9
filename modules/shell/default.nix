@@ -107,7 +107,13 @@ let
       };
 
       config._module.args.pkgsCross =
-        if config.cross then n9.mkCrossNixpkgs inputs.nixpkgs pkgs.system config.triplet else pkgs;
+        if config.cross then
+          import inputs.nixpkgs {
+            inherit (pkgs) system overlays;
+            crossSystem.config = config.triplet;
+          }
+        else
+          pkgs;
 
       options.mkShell = lib.mkOption {
         type = lib.types.functionTo lib.types.package;
@@ -127,6 +133,17 @@ let
     };
 in
 {
+  # respects the nixpkgs:
+  imports = [
+    "${inputs.nixpkgs}/nixos/modules/misc/nixpkgs.nix"
+    ../nix # contains overlays
+  ];
+
+  # emmm, just ignore it:
+  options.nix = lib.mkOption {
+    type = lib.types.unspecified;
+  };
+
   options.n9.shell = lib.mkOption {
     type = lib.types.attrsOf (
       lib.types.submoduleWith {

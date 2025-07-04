@@ -2,7 +2,6 @@
   config,
   lib,
   n9,
-  hostName,
   pkgs,
   ...
 }:
@@ -135,7 +134,7 @@ in
             let
               address = lib.elemAt (lib.splitString "/" v.address) 0;
             in
-            "/${hostName}.${cfg.domain}/${address}"
+            "/${config.networking.hostName}.${cfg.domain}/${address}"
           ) cfg.router.lan;
         };
       };

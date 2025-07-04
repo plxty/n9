@@ -1,6 +1,6 @@
 {
+  config,
   pkgs,
-  hostName,
   ...
 }:
 
@@ -21,10 +21,9 @@
     };
 
     # For default networking, using NixOS's default (dhcpcd).
-    networking = {
-      inherit hostName;
-      hostId = builtins.substring 63 8 (builtins.hashString "sha512" hostName);
-    };
+    networking.hostId = builtins.substring 63 8 (
+      builtins.hashString "sha512" config.networking.hostName
+    );
 
     environment.sessionVariables = {
       NIX_CRATES_INDEX = "sparse+https://mirrors.ustc.edu.cn/crates.io-index/";

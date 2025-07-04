@@ -1,7 +1,4 @@
-{
-  pkgs,
-  ...
-}@args:
+{ pkgs, ... }:
 
 {
   config = {
@@ -20,9 +17,6 @@
       mineffect = "scale";
       autohide = true;
     };
-
-    # TODO: Use flake's nixpkgs for consistency.
-    nixpkgs.overlays = [ (import ../../../pkgs/overlay.nix args) ];
 
     # For the ~/Applications issues:
     # https://github.com/nix-darwin/nix-darwin/commit/fbe795f39dbcc242ddc6f7ab01689617746d9402

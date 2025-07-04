@@ -4,7 +4,6 @@
   lib,
   n9,
   inputs,
-  hostName,
   this,
   ...
 }:
@@ -19,12 +18,6 @@ let
   cfg = config.n9.users;
 
   sharedModules = [
-    (
-      { name, ... }:
-      {
-        config._module.args.userName = name;
-      }
-    )
     ./keys.nix
     ./ssh-key.nix
     ../users
@@ -57,12 +50,7 @@ in
     type = lib.types.attrsOf (
       lib.types.submoduleWith {
         specialArgs = {
-          inherit
-            n9
-            inputs
-            hostName
-            ;
-          # You'd better not to access "userName" in the if statement.
+          inherit n9;
           # We have some cases of the "this" value:
           # * nixos/nix-darwin/home-manager standalone,
           # * home-manager as module,

@@ -56,10 +56,9 @@ rec {
   hells =
     nixpkgs: shells: system:
     (lib.evalModules {
-      specialArgs = args // {
-        pkgs = mkNixpkgs nixpkgs system;
-      };
+      specialArgs = args;
       modules = [
+        { nixpkgs.hostPlatform = system; }
         ../modules/shell
       ] ++ shells;
     }).config.n9.shell;
@@ -125,25 +124,6 @@ rec {
 
   # Anyone has enabled?
   mkIfUsers = testFn: cfg: lib.mkIf (lib.any testFn (lib.attrValues cfg));
-
-  # Replacing legacyPackages, for consistency. TODO: overriding in flake?
-  mkNixpkgs =
-    nixpkgs: system:
-    import nixpkgs {
-      inherit system;
-      overlays = [ (import ../pkgs/overlay.nix args) ];
-
-      # It will get overriden by essentials, here just to help the shells.
-      config.allowUnfree = true;
-    };
-
-  mkCrossNixpkgs =
-    nixpkgs: system: target:
-    import nixpkgs {
-      inherit system;
-      overlays = [ (import ../pkgs/overlay.nix args) ];
-      crossSystem.config = target;
-    };
 
   # Network, maybe:
   mkCarrierOnlyNetwork =
