@@ -90,6 +90,14 @@ Where
 
 The style of configuration is free, anything that just works is acceptable huh.
 
-# TODO
+# Asterisk
 
-We'd better remove niv, it breaks for the sub-flakes.
+The n9 currently can't be burned if the directory `asterisk` is missing, you can build it as
+
+```
+asterisk/<name>/<userName>/id_ed25519
+asterisk/<name>/<userName>/passwd
+asterisk/<name>/some_system_secrets
+```
+
+to make it in fire.

@@ -42,7 +42,9 @@
           chmod -R g-rwx,o-rwx .
           cd ..
           "''${B_NIX[@]}" flake update || true
-          niv update
+          if [[ -f lib/sources.json ]]; then
+            niv update
+          fi
           touch .last
         fi
 

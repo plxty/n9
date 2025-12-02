@@ -1,31 +1,17 @@
-{
-  config,
-  lib,
-  n9,
-  inputs,
-  ...
-}:
+{ n9, inputs, ... }:
 
-let
-  cfg = config.nix.nixpkgs;
-in
 {
   # To provide pkgs in modules argument:
   imports = [ "${inputs.nixpkgs}/nixos/modules/misc/nixpkgs.nix" ];
 
-  options.nix.nixpkgs.enable = lib.mkOption {
-    type = lib.types.bool;
-    default = true;
-  };
-
   options.users = n9.mkAttrsOfSubmoduleOption {
-    config.deployment.file.".config/nixpkgs/config.nix".text = lib.mkIf cfg.enable ''
+    config.deployment.file.".config/nixpkgs/config.nix".text = ''
       { allowUnfree = true; }
     '';
   };
 
   # OSes will use the overrided `pkgs` with those options set:
-  config.nixpkgs = lib.mkIf cfg.enable {
+  config.nixpkgs = {
     # Make overlay everywhere.
     overlays = [
       (import ../../pkgs/overlays.nix { inherit inputs; })

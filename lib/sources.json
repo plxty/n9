@@ -59,11 +59,11 @@
         "version": "0.5.6"
     },
     "mihomo": {
-        "sha256": "1h2ic9ahgz7cyscj39c44a9sqi1bjbcj7xph6a3vlbc6qvykiamm",
+        "sha256": "0sqmclc3ccrd7dw0kjlrx3nxlzq7gq0qmwr6b0gygwan2iv6wx1n",
         "type": "tarball",
-        "url": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v1.19.16.tar.gz",
+        "url": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v1.19.17.tar.gz",
         "url_template": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v<version>.tar.gz",
-        "version": "1.19.16"
+        "version": "1.19.17"
     },
     "rime-ice": {
         "branch": "main",
@@ -102,10 +102,10 @@
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "virtme-ng": {
-        "sha256": "0q9d78yqq0by3ln37ncgac9yhgnip3phyg08qinv2456fl165z63",
+        "sha256": "0zqyv3s2xr4c934iin6jah6c311snllimi2cnjbp5lc0431pxwp6",
         "type": "tarball",
-        "url": "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.38.tar.gz",
+        "url": "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.40.tar.gz",
         "url_template": "https://github.com/arighi/virtme-ng/archive/refs/tags/v<version>.tar.gz",
-        "version": "1.38"
+        "version": "1.40"
     }
 }
