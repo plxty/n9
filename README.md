@@ -50,7 +50,7 @@ Append your own private hosts there :)
 
 # Hierarchy
 
-Relationship: n9 <-> variant <-> nixos/nix-darwin/..., most of works are done in `variant`.
+Relationship: n9 <-> variant <-> nixos/nix-darwin/..., most of compat works are done in `variant`.
 
 ```nix
 {
@@ -89,6 +89,10 @@ Where
 * `userName`: to match your whoami
 
 The style of configuration is free, anything that just works is acceptable huh.
+
+For modules, it's highly recommend to use what variant provides firstly, then the actual options from nixos or else, for example, using `environment.packages` is preferred than using `variant.nixos.environment.systemPackages` directly.
+
+Many modules may not have corresponding variant, long way to go :/
 
 # Asterisk
 

@@ -1,3 +1,29 @@
+From f3f747b35e54ba6399611e546f3a9640ae672495 Mon Sep 17 00:00:00 2001
+From: Zigit Zo <byte@kei.network>
+Date: Tue, 2 Dec 2025 23:11:54 +0800
+Subject: [PATCH] mihomo: hack
+
+---
+ .gitignore                       |  4 +-
+ README.md                        | 57 ++++++++++++++++++++
+ component/fakeip/skipper.go      | 26 +++++----
+ component/fakeip/skipper_test.go | 35 ++++++++++++-
+ config/config.go                 | 90 ++++++++++++++++++++++++++++++++
+ 5 files changed, 200 insertions(+), 12 deletions(-)
+
+diff --git a/.gitignore b/.gitignore
+index d8801262..7085a92d 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -25,4 +25,6 @@ vendor
+ test/config/cache*
+ /output
+ .vscode/
+-.fleet/
+\ No newline at end of file
++.fleet/
++.envrc
++.direnv/
 diff --git a/README.md b/README.md
 index 05f03799..50ff45e0 100644
 --- a/README.md
@@ -66,27 +92,28 @@ index 05f03799..50ff45e0 100644
  ## Dashboard
  
  A web dashboard with first-class support for this project has been created; it can be checked out at [metacubexd](https://github.com/MetaCubeX/metacubexd).
-diff --git a/component/fakeip/pool.go b/component/fakeip/pool.go
-index 895fb658..5ea5f2b0 100644
---- a/component/fakeip/pool.go
-+++ b/component/fakeip/pool.go
-@@ -36,6 +36,7 @@ type Pool struct {
- 	offset  netip.Addr
- 	cycle   bool
- 	mux     sync.Mutex
+diff --git a/component/fakeip/skipper.go b/component/fakeip/skipper.go
+index 2df4094a..a85d6525 100644
+--- a/component/fakeip/skipper.go
++++ b/component/fakeip/skipper.go
+@@ -5,24 +5,30 @@ import (
+ )
+ 
+ type Skipper struct {
+-	Host []C.DomainMatcher
+-	Mode C.FilterMode
++	Host    []C.DomainMatcher
++	Mode    C.FilterMode
 +	Reverse []C.DomainMatcher
- 	host    []C.DomainMatcher
- 	mode    C.FilterMode
- 	ipnet   netip.Prefix
-@@ -68,20 +69,25 @@ func (p *Pool) LookBack(ip netip.Addr) (string, bool) {
+ }
  
  // ShouldSkipped return if domain should be skipped
- func (p *Pool) ShouldSkipped(domain string) bool {
+ func (p *Skipper) ShouldSkipped(domain string) bool {
 -	should := p.shouldSkipped(domain)
--	if p.mode == C.FilterWhiteList {
+-	if p.Mode == C.FilterWhiteList {
 -		return !should
 +	// In blacklist mode, we skip matched item, but in whitelist, we can't:
-+	skipMatched := p.mode == C.FilterBlackList
++	skipMatched := p.Mode == C.FilterBlackList
 +
 +	// We have a higher priority matching, check it:
 +	for _, matcher := range p.Reverse {
@@ -99,8 +126,8 @@ index 895fb658..5ea5f2b0 100644
 -	return should
 -}
  
--func (p *Pool) shouldSkipped(domain string) bool {
- 	for _, matcher := range p.host {
+-func (p *Skipper) shouldSkipped(domain string) bool {
+ 	for _, matcher := range p.Host {
  		if matcher.MatchDomain(domain) {
 -			return true
 +			return skipMatched
@@ -110,38 +137,32 @@ index 895fb658..5ea5f2b0 100644
 +
 +	return !skipMatched /* aka. skipUnmatched */
  }
- 
- // Exist returns if given ip exists in fake-ip pool
-diff --git a/component/fakeip/pool_test.go b/component/fakeip/pool_test.go
-index be78b87c..126935d0 100644
---- a/component/fakeip/pool_test.go
-+++ b/component/fakeip/pool_test.go
-@@ -162,7 +162,7 @@ func TestPool_Skip(t *testing.T) {
- 	for _, pool := range pools {
- 		assert.True(t, pool.ShouldSkipped("example.com"))
- 		assert.False(t, pool.ShouldSkipped("foo.com"))
--		assert.False(t, pool.shouldSkipped("baz.com"))
-+		assert.False(t, pool.ShouldSkipped("baz.com"))
+diff --git a/component/fakeip/skipper_test.go b/component/fakeip/skipper_test.go
+index 3ffffee9..ba4f503b 100644
+--- a/component/fakeip/skipper_test.go
++++ b/component/fakeip/skipper_test.go
+@@ -18,7 +18,7 @@ func TestSkipper_BlackList(t *testing.T) {
  	}
+ 	assert.True(t, skipper.ShouldSkipped("example.com"))
+ 	assert.False(t, skipper.ShouldSkipped("foo.com"))
+-	assert.False(t, skipper.shouldSkipped("baz.com"))
++	assert.False(t, skipper.ShouldSkipped("baz.com"))
  }
  
-@@ -187,6 +187,48 @@ func TestPool_SkipWhiteList(t *testing.T) {
- 	}
+ func TestSkipper_WhiteList(t *testing.T) {
+@@ -33,3 +33,36 @@ func TestSkipper_WhiteList(t *testing.T) {
+ 	assert.True(t, skipper.ShouldSkipped("foo.com"))
+ 	assert.True(t, skipper.ShouldSkipped("baz.com"))
  }
- 
-+func testSkipReverse(t *testing.T, mode C.FilterMode) {
-+	ipnet := netip.MustParsePrefix("192.168.0.1/29")
++
++func testReverse(t *testing.T, mode C.FilterMode) {
 +	tree := trie.New[struct{}]()
 +	assert.NoError(t, tree.Insert("+.net", struct{}{}))
 +	assert.False(t, tree.IsEmpty())
-+	pools, tempfile, err := createPools(Options{
-+		IPNet: ipnet,
-+		Size:  10,
-+		Host:  []C.DomainMatcher{tree.NewDomainSet()},
-+		Mode:  mode,
-+	})
-+	assert.Nil(t, err)
-+	defer os.Remove(tempfile)
++	skipper := &Skipper{
++		Host: []C.DomainMatcher{tree.NewDomainSet()},
++		Mode: mode,
++	}
 +
 +	reverse := trie.New[struct{}]()
 +	assert.NoError(t, reverse.Insert("test.net", struct{}{}))
@@ -149,44 +170,36 @@ index be78b87c..126935d0 100644
 +	var matcher C.DomainMatcher = reverse.NewDomainSet()
 +
 +	if mode == C.FilterBlackList {
-+		for _, pool := range pools {
-+			pool.Reverse = append(pool.Reverse, matcher)
-+			assert.False(t, pool.ShouldSkipped("test.net"))
-+			assert.True(t, pool.ShouldSkipped("only.net"))
-+		}
++		skipper.Reverse = append(skipper.Reverse, matcher)
++		assert.False(t, skipper.ShouldSkipped("test.net"))
++		assert.True(t, skipper.ShouldSkipped("only.net"))
 +	} else {
-+		for _, pool := range pools {
-+			pool.Reverse = append(pool.Reverse, matcher)
-+			assert.True(t, pool.ShouldSkipped("test.net"))
-+			assert.False(t, pool.ShouldSkipped("only.net"))
-+		}
++		skipper.Reverse = append(skipper.Reverse, matcher)
++		assert.True(t, skipper.ShouldSkipped("test.net"))
++		assert.False(t, skipper.ShouldSkipped("only.net"))
 +	}
 +}
 +
-+func TestPool_SkipReverse(t *testing.T) {
-+	testSkipReverse(t, C.FilterBlackList)
++func TestSkipper_BlackListReverse(t *testing.T) {
++	testReverse(t, C.FilterBlackList)
 +}
 +
-+func TestPool_SkipWhitelistReverse(t *testing.T) {
-+	testSkipReverse(t, C.FilterWhiteList)
++func TestSkipper_WhitelistReverse(t *testing.T) {
++	testReverse(t, C.FilterWhiteList)
 +}
-+
- func TestPool_MaxCacheSize(t *testing.T) {
- 	ipnet := netip.MustParsePrefix("192.168.0.1/24")
- 	pool, _ := New(Options{
 diff --git a/config/config.go b/config/config.go
-index dec0955b..675b377f 100644
+index 301126a6..3fe95563 100644
 --- a/config/config.go
 +++ b/config/config.go
-@@ -223,6 +223,7 @@ type RawDNS struct {
- 	FakeIPRange                  string                              `yaml:"fake-ip-range" json:"fake-ip-range"`
+@@ -230,6 +230,7 @@ type RawDNS struct {
  	FakeIPFilter                 []string                            `yaml:"fake-ip-filter" json:"fake-ip-filter"`
  	FakeIPFilterMode             C.FilterMode                        `yaml:"fake-ip-filter-mode" json:"fake-ip-filter-mode"`
+ 	FakeIPTTL                    int                                 `yaml:"fake-ip-ttl" json:"fake-ip-ttl"`
 +	FakeIPReverse                []string                            `yaml:"fake-ip-reverse" json:"fake-ip-reverse"`
  	DefaultNameserver            []string                            `yaml:"default-nameserver" json:"default-nameserver"`
  	CacheAlgorithm               string                              `yaml:"cache-algorithm" json:"cache-algorithm"`
  	CacheMaxSize                 int                                 `yaml:"cache-max-size" json:"cache-max-size"`
-@@ -507,6 +508,7 @@ func DefaultRawConfig() *RawConfig {
+@@ -515,6 +516,7 @@ func DefaultRawConfig() *RawConfig {
  				"www.msftconnecttest.com",
  			},
  			FakeIPFilterMode: C.FilterBlackList,
@@ -194,7 +207,7 @@ index dec0955b..675b377f 100644
  		},
  		NTP: RawNTP{
  			Enable:        false,
-@@ -577,7 +579,67 @@ func DefaultRawConfig() *RawConfig {
+@@ -585,7 +587,67 @@ func DefaultRawConfig() *RawConfig {
  	}
  }
  
@@ -262,7 +275,7 @@ index dec0955b..675b377f 100644
  	// config with default value
  	rawCfg := DefaultRawConfig()
  
-@@ -585,6 +647,14 @@ func UnmarshalRawConfig(buf []byte) (*RawConfig, error) {
+@@ -593,6 +655,14 @@ func UnmarshalRawConfig(buf []byte) (*RawConfig, error) {
  		return nil, err
  	}
  
@@ -277,10 +290,11 @@ index dec0955b..675b377f 100644
  	return rawCfg, nil
  }
  
-@@ -1442,6 +1512,26 @@ func parseDNS(rawCfg *RawConfig, ruleProviders map[string]providerTypes.RuleProv
- 			return nil, err
+@@ -1460,6 +1530,26 @@ func parseDNS(rawCfg *RawConfig, ruleProviders map[string]P.RuleProvider) (*DNS,
+ 			Host: host,
+ 			Mode: cfg.FakeIPFilterMode,
  		}
- 
++
 +		/**
 +		 * Reverse has higher priority, it filp the result.
 +		 * e.g.
@@ -297,10 +311,12 @@ index dec0955b..675b377f 100644
 +			if err != nil {
 +				return nil, err
 +			}
-+
-+			pool.Reverse = reverse
++			skipper.Reverse = reverse
 +		}
 +
- 		dnsCfg.FakeIPRange = pool
- 	}
+ 		dnsCfg.FakeIPSkipper = skipper
+ 		dnsCfg.FakeIPTTL = cfg.FakeIPTTL
  
+-- 
+2.50.1
+

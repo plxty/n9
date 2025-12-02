@@ -3,15 +3,10 @@
 let
   plugin = pkg: { inherit (pkg) name src; };
   tideToken = "0xff";
-
-  mkFishConfig = {
-    home.packages = with pkgs; [
-      ripgrep
-      fd
-      bat
-    ];
-
-    programs.fish = {
+in
+{
+  options.users = n9.mkAttrsOfSubmoduleOption {
+    config.variant.home-manager.programs.fish = {
       enable = true;
 
       plugins = with pkgs.fishPlugins; [
@@ -150,21 +145,7 @@ let
       };
     };
 
-    programs.direnv = {
-      enable = true;
-      nix-direnv.enable = true;
-    };
-    programs.fzf.enable = true;
-    programs.zoxide.enable = true;
-  };
-in
-{
-  options.users = n9.mkAttrsOfSubmoduleOption {
-    config.variant.home-manager = mkFishConfig;
-
     # Make home-manager's fish work, for iterm2 use '/run/current-system/sw/bin/fish' shell.
-    config.variant.nix-darwin = {
-      programs.fish.enable = true;
-    };
+    config.variant.nix-darwin.programs.fish.enable = true;
   };
 }

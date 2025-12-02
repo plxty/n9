@@ -51,23 +51,13 @@
         # Das template:
         echo "\"$(realpath "$PWD")\"" > lib/dir.nix
 
-        # Fake sudo if not have:
-        if ! which sudo && [[ "$(id -u)" -eq "0" ]]; then
-          function sudo() {
-            if [[ "$1" == "-v" ]]; then
-              true
-            else
-              "$@"
-            fi
-          }
-          export -f sudo
-        fi
+        # Trap will be replaced, so we do everything here... TODO: Trap arrays?
+        trap 'git restore lib/dir.nix; pkill -P $$' SIGINT SIGTERM EXIT
 
         B_COLMENA=(colmena --show-trace)
         if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
           # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
-          sudo -v
-          trap 'pkill -P $$' SIGINT SIGTERM EXIT
+          which sudo > /dev/null && sudo -v
           {
             # "Wakeup" the sleeping parent when exit normally or abnormally:
             trap 'pkill -P $$ sleep' EXIT
@@ -83,7 +73,7 @@
 
             # The `sleep` will be killed whether successful or not...
           } &
-          while jobs %%; do sudo -v; sleep 180; done
+          while jobs %%; do sudo -v || true; sleep 180; done
         else
           "''${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
             --no-substitute --sign "asterisk/$B_THIS/nix-key"

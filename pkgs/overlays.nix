@@ -1,5 +1,6 @@
 # https://wiki.nixos.org/wiki/Overlays
 # TODO: But we should ensure there's no extra dependencies.
+# Patches aren't included, to keep the overlay clean. Or?
 { inputs, ... }:
 
 final: prev:
@@ -12,6 +13,7 @@ let
   mkPackage = pkg: final.callPackage pkg { inherit n9 inputs; };
 in
 {
+  # Maybe some new toys:
   rime-ice = mkPackage ./rime-ice.nix;
   virtme-ng = mkPackage ./virtme-ng.nix;
   libkdumpfile = mkPackage ./libkdumpfile.nix;
@@ -19,21 +21,28 @@ in
   gitcache = mkPackage ./gitcache.nix;
 
   # Upgrading some packages ourselves...
-  iterm2 = prev.iterm2.overrideAttrs rec {
-    version = lib.replaceStrings [ "_" ] [ "." ] src.version;
-    src = n9.sources.iterm2;
-    nativeBuildInputs = [ prev.unzip ];
-    unpackPhase = ''unzip $src'';
-    sourceRoot = "iTerm.app"; # avoid /Applications/iTerm2.app/iTerm.app appears
-  };
+  iterm2 =
+    let
+      src = n9.sources.iterm2;
+      version = lib.replaceStrings [ "_" ] [ "." ] src.version;
+    in
+    n9.assureVersion prev.iterm2 version {
+      inherit src;
+      nativeBuildInputs = [ prev.unzip ];
+      unpackPhase = ''unzip $src'';
+      sourceRoot = "iTerm.app"; # avoid /Applications/iTerm2.app/iTerm.app appears
+    };
 
   # And mihomo...
-  mihomo = prev.mihomo.overrideAttrs rec {
-    version = src.version;
-    src = n9.sources.mihomo;
-    patches = [ ]; # FIXME: ...
-    vendorHash = "sha256-t+v+szM5uXRy173tAtRf+IqiGNHaL6nNRgf6OZmeJyQ=";
-  };
+  mihomo =
+    let
+      src = n9.sources.mihomo;
+      version = src.version;
+    in
+    n9.assureVersion prev.mihomo version {
+      inherit src;
+      vendorHash = "sha256-WwbuNplMkH5wotpHasQbwK85Ymh6Ke4WL1LTLDWvRFk=";
+    };
 
   # The home-manager doesn't have an option to customize openssh, thus we make
   # it global. TODO: submit patches to community?

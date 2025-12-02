@@ -6,4 +6,5 @@
   ./shell/d2l.nix
   ./shell/nvidia-gpu.nix
   ./shell/rdma.nix
+  ./shell/mihomo.nix
 ]
