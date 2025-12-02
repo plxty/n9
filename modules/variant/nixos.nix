@@ -1,0 +1,74 @@
+{
+  name,
+  options,
+  config,
+  lib,
+  n9,
+  pkgs,
+  inputs,
+  ...
+}:
+
+let
+  opt = options.variant.nixos;
+  cfg = config.variant.nixos;
+
+  isNixOS = config.variant.get.current == "nixos";
+
+  mkNixOSConfiguration =
+    modules:
+    lib.nixosSystem {
+      modules = [
+        # Manage config.{disko,home-manager} as well:
+        inputs.disko.nixosModules.disko
+        inputs.home-manager.nixosModules.default
+        # Relies on the modules author to make a global option:
+        inputs.nixos-wsl.nixosModules.default
+      ]
+      ++ modules;
+    };
+in
+{
+  options.variant.is.nixos = lib.mkOption {
+    type = lib.types.bool;
+    default = isNixOS;
+  };
+
+  # Notice: imports will not work as `oses.nixos.imports`, because you can't
+  # import things outside the submodule's toplevel.
+  options.variant.nixos = lib.mkOption {
+    type = lib.types.submodule {
+      options = n9.mkOptionsFromConfig (mkNixOSConfiguration [ ]);
+    };
+    apply =
+      _:
+      (mkNixOSConfiguration [
+        # TODO: Move to somewhere default config?
+        {
+          nixpkgs.pkgs = pkgs;
+          hardware.enableRedistributableFirmware = true;
+          networking = {
+            hostName = name;
+            hostId = builtins.substring 63 8 (builtins.hashString "sha512" name);
+          };
+          systemd.coredump.extraConfig = "Storage=journal";
+          # To run "native" linux elf, such as vscode remote server:
+          programs.nix-ld = {
+            enable = true;
+            libraries = with pkgs; [
+              # https://youtrack.jetbrains.com/issue/CPP-44987
+              icu
+            ];
+          };
+          system.stateVersion = "25.05";
+        }
+        # The hardware-configuration.nix, an "backdoor" of imports :/
+        # TODO: Define a options of imports? It's weird of course.
+        config.hardware.configuration
+        # Real definitions :)
+        (lib.mkAliasDefinitions opt)
+      ]).config;
+  };
+
+  config.variant.get.build = lib.mkIf isNixOS cfg.system.build.toplevel;
+}

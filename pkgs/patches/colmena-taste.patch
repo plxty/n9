@@ -1,0 +1,729 @@
+commit 9829ab780ee193b25a16a8cae85169a564399860
+Author: Zigit Zo <byte@pen.guru>
+Date:   Thu Jul 3 17:29:32 2025 +0800
+
+    feat(colmena): taste
+
+diff --git a/.envrc b/.envrc
+index de3998d..234e89d 100644
+--- a/.envrc
++++ b/.envrc
+@@ -2,4 +2,4 @@ if ! has nix_direnv_version || ! nix_direnv_version 2.1.1; then
+   source_url "https://raw.githubusercontent.com/nix-community/nix-direnv/2.1.1/direnvrc" "sha256-b6qJ4r34rbE23yWjMqbmu3ia2z4b2wIlZUksBke/ol0="
+ fi
+ 
+-use flake
++use flake . --accept-flake-config
+diff --git a/src/cli.rs b/src/cli.rs
+index ab1d44c..66241cf 100644
+--- a/src/cli.rs
++++ b/src/cli.rs
+@@ -177,7 +177,6 @@ struct Opts {
+ enum Command {
+     Apply(command::apply::Opts),
+ 
+-    #[cfg(target_os = "linux")]
+     ApplyLocal(command::apply_local::Opts),
+ 
+     /// Build configurations but not push to remote machines
+@@ -330,7 +329,6 @@ pub async fn run() {
+ 
+     match opts.command {
+         Command::Apply(args) => r(command::apply::run(hive, args), opts.config).await,
+-        #[cfg(target_os = "linux")]
+         Command::ApplyLocal(args) => r(command::apply_local::run(hive, args), opts.config).await,
+         Command::Eval(args) => r(command::eval::run(hive, args), opts.config).await,
+         Command::Exec(args) => r(command::exec::run(hive, args), opts.config).await,
+diff --git a/src/command/apply.rs b/src/command/apply.rs
+index 0463367..640a810 100644
+--- a/src/command/apply.rs
++++ b/src/command/apply.rs
+@@ -45,6 +45,21 @@ pub struct DeployOpts {
+     #[arg(short, long)]
+     verbose: bool,
+ 
++    /// Sign the store
++    ///
++    /// Before uploading the closure, sign it first.
++    #[arg(
++        long,
++        help = "Sign nix store closure",
++        long_help = r#"Sign nix store closure with private key <SIGN> before pushing to the target node.
++
++When set, colmena will try to run `nix store sign` of the prof /ile.
++You may want to configure the target node to accept the public key with `nix.settings.trusted-public-keys`.
++
++This is identical to `services.nix-serve.secretKeyFile` in nix.conf, but more flexible."#
++    )]
++    sign: Option<String>,
++
+     /// Do not upload keys
+     ///
+     /// By default, Colmena will upload secret keys set in `deployment.keys` before deploying
+@@ -142,6 +157,7 @@ pub async fn run(hive: Hive, opts: Opts) -> Result<(), ColmenaError> {
+                 keep_result,
+                 verbose,
+                 no_keys,
++                sign,
+                 reboot,
+                 no_substitute,
+                 no_gzip,
+@@ -184,6 +200,7 @@ pub async fn run(hive: Hive, opts: Opts) -> Result<(), ColmenaError> {
+         options.set_substituters_push(!no_substitute);
+         options.set_gzip(!no_gzip);
+         options.set_upload_keys(!no_keys);
++        options.set_sign(sign);
+         options.set_reboot(reboot);
+         options.set_force_replace_unknown_profiles(force_replace_unknown_profiles);
+         options.set_evaluator(evaluator);
+diff --git a/src/command/apply_local.rs b/src/command/apply_local.rs
+index fedb0de..656e7c1 100644
+--- a/src/command/apply_local.rs
++++ b/src/command/apply_local.rs
+@@ -1,8 +1,6 @@
+-use regex::Regex;
+ use std::collections::HashMap;
+ 
+ use clap::Args;
+-use tokio::fs;
+ 
+ use crate::error::ColmenaError;
+ 
+@@ -22,10 +20,6 @@ pub struct Opts {
+     #[arg(value_name = "GOAL", default_value_t)]
+     goal: Goal,
+ 
+-    /// Attempt to escalate privileges if not run as root
+-    #[arg(long)]
+-    sudo: bool,
+-
+     /// Be verbose
+     ///
+     /// Deactivates the progress spinner and prints every line of output.
+@@ -42,50 +36,17 @@ pub struct Opts {
+     /// Override the node name to use
+     #[arg(long)]
+     node: Option<String>,
+-
+-    /// Removed: Configure deployment.privilegeEscalationCommand in node configuration
+-    #[arg(long, value_name = "COMMAND", hide = true)]
+-    sudo_command: Option<String>,
+ }
+ 
+ pub async fn run(
+     hive: Hive,
+     Opts {
+         goal,
+-        sudo,
+         verbose,
+         no_keys,
+         node,
+-        sudo_command,
+     }: Opts,
+ ) -> Result<(), ColmenaError> {
+-    if sudo_command.is_some() {
+-        tracing::error!("--sudo-command has been removed. Please configure it in deployment.privilegeEscalationCommand in the node configuration.");
+-        quit::with_code(1);
+-    }
+-
+-    // Sanity check: Are we running NixOS?
+-    if let Ok(os_release) = fs::read_to_string("/etc/os-release").await {
+-        let re = Regex::new(r#"ID="?nixos"?"#).unwrap();
+-        if !re.is_match(&os_release) {
+-            tracing::error!("\"apply-local\" only works on NixOS machines.");
+-            quit::with_code(5);
+-        }
+-    } else {
+-        tracing::error!("Could not detect the OS version from /etc/os-release.");
+-        quit::with_code(5);
+-    }
+-
+-    let verbose = verbose || sudo; // cannot use spinners with interactive sudo
+-
+-    {
+-        let euid: u32 = unsafe { libc::geteuid() };
+-        if euid != 0 && !sudo {
+-            tracing::warn!("Colmena was not started by root. This is probably not going to work.");
+-            tracing::warn!("Hint: Add the --sudo flag.");
+-        }
+-    }
+-
+     let hostname = NodeName::new(node.unwrap_or_else(|| {
+         hostname::get()
+             .expect("Could not get hostname")
+@@ -96,17 +57,13 @@ pub async fn run(
+     let target = {
+         if let Some(info) = hive.deployment_info_single(&hostname).await.unwrap() {
+             let nix_options = hive.nix_flags_with_builders().await.unwrap();
+-            if !info.allows_local_deployment() {
+-                tracing::error!(
+-                    "Local deployment is not enabled for host {}.",
+-                    hostname.as_str()
+-                );
+-                tracing::error!("Hint: Set deployment.allowLocalDeployment to true.");
+-                quit::with_code(2);
+-            }
+-            let mut host = LocalHost::new(nix_options);
+-            if sudo {
+-                let command = info.privilege_escalation_command().to_owned();
++            let mut host = LocalHost::new(
++                nix_options,
++                info.profile_wide().clone(),
++                info.profile_current().clone(),
++            );
++            let command = info.privilege_escalation_command().to_owned();
++            if command.len() != 0 {
+                 host.set_privilege_escalation_command(Some(command));
+             }
+ 
+diff --git a/src/command/mod.rs b/src/command/mod.rs
+index cc6c8cb..07f9b9d 100644
+--- a/src/command/mod.rs
++++ b/src/command/mod.rs
+@@ -4,7 +4,6 @@ pub mod exec;
+ pub mod nix_info;
+ pub mod repl;
+ 
+-#[cfg(target_os = "linux")]
+ pub mod apply_local;
+ 
+ #[cfg(debug_assertions)]
+diff --git a/src/nix/deployment/mod.rs b/src/nix/deployment/mod.rs
+index bda3f77..f99aee8 100644
+--- a/src/nix/deployment/mod.rs
++++ b/src/nix/deployment/mod.rs
+@@ -502,10 +502,15 @@ impl Deployment {
+         // Build system profile
+         let build_job = parent.create_job(JobType::Build, nodes.clone())?;
+         let arc_self = self.clone();
++
++        let profile_wide = target.config.profile_wide().clone();
++        let profile_current = target.config.profile_current().clone();
+         let profile: Profile = build_job
+             .run(|job| async move {
+                 // FIXME: Remote builder?
+-                let mut builder = LocalHost::new(arc_self.nix_options.clone()).upcast();
++                let mut builder =
++                    LocalHost::new(arc_self.nix_options.clone(), profile_wide, profile_current)
++                        .upcast();
+                 builder.set_job(Some(job.clone()));
+ 
+                 let profile = profile_drv.realize(&mut builder).await?;
+@@ -552,6 +557,12 @@ impl Deployment {
+ 
+                 let host = target.host.as_mut().unwrap();
+                 host.set_job(Some(job.clone()));
++
++                // Sign the profile if needed (only ssh push needs it now):
++                if let Some(key) = &arc_self.options.sign {
++                    host.sign_closure(push_profile.as_store_path(), key).await?;
++                }
++
+                 host.copy_closure(
+                     push_profile.as_store_path(),
+                     CopyDirection::ToRemote,
+diff --git a/src/nix/deployment/options.rs b/src/nix/deployment/options.rs
+index 936de4d..12e1e63 100644
+--- a/src/nix/deployment/options.rs
++++ b/src/nix/deployment/options.rs
+@@ -16,6 +16,10 @@ pub struct Options {
+     /// Whether to upload keys when deploying.
+     pub(super) upload_keys: bool,
+ 
++    /// Path to the sign key when deploying.
++    /// TODO: PathBuf?
++    pub(super) sign: Option<String>,
++
+     /// Whether to reboot the hosts after activation.
+     pub(super) reboot: bool,
+ 
+@@ -65,6 +69,10 @@ impl Options {
+         self.upload_keys = enable;
+     }
+ 
++    pub fn set_sign(&mut self, sign: Option<String>) {
++        self.sign = sign;
++    }
++
+     pub fn set_reboot(&mut self, enable: bool) {
+         self.reboot = enable;
+     }
+@@ -91,6 +99,7 @@ impl Options {
+         options
+             .use_substitutes(self.substituters_push)
+             .gzip(self.gzip)
++            .check_sigs(self.sign.is_some())
+     }
+ }
+ 
+@@ -100,6 +109,7 @@ impl Default for Options {
+             substituters_push: true,
+             gzip: true,
+             upload_keys: true,
++            sign: None,
+             reboot: false,
+             create_gc_roots: false,
+             force_build_on_target: None,
+diff --git a/src/nix/host/local.rs b/src/nix/host/local.rs
+index 6ed0af2..a9c4627 100644
+--- a/src/nix/host/local.rs
++++ b/src/nix/host/local.rs
+@@ -8,7 +8,7 @@ use tokio::process::Command;
+ use super::{key_uploader, CopyDirection, CopyOptions, Host};
+ use crate::error::{ColmenaError, ColmenaResult};
+ use crate::job::JobHandle;
+-use crate::nix::{Goal, Key, NixFlags, Profile, StorePath, CURRENT_PROFILE, SYSTEM_PROFILE};
++use crate::nix::{Goal, Key, NixFlags, Profile, StorePath};
+ use crate::util::{CommandExecution, CommandExt};
+ 
+ /// The local machine running Colmena.
+@@ -19,14 +19,18 @@ use crate::util::{CommandExecution, CommandExt};
+ pub struct Local {
+     job: Option<JobHandle>,
+     nix_options: NixFlags,
++    profile_wide: String,
++    profile_current: String,
+     privilege_escalation_command: Option<Vec<String>>,
+ }
+ 
+ impl Local {
+-    pub fn new(nix_options: NixFlags) -> Self {
++    pub fn new(nix_options: NixFlags, profile_wide: String, profile_current: String) -> Self {
+         Self {
+             job: None,
+             nix_options,
++            profile_wide,
++            profile_current,
+             privilege_escalation_command: None,
+         }
+     }
+@@ -85,9 +89,15 @@ impl Host for Local {
+ 
+         if goal.should_switch_profile() {
+             let path = profile.as_path().to_str().unwrap();
+-            self.make_privileged_command(&["nix-env", "--profile", SYSTEM_PROFILE, "--set", path])
+-                .passthrough()
+-                .await?;
++            self.make_privileged_command(&[
++                "nix-env",
++                "--profile",
++                self.profile_wide.as_str(),
++                "--set",
++                path,
++            ])
++            .passthrough()
++            .await?;
+         }
+ 
+         let command = {
+@@ -104,7 +114,7 @@ impl Host for Local {
+ 
+     async fn get_current_system_profile(&mut self) -> ColmenaResult<Profile> {
+         let paths = Command::new("readlink")
+-            .args(["-e", CURRENT_PROFILE])
++            .args(["-e", self.profile_current.as_str()])
+             .capture_output()
+             .await?;
+ 
+@@ -124,7 +134,8 @@ impl Host for Local {
+                 "-c",
+                 &format!(
+                     "readlink -e {} || readlink -e {}",
+-                    SYSTEM_PROFILE, CURRENT_PROFILE
++                    self.profile_wide.as_str(),
++                    self.profile_current.as_str()
+                 ),
+             ])
+             .capture_output()
+diff --git a/src/nix/host/mod.rs b/src/nix/host/mod.rs
+index 8ff44ad..3a966f4 100644
+--- a/src/nix/host/mod.rs
++++ b/src/nix/host/mod.rs
+@@ -25,6 +25,7 @@ pub struct CopyOptions {
+     include_outputs: bool,
+     use_substitutes: bool,
+     gzip: bool,
++    check_sigs: bool,
+ }
+ 
+ #[derive(Clone, Debug)]
+@@ -42,6 +43,7 @@ impl Default for CopyOptions {
+             include_outputs: true,
+             use_substitutes: true,
+             gzip: true,
++            check_sigs: false,
+         }
+     }
+ }
+@@ -61,6 +63,11 @@ impl CopyOptions {
+         self.gzip = val;
+         self
+     }
++
++    pub fn check_sigs(mut self, val: bool) -> Self {
++        self.check_sigs = val;
++        self
++    }
+ }
+ 
+ impl Default for RebootOptions {
+@@ -89,6 +96,12 @@ impl RebootOptions {
+ /// The underlying implementation must be Send and Sync.
+ #[async_trait]
+ pub trait Host: Send + Sync + std::fmt::Debug {
++    /// Sign a closure if required.
++    #[allow(unused_variables)]
++    async fn sign_closure(&mut self, closure: &StorePath, key: &String) -> ColmenaResult<()> {
++        Err(ColmenaError::Unsupported)
++    }
++
+     /// Sends or receives the specified closure to the host
+     ///
+     /// The StorePath and its dependent paths will then exist on this host.
+@@ -122,27 +135,6 @@ pub trait Host: Send + Sync + std::fmt::Debug {
+         Ok(paths)
+     }
+ 
+-    /// Pushes and optionally activates a profile to the host.
+-    async fn deploy(
+-        &mut self,
+-        profile: &Profile,
+-        goal: Goal,
+-        copy_options: CopyOptions,
+-    ) -> ColmenaResult<()> {
+-        self.copy_closure(
+-            profile.as_store_path(),
+-            CopyDirection::ToRemote,
+-            copy_options,
+-        )
+-        .await?;
+-
+-        if goal.requires_activation() {
+-            self.activate(profile, goal).await?;
+-        }
+-
+-        Ok(())
+-    }
+-
+     /// Uploads a set of keys to the host.
+     ///
+     /// If `require_ownership` is false, then the ownership of a key
+diff --git a/src/nix/host/ssh.rs b/src/nix/host/ssh.rs
+index 64ebb68..35cf7e4 100644
+--- a/src/nix/host/ssh.rs
++++ b/src/nix/host/ssh.rs
+@@ -12,7 +12,7 @@ use tokio::time::sleep;
+ use super::{key_uploader, CopyDirection, CopyOptions, Host, RebootOptions};
+ use crate::error::{ColmenaError, ColmenaResult};
+ use crate::job::JobHandle;
+-use crate::nix::{Goal, Key, Profile, StorePath, CURRENT_PROFILE, SYSTEM_PROFILE};
++use crate::nix::{Goal, Key, Profile, StorePath};
+ use crate::util::{CommandExecution, CommandExt};
+ 
+ /// A remote machine connected over SSH.
+@@ -30,6 +30,12 @@ pub struct Ssh {
+     /// Local path to a ssh_config file.
+     ssh_config: Option<PathBuf>,
+ 
++    /// Replacing SYSTEM_PROFILE:
++    profile_wide: String,
++
++    /// Replacing CURRENT_PROFILE:
++    profile_current: String,
++
+     /// Command to elevate privileges with.
+     privilege_escalation_command: Vec<String>,
+ 
+@@ -48,6 +54,23 @@ struct BootId(String);
+ 
+ #[async_trait]
+ impl Host for Ssh {
++    async fn sign_closure(&mut self, closure: &StorePath, key: &String) -> ColmenaResult<()> {
++        let mut command = Command::new("nix");
++
++        command.args([
++            "--extra-experimental-features",
++            "nix-command",
++            "store",
++            "sign",
++            "-k",
++            key,
++            "--recursive",
++            closure.as_path().to_str().unwrap(),
++        ]);
++
++        self.run_command(command).await
++    }
++
+     async fn copy_closure(
+         &mut self,
+         closure: &StorePath,
+@@ -97,7 +120,13 @@ impl Host for Ssh {
+ 
+         if goal.should_switch_profile() {
+             let path = profile.as_path().to_str().unwrap();
+-            let set_profile = self.ssh(&["nix-env", "--profile", SYSTEM_PROFILE, "--set", path]);
++            let set_profile = self.ssh(&[
++                "nix-env",
++                "--profile",
++                self.profile_wide.as_str(),
++                "--set",
++                path,
++            ]);
+             self.run_command(set_profile).await?;
+         }
+ 
+@@ -109,7 +138,7 @@ impl Host for Ssh {
+ 
+     async fn get_current_system_profile(&mut self) -> ColmenaResult<Profile> {
+         let paths = self
+-            .ssh(&["readlink", "-e", CURRENT_PROFILE])
++            .ssh(&["readlink", "-e", self.profile_current.as_str()])
+             .capture_output()
+             .await?;
+ 
+@@ -126,7 +155,8 @@ impl Host for Ssh {
+     async fn get_main_system_profile(&mut self) -> ColmenaResult<Profile> {
+         let command = format!(
+             "\"readlink -e {} || readlink -e {}\"",
+-            SYSTEM_PROFILE, CURRENT_PROFILE
++            self.profile_wide.as_str(),
++            self.profile_current.as_str()
+         );
+ 
+         let paths = self.ssh(&["sh", "-c", &command]).capture_output().await?;
+@@ -185,12 +215,19 @@ impl Host for Ssh {
+ }
+ 
+ impl Ssh {
+-    pub fn new(user: Option<String>, host: String) -> Self {
++    pub fn new(
++        user: Option<String>,
++        host: String,
++        profile_wide: String,
++        profile_current: String,
++    ) -> Self {
+         Self {
+             user,
+             host,
+             port: None,
+             ssh_config: None,
++            profile_wide,
++            profile_current,
+             privilege_escalation_command: Vec::new(),
+             extra_ssh_options: Vec::new(),
+             use_nix3_copy: false,
+@@ -271,12 +308,11 @@ impl Ssh {
+             // experimental `nix copy` command with ssh-ng://
+             let mut command = Command::new("nix");
+ 
+-            command.args([
+-                "--extra-experimental-features",
+-                "nix-command",
+-                "copy",
+-                "--no-check-sigs",
+-            ]);
++            command.args(["--extra-experimental-features", "nix-command", "copy"]);
++
++            if !options.check_sigs {
++                command.arg("--no-check-sigs");
++            }
+ 
+             if options.use_substitutes {
+                 command.args([
+diff --git a/src/nix/mod.rs b/src/nix/mod.rs
+index 7c8b9ed..06a18b5 100644
+--- a/src/nix/mod.rs
++++ b/src/nix/mod.rs
+@@ -42,12 +42,6 @@ pub mod evaluator;
+ pub mod expression;
+ pub use expression::{NixExpression, SerializedNixExpression};
+ 
+-/// Path to the main system profile.
+-pub const SYSTEM_PROFILE: &str = "/nix/var/nix/profiles/system";
+-
+-/// Path to the system profile that's currently active.
+-pub const CURRENT_PROFILE: &str = "/run/current-system";
+-
+ /// A node's attribute name.
+ #[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq)]
+ #[serde(transparent)]
+@@ -64,8 +58,11 @@ pub struct NodeConfig {
+     #[serde(rename = "targetPort")]
+     target_port: Option<u16>,
+ 
+-    #[serde(rename = "allowLocalDeployment")]
+-    allow_local_deployment: bool,
++    #[serde(rename = "profileWide")]
++    profile_wide: String,
++
++    #[serde(rename = "profileCurrent")]
++    profile_current: String,
+ 
+     #[serde(rename = "buildOnTarget")]
+     build_on_target: bool,
+@@ -164,9 +161,12 @@ impl NodeConfig {
+         &self.tags
+     }
+ 
+-    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+-    pub fn allows_local_deployment(&self) -> bool {
+-        self.allow_local_deployment
++    pub fn profile_wide(&self) -> &String {
++        &self.profile_wide
++    }
++
++    pub fn profile_current(&self) -> &String {
++        &self.profile_current
+     }
+ 
+     pub fn privilege_escalation_command(&self) -> &Vec<String> {
+@@ -182,7 +182,12 @@ impl NodeConfig {
+ 
+     pub fn to_ssh_host(&self) -> Option<Ssh> {
+         self.target_host.as_ref().map(|target_host| {
+-            let mut host = Ssh::new(self.target_user.clone(), target_host.clone());
++            let mut host = Ssh::new(
++                self.target_user.clone(),
++                target_host.clone(),
++                self.profile_wide().clone(),
++                self.profile_current().clone(),
++            );
+             host.set_privilege_escalation_command(self.privilege_escalation_command.clone());
+             host.set_extra_ssh_options(self.extra_ssh_options.clone());
+ 
+diff --git a/src/nix/node_filter.rs b/src/nix/node_filter.rs
+index af76196..c1e0c46 100644
+--- a/src/nix/node_filter.rs
++++ b/src/nix/node_filter.rs
+@@ -237,12 +237,13 @@ mod tests {
+     fn test_filter_node_configs() {
+         // TODO: Better way to mock
+         let template = NodeConfig {
+-            tags: vec![],
+             target_host: None,
+             target_user: None,
+             target_port: None,
+-            allow_local_deployment: false,
++            profile_wide: String::new(),
++            profile_current: String::new(),
+             build_on_target: false,
++            tags: vec![],
+             replace_unknown_profiles: false,
+             privilege_escalation_command: vec![],
+             extra_ssh_options: vec![],
+diff --git a/src/nix/profile.rs b/src/nix/profile.rs
+index b71c637..361c978 100644
+--- a/src/nix/profile.rs
++++ b/src/nix/profile.rs
+@@ -13,31 +13,32 @@ pub type ProfileDerivation = StoreDerivation<Profile>;
+ pub struct Profile(StorePath);
+ 
+ impl Profile {
+-    pub fn from_store_path(path: StorePath) -> ColmenaResult<Self> {
+-        if !path.is_dir() || !path.join("bin/switch-to-configuration").exists() {
+-            return Err(ColmenaError::InvalidProfile);
+-        }
+-
+-        if path.to_str().is_none() {
+-            Err(ColmenaError::InvalidProfile)
+-        } else {
+-            Ok(Self(path))
+-        }
+-    }
+-
+     /// Returns the command to activate this profile.
+     pub fn activation_command(&self, goal: Goal) -> Option<Vec<String>> {
+-        if let Some(goal) = goal.as_str() {
+-            let path = self.as_path().join("bin/switch-to-configuration");
+-            let switch_to_configuration = path
+-                .to_str()
+-                .expect("The string should be UTF-8 valid")
+-                .to_string();
+-
+-            Some(vec![switch_to_configuration, goal.to_string()])
+-        } else {
+-            None
++        let goal = match goal.as_str() {
++            Some(goal) => goal,
++            None => return None,
++        };
++
++        let switch = ["bin/switch-to-configuration", "activate"]
++            .into_iter()
++            .find_map(|str| match self.as_path().join(str) {
++                path if path.exists() => Some(path),
++                _ => None,
++            });
++        if let None = switch {
++            tracing::error!("No valid activate command found! Is the profile correct?");
++            tracing::error!("Profile path {:?}", self.as_path().to_str());
++            return None;
+         }
++
++        let switch_to_configuration = switch
++            .unwrap()
++            .to_str()
++            .expect("The string should be UTF-8 valid")
++            .to_string();
++
++        Some(vec![switch_to_configuration, goal.to_string()])
+     }
+ 
+     /// Returns the store path.
+diff --git a/src/util.rs b/src/util.rs
+index ffbfef5..eb4abe5 100644
+--- a/src/util.rs
++++ b/src/util.rs
+@@ -1,5 +1,3 @@
+-use std::convert::TryFrom;
+-
+ use std::process::Stdio;
+ 
+ use async_trait::async_trait;
+@@ -11,7 +9,6 @@ use tokio::process::Command;
+ use super::error::{ColmenaError, ColmenaResult};
+ use super::job::JobHandle;
+ use super::nix::deployment::TargetNodeMap;
+-use super::nix::StorePath;
+ 
+ const NEWLINE: u8 = 0xa;
+ 
+@@ -37,9 +34,6 @@ pub trait CommandExt {
+     async fn capture_json<T>(&mut self) -> ColmenaResult<T>
+     where
+         T: DeserializeOwned;
+-
+-    /// Runs the command, capturing a single store path.
+-    async fn capture_store_path(&mut self) -> ColmenaResult<StorePath>;
+ }
+ 
+ impl CommandExecution {
+@@ -149,13 +143,6 @@ impl CommandExt for Command {
+             output: output.clone(),
+         })
+     }
+-
+-    /// Captures a single store path.
+-    async fn capture_store_path(&mut self) -> ColmenaResult<StorePath> {
+-        let output = self.capture_output().await?;
+-        let path = output.trim_end().to_owned();
+-        StorePath::try_from(path)
+-    }
+ }
+ 
+ #[async_trait]
+@@ -182,13 +169,6 @@ impl CommandExt for CommandExecution {
+             output: output.clone(),
+         })
+     }
+-
+-    /// Captures a single store path.
+-    async fn capture_store_path(&mut self) -> ColmenaResult<StorePath> {
+-        let output = self.capture_output().await?;
+-        let path = output.trim_end().to_owned();
+-        StorePath::try_from(path)
+-    }
+ }
+ 
+ pub async fn capture_stream<R>(

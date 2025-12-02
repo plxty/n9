@@ -1,0 +1,111 @@
+{
+    "d2l": {
+        "branch": "master",
+        "description": "《动手学深度学习》：面向中文读者、能运行、可讨论。中英文版被70多个国家的500多所大学用于教学。",
+        "homepage": "http://zh.d2l.ai",
+        "owner": "d2l-ai",
+        "repo": "d2l-zh",
+        "rev": "e6b18ccea71451a55fcd861d7b96fddf2587b09a",
+        "sha256": "1w3sjil9g84lvjsg9sdnyg4bwl8saahxds48gwz57570mgmpv54k",
+        "type": "tarball",
+        "url": "https://github.com/d2l-ai/d2l-zh/archive/e6b18ccea71451a55fcd861d7b96fddf2587b09a.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "drgn": {
+        "sha256": "09bp6fwyni5ycllaava98zsf334sivk9q74yl5vspwkp5ajpjj5q",
+        "type": "tarball",
+        "url": "https://github.com/osandov/drgn/archive/refs/tags/v0.0.33.tar.gz",
+        "url_template": "https://github.com/osandov/drgn/archive/refs/tags/v<version>.tar.gz",
+        "version": "0.0.33"
+    },
+    "external-editor-revived": {
+        "sha256": "0hkc9hg58yy5kh4ix348whw0r99091686r5nnwycm56xdysv6jr9",
+        "type": "file",
+        "url": "https://github.com/Frederick888/external-editor-revived/releases/download/v1.2.0/macos-latest-universal-native-messaging-host-v1.2.0.zip",
+        "url_template": "https://github.com/Frederick888/external-editor-revived/releases/download/v<version>/macos-latest-universal-native-messaging-host-v<version>.zip",
+        "version": "1.2.0"
+    },
+    "geoip": {
+        "branch": "release",
+        "description": "🌚 🌍 🌝 GeoIP 规则文件加强版，支持自行定制 V2Ray dat 格式文件 geoip.dat、MaxMind mmdb 格式文件、sing-box SRS 格式文件、mihomo MRS 格式文件、Clash ruleset、Surge ruleset 等。Enhanced edition of GeoIP files for V2Ray, Xray-core, sing-box, Clash, mihomo, Shadowrocket, Quantumult X, Surge, hysteria, Trojan-Go, Leaf, Nginx, etc.",
+        "homepage": "",
+        "owner": "Loyalsoldier",
+        "repo": "geoip",
+        "rev": "5e083bcb7d10c33aaa49d0e6b4c039afc4a847b1",
+        "sha256": "1sm58488qcznjql2y60ixhhad7q0cqk4zdgjgd27mrnaangphn9d",
+        "type": "tarball",
+        "url": "https://github.com/Loyalsoldier/geoip/archive/5e083bcb7d10c33aaa49d0e6b4c039afc4a847b1.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "gitcache": {
+        "sha256": "0gz6l6a5bh73rkcmm972kzln5xsiyvmn4q9kg95z71s146w9qkx1",
+        "type": "tarball",
+        "url": "https://github.com/seeraven/gitcache/archive/refs/tags/v1.0.29.tar.gz",
+        "url_template": "https://github.com/seeraven/gitcache/archive/refs/tags/v<version>.tar.gz",
+        "version": "1.0.29"
+    },
+    "iterm2": {
+        "sha256": "1wxlj2fs55jscgn375pn0gs14pnhv511nrcshw3h857jvn4ksab8",
+        "type": "file",
+        "url": "https://iterm2.com/downloads/stable/iTerm2-3_6_6.zip",
+        "url_template": "https://iterm2.com/downloads/stable/iTerm2-<version>.zip",
+        "version": "3_6_6"
+    },
+    "libkdumpfile": {
+        "sha256": "1dm5917b5942j62z7n0hvbrk8nz53p4xf0n58x1adz3x4dpw14w1",
+        "type": "tarball",
+        "url": "https://codeberg.org/ptesarik/libkdumpfile/releases/download/v0.5.6/libkdumpfile-0.5.6.tar.gz",
+        "url_template": "https://codeberg.org/ptesarik/libkdumpfile/releases/download/v<version>/libkdumpfile-<version>.tar.gz",
+        "version": "0.5.6"
+    },
+    "mihomo": {
+        "sha256": "1h2ic9ahgz7cyscj39c44a9sqi1bjbcj7xph6a3vlbc6qvykiamm",
+        "type": "tarball",
+        "url": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v1.19.16.tar.gz",
+        "url_template": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v<version>.tar.gz",
+        "version": "1.19.16"
+    },
+    "rime-ice": {
+        "branch": "main",
+        "description": "Rime 配置：雾凇拼音 | 长期维护的简体词库",
+        "homepage": "https://dvel.me/posts/rime-ice/",
+        "owner": "iDvel",
+        "repo": "rime-ice",
+        "rev": "c5e8cca497dc44a4e4540cf2a95043aa0151a40e",
+        "sha256": "1jp85dyx7hkvfml060rldx0477kx77g6q6jdkr6jirm418ldnyz8",
+        "type": "tarball",
+        "url": "https://github.com/iDvel/rime-ice/archive/c5e8cca497dc44a4e4540cf2a95043aa0151a40e.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "tree-sitter-kconfig": {
+        "branch": "master",
+        "description": "Kconfig grammar for tree-sitter",
+        "homepage": "",
+        "owner": "tree-sitter-grammars",
+        "repo": "tree-sitter-kconfig",
+        "rev": "9ac99fe4c0c27a35dc6f757cef534c646e944881",
+        "sha256": "1yaslgn41ywm472m9mabzmqfq7dk3x18vaw8813jb0pvc8n5j1pj",
+        "type": "tarball",
+        "url": "https://github.com/tree-sitter-grammars/tree-sitter-kconfig/archive/9ac99fe4c0c27a35dc6f757cef534c646e944881.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "upto": {
+        "branch": "master",
+        "description": "Change to a parent directory by its name based in @driv's upto",
+        "homepage": "",
+        "owner": "Markcial",
+        "repo": "upto",
+        "rev": "2d1f35453fb55747d50da8c1cb1809840f99a646",
+        "sha256": "12rbffk1z61j4bhfxdjrksbky2x4jlak08s5j44dkxdizns9gz9f",
+        "type": "tarball",
+        "url": "https://github.com/Markcial/upto/archive/2d1f35453fb55747d50da8c1cb1809840f99a646.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "virtme-ng": {
+        "sha256": "0q9d78yqq0by3ln37ncgac9yhgnip3phyg08qinv2456fl165z63",
+        "type": "tarball",
+        "url": "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.38.tar.gz",
+        "url_template": "https://github.com/arighi/virtme-ng/archive/refs/tags/v<version>.tar.gz",
+        "version": "1.38"
+    }
+}

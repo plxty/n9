@@ -1,0 +1,9 @@
+[
+  ./shell/burn.nix
+  ./shell/squirrel.nix
+  ./shell/linux.nix
+  ./shell/bpf.nix
+  ./shell/d2l.nix
+  ./shell/nvidia-gpu.nix
+  ./shell/rdma.nix
+]

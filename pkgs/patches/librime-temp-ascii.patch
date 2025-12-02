@@ -1,0 +1,219 @@
+commit 16d2381e9ee0048841535cc267d0849d424ef666
+Author: Zigit Zo <byte@pen.guru>
+Date:   Tue Jun 24 21:47:30 2025 +0800
+
+    taste
+
+diff --git a/src/rime/gear/ascii_composer.cc b/src/rime/gear/ascii_composer.cc
+index a9e333b9..51c01312 100644
+--- a/src/rime/gear/ascii_composer.cc
++++ b/src/rime/gear/ascii_composer.cc
+@@ -12,6 +12,7 @@
+ #include <rime/key_event.h>
+ #include <rime/schema.h>
+ #include <rime/gear/ascii_composer.h>
++#include <algorithm>
+ 
+ namespace rime {
+ 
+@@ -55,6 +56,129 @@ AsciiComposer::~AsciiComposer() {
+   connection_.disconnect();
+ }
+ 
++/**
++ * Temporary ASCII Mode:
++ *
++ * 这个模式只是用来快速编辑英文而不需要频繁 shift 切换输入法的一种尝试。
++ * 它的设计目的在于保证以中文为主、英文为辅下输入的连贯性。因此，它并不适用于
++ * 需要输入大量英文的情况，那种情况下最好的方式就是使用 shift key。
++ *
++ * 在输入中文后可以直接通过按下空格键进入到临时 ASCII 模式，也可以通过大写字母的
++ * 方式进入。直到输入特殊字符（频率最高的应该就是空格了）后解除临时 ASCII 模式。
++ * 任意模式下，都可以使用 shift+space 的方式强制输入空格。
++ *
++ * TODO: 空格键作为触发的体验如何？如何重新利用 i 键呢？
++ * 感觉 i 可以作为自动填充的 prefix，比如填充云服务器的 sudo 等命令。
++ */
++
++static inline void TempAsciiOff(Context* ctx) {
++  ctx->set_option("temp_ascii", false);
++  // To send one more ascii_mode notification, make the frontend aware.
++  ctx->set_option("ascii_mode", ctx->get_option("ascii_mode"));
++  ctx->commit_history().clear();
++}
++
++// Will clear the commit_history to (try to) avoid inconsistence.
++// Maybe it's unneccessary.
++static inline void TempAsciiOn(Context* ctx) {
++  ctx->set_option("temp_ascii", true);
++  ctx->commit_history().clear();
++}
++
++// May process the half or full width transform?
++static inline bool MayProcessTransform(int ch, bool optional) {
++  // Tramsform while in normal and temp_ascii mode; TODO: XK_ macro?
++  // ... Or to leave the temp_ascii mode.
++  switch (ch) {
++    case ',':
++    case '^':  // true^false
++    case '\\':
++    case '"':
++    case '!':
++    case '?':
++    case ';':
++      return true;
++  }
++
++  // Transform while in normal mode, but not in temp_ascii:
++  if (optional) {
++    switch (ch) {
++      case '.':   // namespace.method, 1.2.3.
++      case '\'':  // it's
++      case '<':   // 1<3
++      case '>':   // pointer->member
++      case ':':   // namespace::nested
++      case '(':   // invoke()
++      case ')':   // revoke()
++      case '[':   // a[4]
++      case ']':   // b[2]
++      case '{':   // {"foh"}
++      case '}':   // {"bah"}
++        return true;
++    }
++  }
++
++  // Other keys may enter the temp_ascii mode, and won't be transformed:
++  return false;
++}
++
++// TODO: Library.
++static inline bool IsPrintable(int ch) {
++  return XK_space <= ch && ch <= XK_asciitilde;
++}
++
++static inline bool IsLower(int ch) {
++  return XK_a <= ch && ch <= XK_z;
++}
++
++ProcessResult TempAsciiProcess(Context* ctx, const KeyEvent& key_event) {
++  const int ch = key_event.keycode();  // actually the `keyval`
++  if (key_event.release() || ch == XK_BackSpace || ch == XK_Delete)
++    return kNoop;
++
++  // For shift+space, we directly commit it, regardless what mode is:
++  const bool composing = ctx->IsComposing();
++  if (!composing && ch == XK_space && key_event.shift())
++    return kNoop;
++
++  if (ctx->get_option("temp_ascii")) {
++    // For XK_Return, we may accidentally disabled the temp mode:
++    if (composing)
++      return kNoop;
++
++    if (ch == XK_space || !IsPrintable(ch) || MayProcessTransform(ch, false)) {
++      // Let other transformer do their's work:
++      TempAsciiOff(ctx);
++      return kNoop;
++    }
++
++    // @see ascii_mode
++    return kRejected;
++  }
++
++  // Here is !temp_ascii:
++  if (composing) {
++    // Return key trigger, here we must still composing:
++    if (ch == XK_Return) {
++      string latest = ctx->commit_history().latest_text();
++      if (all_of(latest.cbegin(), latest.cend(), IsPrintable))
++        TempAsciiOn(ctx);
++    }
++
++    return kNoop;
++  } else {
++    // Remember here is !temp_ascii, therefore we should consider less keys to
++    // turn this mode on, without damanging the type experience.
++    // That's why we need a `optional`, and it should be `true`.
++    if (IsLower(ch) || !IsPrintable(ch) || MayProcessTransform(ch, true))
++      return kNoop;
++
++    // Some other keys like uppercase, +-*/ and more trigger, including space:
++    TempAsciiOn(ctx);
++    return kRejected;
++  }
++}
++
+ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+   if ((key_event.shift() && key_event.ctrl()) || key_event.alt() ||
+       key_event.super()) {
+@@ -104,10 +228,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+   }
+   // other keys
+   shift_key_pressed_ = ctrl_key_pressed_ = false;
+-  // possible key binding: Control+x, Shift+space
+-  if (key_event.ctrl() || (key_event.shift() && ch == XK_space)) {
+-    return kNoop;
+-  }
+   Context* ctx = engine_->context();
+   bool ascii_mode = ctx->get_option("ascii_mode");
+   if (ascii_mode) {
+@@ -120,7 +240,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+       return kAccepted;
+     }
+   }
+-  return kNoop;
++  return TempAsciiProcess(ctx, key_event);
+ }
+ 
+ ProcessResult AsciiComposer::ProcessCapsLock(const KeyEvent& key_event) {
+@@ -205,8 +325,11 @@ bool AsciiComposer::ToggleAsciiModeWithKey(int key_code) {
+     return false;
+   AsciiModeSwitchStyle style = it->second;
+   Context* ctx = engine_->context();
+-  bool ascii_mode = !ctx->get_option("ascii_mode");
++  // Treat temp ascii the same as ascii:
++  bool ascii_mode =
++      !(ctx->get_option("ascii_mode") || ctx->get_option("temp_ascii"));
+   SwitchAsciiMode(ascii_mode, style);
++  TempAsciiOff(ctx);
+   toggle_with_caps_ = (key_code == XK_Caps_Lock);
+   return true;
+ }
+diff --git a/src/rime/gear/punctuator.cc b/src/rime/gear/punctuator.cc
+index 435babc0..5303bebc 100644
+--- a/src/rime/gear/punctuator.cc
++++ b/src/rime/gear/punctuator.cc
+@@ -128,6 +128,9 @@ ProcessResult Punctuator::ProcessKeyEvent(const KeyEvent& key_event) {
+           AutoCommitPunct(punct_definition) || PairPunct(punct_definition);
+     }
+   }
++
++  // Drop punctuator in words, to make temp_ascii works:
++  ctx->commit_history().clear();
+   return kAccepted;
+ }
+ 
+diff --git a/src/rime_api.h b/src/rime_api.h
+index 2fccde0f..91fd50a9 100644
+--- a/src/rime_api.h
++++ b/src/rime_api.h
+@@ -177,6 +177,7 @@ typedef struct RIME_FLAVORED(rime_status_t) {
+   Bool is_simplified;
+   Bool is_traditional;
+   Bool is_ascii_punct;
++  Bool is_temp_ascii;
+ } RIME_FLAVORED(RimeStatus);
+ 
+ typedef struct rime_candidate_list_iterator_t {
+diff --git a/src/rime_api_impl.h b/src/rime_api_impl.h
+index 6e906cfe..22fb027c 100644
+--- a/src/rime_api_impl.h
++++ b/src/rime_api_impl.h
+@@ -351,6 +351,7 @@ RIME_DEPRECATED Bool RimeGetStatus(RimeSessionId session_id,
+   status->is_simplified = Bool(ctx->get_option("simplification"));
+   status->is_traditional = Bool(ctx->get_option("traditional"));
+   status->is_ascii_punct = Bool(ctx->get_option("ascii_punct"));
++  status->is_temp_ascii = Bool(ctx->get_option("temp_ascii"));
+   return True;
+ }
+ 
