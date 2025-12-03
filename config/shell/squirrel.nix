@@ -6,7 +6,7 @@
 
 {
   n9.shell.squirrel =
-    { pkgs, ... }:
+    { pkgs, inputs, ... }:
     let
       sdk = rec {
         version = "15";
@@ -15,8 +15,8 @@
       };
 
       rapidjsonPatch = pkgs.fetchurl {
-        url = "https://github.com/wittrock/kythe/commit/9bb04240c4f9b8886d63bf7e745aef332be80d28.patch";
-        sha256 = "1r86c1rr5yxfzdqb5gkjpqyr32l3mip365bxf2iva38v89gyq3k0";
+        url = "https://github.com/Tencent/rapidjson/commit/3b2441b87f99ab65f37b141a7b548ebadb607b96.patch";
+        sha256 = "14sspnvd5rgndl0pkyrd473p66z61kpdgd9y2zwjwya1qlxgxcd8";
       };
     in
     {
@@ -49,10 +49,9 @@
         MACOSX_DEPLOYMENT_TARGET = "${sdk.version}";
       };
 
-      # make clean && make && make install
-      # you may need to re-login your account to make it work
-      environment.make.targets.clean = ''
-        sudo git clean -fdx -e .direnv -e .envrc
+      environment.make.targets.init = ''
+        git reset --hard
+        git clean -fdx -e .direnv -e .envrc
         git submodule update --init --recursive
         git submodule foreach --recursive git reset --hard
         git submodule foreach --recursive git clean -fdx
@@ -61,14 +60,26 @@
         bash install-plugins.sh hchunhui/librime-lua lotem/librime-octagram rime/librime-predict
         git submodule update --init --recursive
 
+        pushd deps/yaml-cpp
+        sed -i.old 's/3\.4/3.5/g' CMakeLists.txt
+        popd
+
         # https://github.com/wittrock/kythe/commit/9bb04240c4f9b8886d63bf7e745aef332be80d28
-        pushd deps/opencc
-        patch -p1 < "${rapidjsonPatch}"
+        pushd deps/opencc/deps/rapidjson-1.1.0
+        sed 's|include/||g' ${rapidjsonPatch} | patch -p1
         popd
 
         # what's my hack?
-        patch -p1 < "$HOME/.n9/pkgs/patches/librime-temp-ascii.patch"
+        patch -p1 < "${inputs.self}/pkgs/patches/librime-temp-ascii.patch"
         popd
+      '';
+
+      # make clean && make && make install
+      # you may need to re-login your account to make it work
+      environment.make.targets.clean = ''
+        git clean -fdx -e .direnv -e .envrc
+        git submodule update --init --recursive
+        git submodule foreach --recursive git clean -fdx
       '';
     };
 }
