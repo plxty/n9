@@ -25,6 +25,13 @@
         "url_template": "https://github.com/Frederick888/external-editor-revived/releases/download/v<version>/macos-latest-universal-native-messaging-host-v<version>.zip",
         "version": "1.2.0"
     },
+    "flashspace": {
+        "sha256": "1qppdqbvwkdfx7xq625di687wxrvyzqv78i57wd6k468415lrfih",
+        "type": "file",
+        "url": "https://github.com/wojciech-kulik/FlashSpace/releases/download/v4.12.65/FlashSpace.app.zip",
+        "url_template": "https://github.com/wojciech-kulik/FlashSpace/releases/download/v<version>/FlashSpace.app.zip",
+        "version": "4.12.65"
+    },
     "geoip": {
         "branch": "release",
         "description": "🌚 🌍 🌝 GeoIP 规则文件加强版，支持自行定制 V2Ray dat 格式文件 geoip.dat、MaxMind mmdb 格式文件、sing-box SRS 格式文件、mihomo MRS 格式文件、Clash ruleset、Surge ruleset 等。Enhanced edition of GeoIP files for V2Ray, Xray-core, sing-box, Clash, mihomo, Shadowrocket, Quantumult X, Surge, hysteria, Trojan-Go, Leaf, Nginx, etc.",

@@ -33,13 +33,23 @@ in
       sourceRoot = "iTerm.app"; # avoid /Applications/iTerm2.app/iTerm.app appears
     };
 
+  flashspace =
+    let
+      src = n9.sources.flashspace;
+    in
+    n9.assureVersion prev.flashspace src.version {
+      inherit src;
+      nativeBuildInputs = [ prev.unzip ];
+      unpackPhase = ''unzip $src'';
+      sourceRoot = "flashspace.app";
+    };
+
   # And mihomo...
   mihomo =
     let
       src = n9.sources.mihomo;
-      version = src.version;
     in
-    n9.assureVersion prev.mihomo version {
+    n9.assureVersion prev.mihomo src.version {
       inherit src;
       vendorHash = "sha256-WwbuNplMkH5wotpHasQbwK85Ymh6Ke4WL1LTLDWvRFk=";
     };
