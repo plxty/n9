@@ -1,8 +1,25 @@
-commit 9829ab780ee193b25a16a8cae85169a564399860
-Author: Zigit Zo <byte@pen.guru>
-Date:   Thu Jul 3 17:29:32 2025 +0800
+From 7da39185608a7683fafd62d93a7e32b8c59bdb9b Mon Sep 17 00:00:00 2001
+From: Zigit Zo <byte@kei.network>
+Date: Wed, 3 Dec 2025 16:13:55 +0800
+Subject: [PATCH] colmena: hack
 
-    feat(colmena): taste
+---
+ .envrc                        |  2 +-
+ src/cli.rs                    |  2 -
+ src/command/apply.rs          | 17 +++++++
+ src/command/apply_local.rs    | 54 +---------------------
+ src/command/mod.rs            |  1 -
+ src/nix/deployment/mod.rs     | 10 +++-
+ src/nix/deployment/options.rs | 10 ++++
+ src/nix/hive/mod.rs           |  2 +-
+ src/nix/host/local.rs         | 40 +++++++++-------
+ src/nix/host/mod.rs           | 34 ++++++--------
+ src/nix/host/ssh.rs           | 86 ++++++++++++++++++-----------------
+ src/nix/mod.rs                | 42 ++++++-----------
+ src/nix/node_filter.rs        |  7 ++-
+ src/nix/profile.rs            | 47 ++++++++++---------
+ src/util.rs                   | 20 --------
+ 15 files changed, 166 insertions(+), 208 deletions(-)
 
 diff --git a/.envrc b/.envrc
 index de3998d..234e89d 100644
@@ -77,7 +94,7 @@ index 0463367..640a810 100644
          options.set_force_replace_unknown_profiles(force_replace_unknown_profiles);
          options.set_evaluator(evaluator);
 diff --git a/src/command/apply_local.rs b/src/command/apply_local.rs
-index fedb0de..656e7c1 100644
+index fedb0de..12b9274 100644
 --- a/src/command/apply_local.rs
 +++ b/src/command/apply_local.rs
 @@ -1,8 +1,6 @@
@@ -151,7 +168,7 @@ index fedb0de..656e7c1 100644
      let hostname = NodeName::new(node.unwrap_or_else(|| {
          hostname::get()
              .expect("Could not get hostname")
-@@ -96,17 +57,13 @@ pub async fn run(
+@@ -96,20 +57,7 @@ pub async fn run(
      let target = {
          if let Some(info) = hive.deployment_info_single(&hostname).await.unwrap() {
              let nix_options = hive.nix_flags_with_builders().await.unwrap();
@@ -166,16 +183,13 @@ index fedb0de..656e7c1 100644
 -            let mut host = LocalHost::new(nix_options);
 -            if sudo {
 -                let command = info.privilege_escalation_command().to_owned();
-+            let mut host = LocalHost::new(
-+                nix_options,
-+                info.profile_wide().clone(),
-+                info.profile_current().clone(),
-+            );
-+            let command = info.privilege_escalation_command().to_owned();
-+            if command.len() != 0 {
-                 host.set_privilege_escalation_command(Some(command));
-             }
- 
+-                host.set_privilege_escalation_command(Some(command));
+-            }
+-
++            let host = LocalHost::new(nix_options, info.clone());
+             TargetNode::new(hostname.clone(), Some(host.upcast()), info.clone())
+         } else {
+             tracing::error!(
 diff --git a/src/command/mod.rs b/src/command/mod.rs
 index cc6c8cb..07f9b9d 100644
 --- a/src/command/mod.rs
@@ -189,27 +203,24 @@ index cc6c8cb..07f9b9d 100644
  
  #[cfg(debug_assertions)]
 diff --git a/src/nix/deployment/mod.rs b/src/nix/deployment/mod.rs
-index bda3f77..f99aee8 100644
+index 131b9d2..44b4a8b 100644
 --- a/src/nix/deployment/mod.rs
 +++ b/src/nix/deployment/mod.rs
-@@ -502,10 +502,15 @@ impl Deployment {
+@@ -502,10 +502,12 @@ impl Deployment {
          // Build system profile
          let build_job = parent.create_job(JobType::Build, nodes.clone())?;
          let arc_self = self.clone();
 +
-+        let profile_wide = target.config.profile_wide().clone();
-+        let profile_current = target.config.profile_current().clone();
++        let config = target.config.clone();
          let profile: Profile = build_job
              .run(|job| async move {
                  // FIXME: Remote builder?
 -                let mut builder = LocalHost::new(arc_self.nix_options.clone()).upcast();
-+                let mut builder =
-+                    LocalHost::new(arc_self.nix_options.clone(), profile_wide, profile_current)
-+                        .upcast();
++                let mut builder = LocalHost::new(arc_self.nix_options.clone(), config).upcast();
                  builder.set_job(Some(job.clone()));
  
                  let profile = profile_drv.realize(&mut builder).await?;
-@@ -552,6 +557,12 @@ impl Deployment {
+@@ -552,6 +554,12 @@ impl Deployment {
  
                  let host = target.host.as_mut().unwrap();
                  host.set_job(Some(job.clone()));
@@ -264,8 +275,21 @@ index 936de4d..12e1e63 100644
              reboot: false,
              create_gc_roots: false,
              force_build_on_target: None,
+diff --git a/src/nix/hive/mod.rs b/src/nix/hive/mod.rs
+index 0fe40ea..9528027 100644
+--- a/src/nix/hive/mod.rs
++++ b/src/nix/hive/mod.rs
+@@ -486,7 +486,7 @@ impl Hive {
+         matches!(self.path(), HivePath::Flake(_))
+     }
+ 
+-    fn nix_instantiate(&self, expression: &str) -> NixInstantiate {
++    fn nix_instantiate(&'_ self, expression: &str) -> NixInstantiate<'_> {
+         NixInstantiate::new(self, expression.to_owned())
+     }
+ 
 diff --git a/src/nix/host/local.rs b/src/nix/host/local.rs
-index 6ed0af2..a9c4627 100644
+index 6ed0af2..d7e080a 100644
 --- a/src/nix/host/local.rs
 +++ b/src/nix/host/local.rs
 @@ -8,7 +8,7 @@ use tokio::process::Command;
@@ -273,31 +297,30 @@ index 6ed0af2..a9c4627 100644
  use crate::error::{ColmenaError, ColmenaResult};
  use crate::job::JobHandle;
 -use crate::nix::{Goal, Key, NixFlags, Profile, StorePath, CURRENT_PROFILE, SYSTEM_PROFILE};
-+use crate::nix::{Goal, Key, NixFlags, Profile, StorePath};
++use crate::nix::{Goal, Key, NixFlags, NodeConfig, Profile, StorePath};
  use crate::util::{CommandExecution, CommandExt};
  
  /// The local machine running Colmena.
-@@ -19,14 +19,18 @@ use crate::util::{CommandExecution, CommandExt};
+@@ -19,15 +19,15 @@ use crate::util::{CommandExecution, CommandExt};
  pub struct Local {
      job: Option<JobHandle>,
      nix_options: NixFlags,
-+    profile_wide: String,
-+    profile_current: String,
-     privilege_escalation_command: Option<Vec<String>>,
+-    privilege_escalation_command: Option<Vec<String>>,
++    config: NodeConfig,
  }
  
  impl Local {
 -    pub fn new(nix_options: NixFlags) -> Self {
-+    pub fn new(nix_options: NixFlags, profile_wide: String, profile_current: String) -> Self {
++    pub fn new(nix_options: NixFlags, config: NodeConfig) -> Self {
          Self {
              job: None,
              nix_options,
-+            profile_wide,
-+            profile_current,
-             privilege_escalation_command: None,
+-            privilege_escalation_command: None,
++            config,
          }
      }
-@@ -85,9 +89,15 @@ impl Host for Local {
+ }
+@@ -85,13 +85,19 @@ impl Host for Local {
  
          if goal.should_switch_profile() {
              let path = profile.as_path().to_str().unwrap();
@@ -307,7 +330,7 @@ index 6ed0af2..a9c4627 100644
 +            self.make_privileged_command(&[
 +                "nix-env",
 +                "--profile",
-+                self.profile_wide.as_str(),
++                self.config.profile_wide.as_str(),
 +                "--set",
 +                path,
 +            ])
@@ -316,25 +339,57 @@ index 6ed0af2..a9c4627 100644
          }
  
          let command = {
-@@ -104,7 +114,7 @@ impl Host for Local {
+-            let activation_command = profile.activation_command(goal).unwrap();
++            let activation_command = profile.activation_command(&self.config, goal).unwrap();
+             self.make_privileged_command(&activation_command)
+         };
+ 
+@@ -104,7 +110,7 @@ impl Host for Local {
  
      async fn get_current_system_profile(&mut self) -> ColmenaResult<Profile> {
          let paths = Command::new("readlink")
 -            .args(["-e", CURRENT_PROFILE])
-+            .args(["-e", self.profile_current.as_str()])
++            .args(["-e", self.config.profile_current.as_str()])
              .capture_output()
              .await?;
  
-@@ -124,7 +134,8 @@ impl Host for Local {
+@@ -124,7 +130,8 @@ impl Host for Local {
                  "-c",
                  &format!(
                      "readlink -e {} || readlink -e {}",
 -                    SYSTEM_PROFILE, CURRENT_PROFILE
-+                    self.profile_wide.as_str(),
-+                    self.profile_current.as_str()
++                    self.config.profile_wide.as_str(),
++                    self.config.profile_current.as_str()
                  ),
              ])
              .capture_output()
+@@ -146,10 +153,6 @@ impl Host for Local {
+ }
+ 
+ impl Local {
+-    pub fn set_privilege_escalation_command(&mut self, command: Option<Vec<String>>) {
+-        self.privilege_escalation_command = command;
+-    }
+-
+     pub fn upcast(self) -> Box<dyn Host> {
+         Box::new(self)
+     }
+@@ -183,8 +186,13 @@ impl Local {
+     /// Constructs a command with privilege escalation.
+     fn make_privileged_command<S: AsRef<str>>(&self, command: &[S]) -> Command {
+         let mut full_command = Vec::new();
+-        if let Some(esc) = &self.privilege_escalation_command {
+-            full_command.extend(esc.iter().map(|s| s.as_str()));
++        if !self.config.privilege_escalation_command.is_empty() {
++            full_command.extend(
++                self.config
++                    .privilege_escalation_command
++                    .iter()
++                    .map(|s| s.as_str()),
++            );
+         }
+         full_command.extend(command.iter().map(|s| s.as_ref()));
+ 
 diff --git a/src/nix/host/mod.rs b/src/nix/host/mod.rs
 index 8ff44ad..3a966f4 100644
 --- a/src/nix/host/mod.rs
@@ -409,32 +464,41 @@ index 8ff44ad..3a966f4 100644
      ///
      /// If `require_ownership` is false, then the ownership of a key
 diff --git a/src/nix/host/ssh.rs b/src/nix/host/ssh.rs
-index 64ebb68..35cf7e4 100644
+index 64ebb68..c1d6edd 100644
 --- a/src/nix/host/ssh.rs
 +++ b/src/nix/host/ssh.rs
-@@ -12,7 +12,7 @@ use tokio::time::sleep;
+@@ -12,27 +12,18 @@ use tokio::time::sleep;
  use super::{key_uploader, CopyDirection, CopyOptions, Host, RebootOptions};
  use crate::error::{ColmenaError, ColmenaResult};
  use crate::job::JobHandle;
 -use crate::nix::{Goal, Key, Profile, StorePath, CURRENT_PROFILE, SYSTEM_PROFILE};
-+use crate::nix::{Goal, Key, Profile, StorePath};
++use crate::nix::{Goal, Key, NodeConfig, Profile, StorePath};
  use crate::util::{CommandExecution, CommandExt};
  
  /// A remote machine connected over SSH.
-@@ -30,6 +30,12 @@ pub struct Ssh {
+ #[derive(Debug)]
+ pub struct Ssh {
+-    /// The username to use to connect.
+-    user: Option<String>,
+-
+-    /// The hostname or IP address to connect to.
+-    host: String,
+-
+-    /// The port to connect to.
+-    port: Option<u16>,
++    /// Node config, just clone it, no much overheads
++    config: NodeConfig,
+ 
      /// Local path to a ssh_config file.
      ssh_config: Option<PathBuf>,
  
-+    /// Replacing SYSTEM_PROFILE:
-+    profile_wide: String,
-+
-+    /// Replacing CURRENT_PROFILE:
-+    profile_current: String,
-+
-     /// Command to elevate privileges with.
-     privilege_escalation_command: Vec<String>,
+-    /// Command to elevate privileges with.
+-    privilege_escalation_command: Vec<String>,
+-
+     /// extra SSH options
+     extra_ssh_options: Vec<String>,
  
-@@ -48,6 +54,23 @@ struct BootId(String);
+@@ -48,6 +39,23 @@ struct BootId(String);
  
  #[async_trait]
  impl Host for Ssh {
@@ -458,7 +522,7 @@ index 64ebb68..35cf7e4 100644
      async fn copy_closure(
          &mut self,
          closure: &StorePath,
-@@ -97,7 +120,13 @@ impl Host for Ssh {
+@@ -97,11 +105,17 @@ impl Host for Ssh {
  
          if goal.should_switch_profile() {
              let path = profile.as_path().to_str().unwrap();
@@ -466,54 +530,97 @@ index 64ebb68..35cf7e4 100644
 +            let set_profile = self.ssh(&[
 +                "nix-env",
 +                "--profile",
-+                self.profile_wide.as_str(),
++                self.config.profile_wide.as_str(),
 +                "--set",
 +                path,
 +            ]);
              self.run_command(set_profile).await?;
          }
  
-@@ -109,7 +138,7 @@ impl Host for Ssh {
+-        let activation_command = profile.activation_command(goal).unwrap();
++        let activation_command = profile.activation_command(&self.config, goal).unwrap();
+         let v: Vec<&str> = activation_command.iter().map(|s| &**s).collect();
+         let command = self.ssh(&v);
+         self.run_command(command).await
+@@ -109,7 +123,7 @@ impl Host for Ssh {
  
      async fn get_current_system_profile(&mut self) -> ColmenaResult<Profile> {
          let paths = self
 -            .ssh(&["readlink", "-e", CURRENT_PROFILE])
-+            .ssh(&["readlink", "-e", self.profile_current.as_str()])
++            .ssh(&["readlink", "-e", self.config.profile_current.as_str()])
              .capture_output()
              .await?;
  
-@@ -126,7 +155,8 @@ impl Host for Ssh {
+@@ -126,7 +140,8 @@ impl Host for Ssh {
      async fn get_main_system_profile(&mut self) -> ColmenaResult<Profile> {
          let command = format!(
              "\"readlink -e {} || readlink -e {}\"",
 -            SYSTEM_PROFILE, CURRENT_PROFILE
-+            self.profile_wide.as_str(),
-+            self.profile_current.as_str()
++            self.config.profile_wide.as_str(),
++            self.config.profile_current.as_str()
          );
  
          let paths = self.ssh(&["sh", "-c", &command]).capture_output().await?;
-@@ -185,12 +215,19 @@ impl Host for Ssh {
+@@ -185,31 +200,20 @@ impl Host for Ssh {
  }
  
  impl Ssh {
 -    pub fn new(user: Option<String>, host: String) -> Self {
-+    pub fn new(
-+        user: Option<String>,
-+        host: String,
-+        profile_wide: String,
-+        profile_current: String,
-+    ) -> Self {
++    pub fn new(config: NodeConfig) -> Self {
          Self {
-             user,
-             host,
-             port: None,
+-            user,
+-            host,
+-            port: None,
++            config,
              ssh_config: None,
-+            profile_wide,
-+            profile_current,
-             privilege_escalation_command: Vec::new(),
+-            privilege_escalation_command: Vec::new(),
              extra_ssh_options: Vec::new(),
              use_nix3_copy: false,
-@@ -271,12 +308,11 @@ impl Ssh {
+             job: None,
+         }
+     }
+ 
+-    pub fn set_port(&mut self, port: u16) {
+-        self.port = Some(port);
+-    }
+-
+     pub fn set_ssh_config(&mut self, ssh_config: PathBuf) {
+         self.ssh_config = Some(ssh_config);
+     }
+ 
+-    pub fn set_privilege_escalation_command(&mut self, command: Vec<String>) {
+-        self.privilege_escalation_command = command;
+-    }
+-
+     pub fn set_extra_ssh_options(&mut self, options: Vec<String>) {
+         self.extra_ssh_options = options;
+     }
+@@ -226,8 +230,8 @@ impl Ssh {
+     pub fn ssh(&self, command: &[&str]) -> Command {
+         let options = self.ssh_options();
+         let options_str = options.join(" ");
+-        let privilege_escalation_command = if self.user.as_deref() != Some("root") {
+-            self.privilege_escalation_command.as_slice()
++        let privilege_escalation_command = if self.config.target_user.as_deref() != Some("root") {
++            self.config.privilege_escalation_command.as_slice()
+         } else {
+             &[]
+         };
+@@ -252,9 +256,10 @@ impl Ssh {
+     }
+ 
+     fn ssh_target(&self) -> String {
+-        match &self.user {
+-            Some(n) => format!("{}@{}", n, self.host),
+-            None => self.host.clone(),
++        let host = self.config.target_host.as_ref().unwrap();
++        match &self.config.target_user {
++            Some(n) => format!("{}@{}", n, host),
++            None => host.clone(),
+         }
+     }
+ 
+@@ -271,12 +276,11 @@ impl Ssh {
              // experimental `nix copy` command with ssh-ng://
              let mut command = Command::new("nix");
  
@@ -531,8 +638,17 @@ index 64ebb68..35cf7e4 100644
  
              if options.use_substitutes {
                  command.args([
+@@ -357,7 +361,7 @@ impl Ssh {
+         .chain(self.extra_ssh_options.clone())
+         .collect();
+ 
+-        if let Some(port) = self.port {
++        if let Some(port) = self.config.target_port {
+             options.push("-p".to_string());
+             options.push(port.to_string());
+         }
 diff --git a/src/nix/mod.rs b/src/nix/mod.rs
-index 7c8b9ed..06a18b5 100644
+index 7c8b9ed..61e85c0 100644
 --- a/src/nix/mod.rs
 +++ b/src/nix/mod.rs
 @@ -42,12 +42,6 @@ pub mod evaluator;
@@ -548,7 +664,7 @@ index 7c8b9ed..06a18b5 100644
  /// A node's attribute name.
  #[derive(Serialize, Deserialize, Clone, Debug, Hash, Eq, PartialEq)]
  #[serde(transparent)]
-@@ -64,8 +58,11 @@ pub struct NodeConfig {
+@@ -64,8 +58,17 @@ pub struct NodeConfig {
      #[serde(rename = "targetPort")]
      target_port: Option<u16>,
  
@@ -559,44 +675,57 @@ index 7c8b9ed..06a18b5 100644
 +
 +    #[serde(rename = "profileCurrent")]
 +    profile_current: String,
++
++    #[serde(rename = "activateScript")]
++    activate_script: String,
++
++    #[serde(rename = "switchGoal")]
++    switch_goal: Option<Vec<String>>,
  
      #[serde(rename = "buildOnTarget")]
      build_on_target: bool,
-@@ -164,9 +161,12 @@ impl NodeConfig {
+@@ -164,15 +167,6 @@ impl NodeConfig {
          &self.tags
      }
  
 -    #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 -    pub fn allows_local_deployment(&self) -> bool {
 -        self.allow_local_deployment
-+    pub fn profile_wide(&self) -> &String {
-+        &self.profile_wide
-+    }
-+
-+    pub fn profile_current(&self) -> &String {
-+        &self.profile_current
+-    }
+-
+-    pub fn privilege_escalation_command(&self) -> &Vec<String> {
+-        &self.privilege_escalation_command
+-    }
+-
+     pub fn build_on_target(&self) -> bool {
+         self.build_on_target
+     }
+@@ -181,17 +175,9 @@ impl NodeConfig {
      }
  
-     pub fn privilege_escalation_command(&self) -> &Vec<String> {
-@@ -182,7 +182,12 @@ impl NodeConfig {
- 
      pub fn to_ssh_host(&self) -> Option<Ssh> {
-         self.target_host.as_ref().map(|target_host| {
+-        self.target_host.as_ref().map(|target_host| {
 -            let mut host = Ssh::new(self.target_user.clone(), target_host.clone());
-+            let mut host = Ssh::new(
-+                self.target_user.clone(),
-+                target_host.clone(),
-+                self.profile_wide().clone(),
-+                self.profile_current().clone(),
-+            );
-             host.set_privilege_escalation_command(self.privilege_escalation_command.clone());
-             host.set_extra_ssh_options(self.extra_ssh_options.clone());
+-            host.set_privilege_escalation_command(self.privilege_escalation_command.clone());
+-            host.set_extra_ssh_options(self.extra_ssh_options.clone());
+-
+-            if let Some(target_port) = self.target_port {
+-                host.set_port(target_port);
+-            }
+-
+-            host
+-        })
++        let mut host = Ssh::new(self.clone());
++        host.set_extra_ssh_options(self.extra_ssh_options.clone());
++        Some(host)
+     }
+ }
  
 diff --git a/src/nix/node_filter.rs b/src/nix/node_filter.rs
-index af76196..c1e0c46 100644
+index af76196..dbe6b9f 100644
 --- a/src/nix/node_filter.rs
 +++ b/src/nix/node_filter.rs
-@@ -237,12 +237,13 @@ mod tests {
+@@ -237,12 +237,15 @@ mod tests {
      fn test_filter_node_configs() {
          // TODO: Better way to mock
          let template = NodeConfig {
@@ -607,33 +736,68 @@ index af76196..c1e0c46 100644
 -            allow_local_deployment: false,
 +            profile_wide: String::new(),
 +            profile_current: String::new(),
++            activate_script: String::new(),
++            switch_goal: None,
              build_on_target: false,
 +            tags: vec![],
              replace_unknown_profiles: false,
              privilege_escalation_command: vec![],
              extra_ssh_options: vec![],
 diff --git a/src/nix/profile.rs b/src/nix/profile.rs
-index b71c637..361c978 100644
+index b71c637..92ece43 100644
 --- a/src/nix/profile.rs
 +++ b/src/nix/profile.rs
-@@ -13,31 +13,32 @@ pub type ProfileDerivation = StoreDerivation<Profile>;
+@@ -4,7 +4,9 @@ use std::process::Stdio;
+ 
+ use tokio::process::Command;
+ 
+-use super::{BuildResult, ColmenaError, ColmenaResult, Goal, StoreDerivation, StorePath};
++use super::{
++    BuildResult, ColmenaError, ColmenaResult, Goal, NodeConfig, StoreDerivation, StorePath,
++};
+ 
+ pub type ProfileDerivation = StoreDerivation<Profile>;
+ 
+@@ -13,31 +15,34 @@ pub type ProfileDerivation = StoreDerivation<Profile>;
  pub struct Profile(StorePath);
  
  impl Profile {
 -    pub fn from_store_path(path: StorePath) -> ColmenaResult<Self> {
 -        if !path.is_dir() || !path.join("bin/switch-to-configuration").exists() {
 -            return Err(ColmenaError::InvalidProfile);
--        }
--
++    /// Returns the command to activate this profile.
++    pub fn activation_command(&self, config: &NodeConfig, goal: Goal) -> Option<Vec<String>> {
++        if config.switch_goal.is_some() && !goal.should_switch_profile() {
++            tracing::error!("Profile's switchGoal defined non-null, {:?} != switch", goal);
++            return None;
+         }
+ 
 -        if path.to_str().is_none() {
 -            Err(ColmenaError::InvalidProfile)
--        } else {
++        let goal = match goal.as_str() {
++            Some(goal) => goal,
++            None => return None,
++        };
++
++        let activate = match self.as_path().join(config.activate_script.as_str()) {
++            path if path.exists() => path,
++            _ => {
++                tracing::error!("Activate script {} does not exist", config.activate_script);
++                return None;
++            }
++        };
++
++        let mut activate = vec![activate.to_str().unwrap().to_string()];
++        if config.switch_goal.is_some() {
++            activate.append(&mut config.switch_goal.as_ref().unwrap().clone());
+         } else {
 -            Ok(Self(path))
--        }
++            activate.push(goal.to_string());
+         }
 -    }
--
-     /// Returns the command to activate this profile.
-     pub fn activation_command(&self, goal: Goal) -> Option<Vec<String>> {
+ 
+-    /// Returns the command to activate this profile.
+-    pub fn activation_command(&self, goal: Goal) -> Option<Vec<String>> {
 -        if let Some(goal) = goal.as_str() {
 -            let path = self.as_path().join("bin/switch-to-configuration");
 -            let switch_to_configuration = path
@@ -644,30 +808,8 @@ index b71c637..361c978 100644
 -            Some(vec![switch_to_configuration, goal.to_string()])
 -        } else {
 -            None
-+        let goal = match goal.as_str() {
-+            Some(goal) => goal,
-+            None => return None,
-+        };
-+
-+        let switch = ["bin/switch-to-configuration", "activate"]
-+            .into_iter()
-+            .find_map(|str| match self.as_path().join(str) {
-+                path if path.exists() => Some(path),
-+                _ => None,
-+            });
-+        if let None = switch {
-+            tracing::error!("No valid activate command found! Is the profile correct?");
-+            tracing::error!("Profile path {:?}", self.as_path().to_str());
-+            return None;
-         }
-+
-+        let switch_to_configuration = switch
-+            .unwrap()
-+            .to_str()
-+            .expect("The string should be UTF-8 valid")
-+            .to_string();
-+
-+        Some(vec![switch_to_configuration, goal.to_string()])
+-        }
++        Some(activate)
      }
  
      /// Returns the store path.
@@ -727,3 +869,6 @@ index ffbfef5..eb4abe5 100644
  }
  
  pub async fn capture_stream<R>(
+-- 
+2.50.1
+
