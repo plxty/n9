@@ -9,8 +9,14 @@
 let
   cfg = config.environment.packages;
 
-  # Keep most of my CLI stuff here, as default packages (system-wide):
-  systemPackages =
+  # System-wide stuff, not using much, as the home-manager one provides with
+  # better fish-completion support.
+  systemPackages = with pkgs; [
+    python3
+  ];
+
+  # Keep most of my CLI stuff here, as default packages (per-user):
+  userPackages =
     with pkgs;
     [
       # basic
@@ -53,7 +59,7 @@ let
       socat
       lrzsz
       # python3 # conflict with jupyter
-      jupyter # https://github.com/NixOS/nixpkgs/issues/255923
+      # jupyter # https://github.com/NixOS/nixpkgs/issues/255923
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       # basic
@@ -67,7 +73,7 @@ let
       sysstat
       lm_sensors
       bpftrace
-      config.variant.nixos.boot.kernelPackages.perf
+      perf
     ];
 
   # TODO: Fill it?
@@ -90,15 +96,21 @@ in
         default = [ ];
       };
 
+      # Defaults:
+      config.environment.packages = userPackages;
+
+      # To home-manager:
       config.variant.home-manager.home.packages = cfg;
     }
   );
 
+  # Defaults:
   config.environment.packages = lib.mkMerge [
     (lib.mkIf (!config.variant.is.shell) systemPackages)
     (lib.mkIf config.variant.is.shell shellPackages)
   ];
 
+  # To system/shell:
   config.variant = rec {
     nixos.environment.systemPackages = cfg;
     nix-darwin = nixos;

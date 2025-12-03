@@ -12,7 +12,7 @@ stdenv.mkDerivation {
 
 NixOS (partial-non-secrets) configurations of mine. Break it!
 
-_WARNING: Plenty of harmful codes, be aware..._
+_WARNING: Plenty of harmful codes, for reference only..._
 
 # ()ctothorp
 
