@@ -1,18 +1,18 @@
-From 325be0de46c0cbee6015f9271c9d0cceb84eb84c Mon Sep 17 00:00:00 2001
+From 2f60315c9b294ca28462b6c2d8678a7a68c1cb27 Mon Sep 17 00:00:00 2001
 From: Zigit Zo <byte@kei.network>
-Date: Wed, 3 Dec 2025 21:27:52 +0800
+Date: Thu, 4 Dec 2025 17:10:01 +0800
 Subject: [PATCH] librime: temp_ascii
 
 ---
- src/rime/gear/ascii_composer.cc | 133 ++++++++++++++++++++++++++++++--
+ src/rime/gear/ascii_composer.cc | 154 ++++++++++++++++++++++++++++++--
  src/rime/gear/punctuator.cc     |   3 +
- 2 files changed, 129 insertions(+), 7 deletions(-)
+ 2 files changed, 149 insertions(+), 8 deletions(-)
 
 diff --git a/src/rime/gear/ascii_composer.cc b/src/rime/gear/ascii_composer.cc
-index a9e333b9..2be45cbb 100644
+index a9e333b9..f6e0f3f8 100644
 --- a/src/rime/gear/ascii_composer.cc
 +++ b/src/rime/gear/ascii_composer.cc
-@@ -55,7 +55,126 @@ AsciiComposer::~AsciiComposer() {
+@@ -55,11 +55,149 @@ AsciiComposer::~AsciiComposer() {
    connection_.disconnect();
  }
  
@@ -27,10 +27,12 @@ index a9e333b9..2be45cbb 100644
 + * 方式进入。直到输入特殊字符（频率最高的应该就是空格了）后解除临时 ASCII 模式。
 + */
 +
-+static inline ProcessResult TempAsciiOff(Context* ctx, bool swtch) {
-+  ctx->set_option("temp_ascii", false);
++static ProcessResult TempAsciiOff(Context* ctx, bool swtch) {
 +  if (!swtch)
 +    ctx->set_option("swtch_temp_ascii", true);
++  if (!ctx->get_option("temp_ascii"))
++    return kNoop;
++  ctx->set_option("temp_ascii", false);
 +  // To send one more ascii_mode notification, make the frontend aware.
 +  ctx->set_option("ascii_mode", ctx->get_option("ascii_mode"));
 +  ctx->commit_history().clear();
@@ -39,25 +41,42 @@ index a9e333b9..2be45cbb 100644
 +
 +// Will clear the commit_history to (try to) avoid inconsistence.
 +// Maybe it's unneccessary.
-+static inline ProcessResult TempAsciiOn(Context* ctx, bool swtch) {
-+  ctx->set_option("temp_ascii", true);
++static ProcessResult TempAsciiOn(Context* ctx, bool swtch) {
 +  if (!swtch)
 +    ctx->set_option("swtch_temp_ascii", true);
++  if (ctx->get_option("temp_ascii"))
++    return kRejected;
++  ctx->set_option("temp_ascii", true);
 +  ctx->commit_history().clear();
 +  return kRejected;
 +}
 +
-+// May process the half or full width transform?
-+static inline bool MayProcessTransform(int ch, bool optional) {
-+  // Not printable things, let other handles it:
-+  if (!(XK_space <= ch && ch <= XK_asciitilde))
-+    return true;
++// Transform means ascii to half or full width symbol in cn, like . to 。.
++// We treat 'a' to 'z' as a transformable character, because in cn, they're
++// "transformed" into real chinese words, huh.
++static bool CanTransform(int ch, bool optional) {
++  if (optional) {
++    switch (ch) {
++      case XK_a ... XK_z:  // regular keys
++      case '.':            // namespace.method, 1.2.3.
++      case '\'':           // it's
++      case '"':            // "string"
++      case '<':            // 1<3
++      case '>':            // pointer->member
++      case ':':            // namespace::nested
++      case '(':            // invoke()
++      case ')':            // revoke()
++      case '[':            // a[4]
++      case ']':            // b[2]
++      case '{':            // {"foh"}
++      case '}':            // {"bah"}
++        return true;
++    }
++  }
 +
-+  // Transform while in normal and temp_ascii mode; TODO: XK_ macro?
-+  // ... Or to leave the temp_ascii mode.
 +  switch (ch) {
 +    case ',':
-+    case '^':  // true^false
++    case '^':  // true^false?
 +    case '\\':
 +    case '!':
 +    case '?':
@@ -65,68 +84,67 @@ index a9e333b9..2be45cbb 100644
 +      return true;
 +  }
 +
-+  // Transform while in normal mode, but not in temp_ascii:
-+  // ... Or to stay in the temp_ascii mode.
-+  if (optional) {
-+    switch (ch) {
-+      case '.':   // namespace.method, 1.2.3.
-+      case '\'':  // it's
-+      case '"':   // "string"
-+      case '<':   // 1<3
-+      case '>':   // pointer->member
-+      case ':':   // namespace::nested
-+      case '(':   // invoke()
-+      case ')':   // revoke()
-+      case '[':   // a[4]
-+      case ']':   // b[2]
-+      case '{':   // {"foh"}
-+      case '}':   // {"bah"}
-+        return true;
-+    }
-+  }
-+
-+  // Other keys may enter the temp_ascii mode, and won't be transformed:
 +  return false;
 +}
 +
-+ProcessResult TempAsciiProcess(Context* ctx, KeyEvent key_event, bool swtch) {
++// Here we MUST be !ascii_mode, it isn't in the consideration.
++static inline ProcessResult TempAsciiProcess(Context* ctx,
++                                             KeyEvent key_event,
++                                             bool swtch) {
++  if (key_event.release())
++    return kNoop;
++
 +  const int ch = key_event.keycode();  // actually the `keyval`
-+  if (key_event.release() || ch == XK_Delete || ctx->IsComposing())
++  if (ch == XK_Return) {
++    // return in cn: to temp_ascii if composing
++    if (ctx->IsComposing())
++      TempAsciiOn(ctx, swtch);
++    // return in temp_ascii: to cn
++    else
++      TempAsciiOff(ctx, swtch);
++    return kNoop;  // MUST noop to make the composer commit
++  }
++
++  // all other keys now handled only !composing (not selecting candidates)
++  if (ctx->IsComposing())
 +    return kNoop;
 +
-+  // Force ascii_mode with shift+space:
-+  if (key_event.shift() && ch == XK_space) {
-+    ctx->set_option("ascii_mode", true);
-+    return TempAsciiOff(ctx, true);  // @see ToggleAsciiModeWithKey
-+  }
-+
-+  if (ctx->get_option("temp_ascii")) {
-+    // May entered (swtch) temp_ascii accidently, restore it:
-+    if (ch == XK_BackSpace) {
-+      if (swtch)
-+        return TempAsciiOff(ctx, swtch);
-+      return kNoop;
-+    }
-+
-+    if (ch == XK_space || MayProcessTransform(ch, false))
-+      return TempAsciiOff(ctx, swtch);
-+    return kRejected;
-+  }
-+
-+  // May exit (swtch) temp_ascii accidently, restore it:
-+  if (ch == XK_BackSpace) {
-+    if (swtch)
++  if (ch == XK_space) {
++    // space (or +shift) in cn: to temp_ascii
++    if (!ctx->get_option("temp_ascii"))
 +      return TempAsciiOn(ctx, swtch);
++    // shift+space in temp_ascii: to ascii_mode
++    if (key_event.shift()) {
++      ctx->set_option("ascii_mode", true);
++      return TempAsciiOff(ctx, true);  // @see ToggleAsciiModeWithKey
++    }
++    // space in temp_ascii: to cn
++    return TempAsciiOff(ctx, swtch);
++  }
++
++  // no more modifiers are allowed to continue, preventing shortcuts:
++  if (key_event.modifier())
++    return TempAsciiOff(ctx, swtch);
++
++  if (ch == XK_BackSpace) {
++    // backspace in cn/temp_ascii: to temp_ascii/cn if just switched temp_ascii
++    if (swtch)
++      return ctx->get_option("temp_ascii") ? TempAsciiOff(ctx, swtch)
++                                           : TempAsciiOn(ctx, swtch);
++    // backspace in any: just do the job
 +    return kNoop;
 +  }
 +
-+  // Remember here is !temp_ascii, therefore we should consider less keys to
-+  // turn this mode on, without damanging the type experience.
-+  // That's why we need a `optional`, and it should be `true`.
-+  if ((XK_a <= ch && ch <= XK_z) || MayProcessTransform(ch, true))
-+    return kNoop;
-+  // Some other keys like uppercase, +-*/ and more trigger, including space:
-+  return TempAsciiOn(ctx, swtch);
++  if (XK_space <= ch && ch <= XK_asciitilde) {
++    // other in cn: to temp_ascii if !transformable
++    if (!ctx->get_option("temp_ascii"))
++      return CanTransform(ch, true) ? kNoop : TempAsciiOn(ctx, swtch);
++    // other in temp_ascii: to cn if transformable
++    return CanTransform(ch, false) ? TempAsciiOff(ctx, swtch) : kRejected;
++  }
++
++  // what's this unprintable character? we can't do anything really...
++  return kNoop;
 +}
 +
  ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
@@ -139,7 +157,13 @@ index a9e333b9..2be45cbb 100644
    if ((key_event.shift() && key_event.ctrl()) || key_event.alt() ||
        key_event.super()) {
      shift_key_pressed_ = ctrl_key_pressed_ = false;
-@@ -104,11 +223,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+-    return kNoop;
++    // triggering shortcuts should reset the temp_ascii, TODO: more?
++    return TempAsciiOff(ctx, swtch_temp_ascii);
+   }
+   if (caps_lock_switch_style_ != kAsciiModeSwitchNoop) {
+     ProcessResult result = ProcessCapsLock(key_event);
+@@ -104,11 +242,6 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
    }
    // other keys
    shift_key_pressed_ = ctrl_key_pressed_ = false;
@@ -151,7 +175,7 @@ index a9e333b9..2be45cbb 100644
    bool ascii_mode = ctx->get_option("ascii_mode");
    if (ascii_mode) {
      if (!ctx->IsComposing()) {
-@@ -120,7 +234,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
+@@ -120,7 +253,7 @@ ProcessResult AsciiComposer::ProcessKeyEvent(const KeyEvent& key_event) {
        return kAccepted;
      }
    }
@@ -160,7 +184,7 @@ index a9e333b9..2be45cbb 100644
  }
  
  ProcessResult AsciiComposer::ProcessCapsLock(const KeyEvent& key_event) {
-@@ -205,8 +319,13 @@ bool AsciiComposer::ToggleAsciiModeWithKey(int key_code) {
+@@ -205,8 +338,13 @@ bool AsciiComposer::ToggleAsciiModeWithKey(int key_code) {
      return false;
    AsciiModeSwitchStyle style = it->second;
    Context* ctx = engine_->context();
