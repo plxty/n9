@@ -21,6 +21,7 @@ python3Packages.buildPythonPackage {
   pname = "drgn";
   inherit src;
   inherit (src) version;
+  pyproject = true;
 
   patches = [
     # Enable the builtin commands (%crash), it still unstable, and lacks of many things, just try.
@@ -28,6 +29,11 @@ python3Packages.buildPythonPackage {
       url = "https://github.com/osandov/drgn/commit/6cff072db547f6562505939a776e8260abe3f683.patch";
       sha256 = "1vj6616h0f9a2iy812ak2clzc4jqqrl6lfzs3pmk12acl3z1rjs7";
     })
+  ];
+
+  # Legacy needs:
+  build-system = with python3Packages; [
+    setuptools
   ];
 
   # TODO: Something to nativeBuildInputs?

@@ -110,6 +110,7 @@ def main():
     os.chmod(TARGET, 0o600)
 
     # restart mihomo, don't check
+    # TODO: test config before moving?
     subprocess.call(["systemctl", "restart", "mihomo.service", "dnsmasq.service"])
 
     return 0

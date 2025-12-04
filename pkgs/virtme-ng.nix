@@ -5,6 +5,7 @@
   python3Packages,
   runCommand,
   writers,
+  patchutils,
   qemu_kvm,
   virtiofsd,
   busybox,
@@ -22,17 +23,24 @@ let
   '';
 
   # MUST static for --root to work:
-  virtme-ng-init = pkgsStatic.rustPlatform.buildRustPackage {
+  virtme-ng-init = pkgsStatic.rustPlatform.buildRustPackage rec {
     pname = "virtme-ng-init";
     inherit src;
     inherit (src) version;
+    sourceRoot = "virtme-ng-src/${lib.replaceStrings [ "-" ] [ "_" ] pname}";
     cargoHash = "sha256-3+MDf6pescqPnsQBOODZJ7ic2tqxh5LPvHIMouUkhjI=";
-    sourceRoot = "virtme-ng-src/virtme_ng_init";
+
+    # @see patchPhase, patchFlags
+    depsBuildBuild = [ patchutils ];
 
     # Includes other things, to compatible with really "bare" environment, e.g. docker.
     # https://github.com/NixOS/nix/blob/324bfd82dca67c3189b0d218160da30a5e9b7637/docker.nix#L377
     # We include everything that equals when boot up, remains are let to direnv.
-    patches = [ ./patches/virtme-ng-nix-path.patch ];
+    patchPhase = ''
+      runHook prePatch
+      filterdiff -i '*/virtme_ng_init/*' ${./patches/virtme-ng-taste.patch} | patch -d.. -p1
+      runHook postPatch
+    '';
     preConfigure = ''
       echo -n "/nix/var/nix/profiles/default/bin:/nix/var/nix/profiles/default/sbin:" > src/nix-path
       echo -n "${lib.makeBinPath [ busybox-only ]}" >> src/nix-path
@@ -44,16 +52,22 @@ python3Packages.buildPythonPackage {
   inherit src;
   inherit (src) version;
 
-  patches = [ ./patches/virtme-ng-sshd.nix ];
+  # @see doc/languages-frameworks/python.section.md
+  pyproject = true;
 
+  patches = [ ./patches/virtme-ng-taste.patch ];
   configurePhase = ''
     export BUILD_VIRTME_NG_INIT=1
     cp -r "${virtme-ng-init}/bin/." virtme/guest/bin/
   '';
-
   # We patch it ourselves, to ensure --root runs scripts properly without /nix
   dontPatchShebangs = true;
 
+  # Legacy needs:
+  build-system = with python3Packages; [
+    argparse-manpage
+    setuptools
+  ];
   propagatedBuildInputs = with python3Packages; [
     argcomplete
     requests
