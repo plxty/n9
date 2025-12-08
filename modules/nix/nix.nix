@@ -11,7 +11,7 @@ let
   inherit ((import ../../flake.nix).nixConfig) substituters;
 in
 {
-  options.users = n9.mkAttrsOfSubmoduleOption {
+  options.users = n9.mkAttrsOfSubmoduleOption { } {
     config.deployment.file.".local/share/nix/trusted-settings.json" = {
       text = ''
         {
@@ -29,7 +29,8 @@ in
           "nix-command"
           "flakes"
         ];
-        inherit substituters;
+        # No duplicated entries, we control it all by hand :)
+        substituters = lib.mkForce substituters;
       };
 
       nix.extraOptions = ''

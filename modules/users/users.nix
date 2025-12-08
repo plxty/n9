@@ -19,7 +19,7 @@ let
   };
 in
 {
-  options.users = n9.mkAttrsOfSubmoduleOption (
+  options.users = n9.mkAttrsOfSubmoduleOption { } (
     { name, config, ... }:
     {
       options.home = lib.mkOption {

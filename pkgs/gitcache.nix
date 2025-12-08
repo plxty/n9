@@ -1,8 +1,6 @@
 {
   n9,
-  inputs,
   writers,
-  python3,
   python3Packages,
   git,
   ...
@@ -11,19 +9,23 @@
 let
   src = n9.sources.gitcache;
 
-  pyproject = inputs.pyproject-nix.lib.project.loadPyproject {
-    projectRoot = "${src}";
+  gitcache = python3Packages.buildPythonPackage {
+    pname = "gitcache";
+    inherit src;
+    inherit (src) version;
+    pyproject = true;
+
+    build-system = with python3Packages; [
+      setuptools
+      wheel
+    ];
+
+    dependencies = with python3Packages; [
+      portalocker
+      pytimeparse
+      coloredlogs
+    ];
   };
-
-  pyattrs = pyproject.renderers.buildPythonPackage { python = python3; };
-
-  gitcache = python3Packages.buildPythonPackage (
-    pyattrs
-    // {
-      pname = "gitcache";
-      inherit (src) version;
-    }
-  );
 in
 # TODO: wrapper of wrapper?
 writers.writeBashBin "gitcache" ''

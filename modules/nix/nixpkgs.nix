@@ -4,7 +4,7 @@
   # To provide pkgs in modules argument:
   imports = [ "${inputs.nixpkgs}/nixos/modules/misc/nixpkgs.nix" ];
 
-  options.users = n9.mkAttrsOfSubmoduleOption {
+  options.users = n9.mkAttrsOfSubmoduleOption { } {
     config.deployment.file.".config/nixpkgs/config.nix".text = ''
       { allowUnfree = true; }
     '';

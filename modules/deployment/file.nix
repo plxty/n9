@@ -20,7 +20,7 @@ let
     }).fileType;
 in
 {
-  options.users = n9.mkAttrsOfSubmoduleOption (
+  options.users = n9.mkAttrsOfSubmoduleOption { } (
     { options, config, ... }:
     let
       opt = options.deployment.file;

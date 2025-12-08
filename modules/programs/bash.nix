@@ -1,6 +1,6 @@
 { n9, pkgs, ... }:
 {
-  options.users = n9.mkAttrsOfSubmoduleOption {
+  options.users = n9.mkAttrsOfSubmoduleOption { } {
     config.variant.home-manager.programs = {
       bash = {
         enable = true;

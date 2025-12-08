@@ -22,7 +22,7 @@ in
     };
   };
 
-  options.users = n9.mkAttrsOfSubmoduleOption (
+  options.users = n9.mkAttrsOfSubmoduleOption { } (
     { name, config, ... }:
     let
       cfg = config.programs.ssh;

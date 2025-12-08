@@ -24,6 +24,7 @@ let
         inputs.home-manager.nixosModules.default
         # Relies on the modules author to make a global option:
         inputs.nixos-wsl.nixosModules.default
+        inputs.nixos-x1e.nixosModules.x1e
       ]
       ++ modules;
     };
@@ -34,8 +35,9 @@ in
     default = isNixOS;
   };
 
-  # Notice: imports will not work as `oses.nixos.imports`, because you can't
-  # import things outside the submodule's toplevel.
+  # FIXME: imports will not work as `variant.nixos.imports`, because you can't
+  # import things outside the submodule's "modules".
+  # @see https://github.com/NixOS/nixpkgs/issues/70638
   options.variant.nixos = lib.mkOption {
     type = lib.types.submodule {
       options = n9.mkOptionsFromConfig (mkNixOSConfiguration [ ]);

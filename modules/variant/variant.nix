@@ -13,7 +13,7 @@ let
   groupBy = list: lib.foldAttrs (v: acc: [ v ] ++ acc) [ ] list;
 in
 {
-  options.users = n9.mkAttrsOfSubmoduleOption (
+  options.users = n9.mkAttrsOfSubmoduleOption { } (
     { options, ... }:
     {
       # For referencing config, please use rConfig..., this is just a snippet.

@@ -6,7 +6,7 @@
 }:
 
 {
-  options.users = n9.options.mkAttrsOfSubmoduleOption {
+  options.users = n9.options.mkAttrsOfSubmoduleOption { } {
     config.variant.home-manager.programs.zellij = {
       enable = true;
       enableBashIntegration = false;

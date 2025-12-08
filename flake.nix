@@ -46,11 +46,6 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
-    pyproject-nix = {
-      url = "github:pyproject-nix/pyproject.nix";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
-
     nixos-wsl = {
       url = "github:nix-community/NixOS-WSL";
       inputs.nixpkgs.follows = "nixpkgs";
@@ -60,13 +55,21 @@
       url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    nixos-x1e = {
+      url = "github:plxty/nixos-x1e";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   nixConfig = {
+    # @see https://github.com/NixOS/nix/commit/f8abbdd4565542464f31f4dc203a9c3e091b3536
+    # @see https://github.com/NixOS/nix/commit/4029f4b05bfffcf6c5cbbfae1bfb9416c070b81e
+    # Lower value means higher priority.
     substituters = [
-      "https://mirrors.sjtug.sjtu.edu.cn/nix-channels/store/"
-      "https://mirrors.ustc.edu.cn/nix-channels/store/"
-      "https://cache.nixos.org/"
+      "https://mirrors.sjtug.sjtu.edu.cn/nix-channels/store/?priority=10"
+      "https://mirrors.ustc.edu.cn/nix-channels/store/?priority=11"
+      "https://cache.nixos.org/?priority=40" # default
     ];
   };
 }

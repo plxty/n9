@@ -10,7 +10,7 @@ let
   rConfig = config;
 in
 {
-  options.users = n9.mkAttrsOfSubmoduleOption (
+  options.users = n9.mkAttrsOfSubmoduleOption { } (
     { config, ... }:
     let
       cfg = config.programs.code-server;

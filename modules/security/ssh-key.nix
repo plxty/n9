@@ -32,7 +32,7 @@ let
   );
 in
 {
-  options.users = n9.options.mkAttrsOfSubmoduleOption (
+  options.users = n9.options.mkAttrsOfSubmoduleOption { } (
     { name, config, ... }:
     let
       cfg = config.security.ssh-key;

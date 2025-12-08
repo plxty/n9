@@ -32,17 +32,10 @@ let
 
     options = {
       mkAttrsOfSubmoduleOption =
-        modules:
-        lib.mkOption {
-          type = lib.types.attrsOf (lib.types.submodule modules);
-          # default = { };
-        };
+        attrs: modules: lib.mkOption (attrs // { type = lib.types.attrsOf (lib.types.submodule modules); });
       mkAttrsOfSubmoduleWithOption =
-        attrs:
-        lib.mkOption {
-          type = lib.types.attrsOf (lib.types.submoduleWith attrs);
-          default = { };
-        };
+        attrs: modules:
+        lib.mkOption (attrs // { type = lib.types.attrsOf (lib.types.submoduleWith modules); });
 
       mkOptionsFromConfig =
         { options, ... }:
@@ -61,7 +54,7 @@ let
         let
           theWorld =
             n:
-            n9.mkAttrsOfSubmoduleWithOption {
+            n9.mkAttrsOfSubmoduleWithOption { default = { }; } {
               modules = module-list ++ [
                 { config.variant.get.current = n; }
               ];
@@ -116,7 +109,7 @@ let
           (
             system:
             let
-              withSystem.options.n9.shell = n9.mkAttrsOfSubmoduleOption { nixpkgs.hostPlatform = system; };
+              withSystem.options.n9.shell = n9.mkAttrsOfSubmoduleOption { } { nixpkgs.hostPlatform = system; };
             in
             lib.mapAttrs (_: v: v.variant.get.build) (mkWorld module-list ([ withSystem ] ++ modules))
           );

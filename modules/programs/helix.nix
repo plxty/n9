@@ -6,7 +6,7 @@
 }:
 
 {
-  options.users = n9.mkAttrsOfSubmoduleOption (
+  options.users = n9.mkAttrsOfSubmoduleOption { } (
     { config, ... }:
     let
       cfg = config.programs.helix;
