@@ -76,6 +76,11 @@ in
     withKerberos = lib.trace "overlay derivition created" true;
   };
 
+  # Helix, and skip check for our own builds, to speed up:
+  helix = (patch prev.helix "helix-taste").overrideAttrs {
+    doCheck = false;
+  };
+
   ibus-engines = prev.ibus-engines // {
     rime = (patch prev.ibus-engines.rime "ibus-rime-temp-ascii").override {
       rimeDataPkgs = [ final.rime-ice ];

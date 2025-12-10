@@ -45,9 +45,6 @@
 
       config.variant.home-manager.programs.helix = lib.mkIf cfg.enable {
         enable = true;
-        package = (n9.packages.patch pkgs.helix "helix-taste").overrideAttrs {
-          doCheck = false;
-        };
         defaultEditor = true;
 
         settings = {
