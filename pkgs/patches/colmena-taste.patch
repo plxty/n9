@@ -1,16 +1,18 @@
-From 7da39185608a7683fafd62d93a7e32b8c59bdb9b Mon Sep 17 00:00:00 2001
+From f3fc25f40779d5588f9a17c447c3bcb62be86124 Mon Sep 17 00:00:00 2001
 From: Zigit Zo <byte@kei.network>
-Date: Wed, 3 Dec 2025 16:13:55 +0800
+Date: Wed, 10 Dec 2025 15:17:18 +0800
 Subject: [PATCH] colmena: hack
 
 ---
  .envrc                        |  2 +-
+ .gitignore                    |  1 +
  src/cli.rs                    |  2 -
  src/command/apply.rs          | 17 +++++++
  src/command/apply_local.rs    | 54 +---------------------
  src/command/mod.rs            |  1 -
  src/nix/deployment/mod.rs     | 10 +++-
  src/nix/deployment/options.rs | 10 ++++
+ src/nix/flake.rs              |  6 ++-
  src/nix/hive/mod.rs           |  2 +-
  src/nix/host/local.rs         | 40 +++++++++-------
  src/nix/host/mod.rs           | 34 ++++++--------
@@ -19,7 +21,7 @@ Subject: [PATCH] colmena: hack
  src/nix/node_filter.rs        |  7 ++-
  src/nix/profile.rs            | 47 ++++++++++---------
  src/util.rs                   | 20 --------
- 15 files changed, 166 insertions(+), 208 deletions(-)
+ 17 files changed, 172 insertions(+), 209 deletions(-)
 
 diff --git a/.envrc b/.envrc
 index de3998d..234e89d 100644
@@ -31,6 +33,16 @@ index de3998d..234e89d 100644
  
 -use flake
 +use flake . --accept-flake-config
+diff --git a/.gitignore b/.gitignore
+index 2ddacb1..f303eb0 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,4 +1,5 @@
+ result*
++*.patch
+ /target
+ /.direnv
+ /.vscode
 diff --git a/src/cli.rs b/src/cli.rs
 index ab1d44c..66241cf 100644
 --- a/src/cli.rs
@@ -275,6 +287,23 @@ index 936de4d..12e1e63 100644
              reboot: false,
              create_gc_roots: false,
              force_build_on_target: None,
+diff --git a/src/nix/flake.rs b/src/nix/flake.rs
+index 5f410ea..3b61c0e 100644
+--- a/src/nix/flake.rs
++++ b/src/nix/flake.rs
+@@ -44,7 +44,11 @@ impl Flake {
+             .to_str()
+             .expect("Flake directory path contains non-UTF-8 characters");
+ 
+-        let metadata = FlakeMetadata::resolve(flake).await?;
++        // Forcing submodules in the path:
++        // @see https://github.com/zhaofengli/colmena/issues/181
++        let flake = format!("{flake}?submodules=1");
++
++        let metadata = FlakeMetadata::resolve(flake.as_str()).await?;
+ 
+         Ok(Self {
+             metadata,
 diff --git a/src/nix/hive/mod.rs b/src/nix/hive/mod.rs
 index 0fe40ea..9528027 100644
 --- a/src/nix/hive/mod.rs
@@ -870,5 +899,5 @@ index ffbfef5..eb4abe5 100644
  
  pub async fn capture_stream<R>(
 -- 
-2.50.1
+2.51.2
 
