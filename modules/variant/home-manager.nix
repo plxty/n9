@@ -12,8 +12,6 @@ let
   opt = options.variant.home-manager;
   cfg = config.variant.home-manager;
 
-  isHomeManager = config.variant.get.current == "home-manager";
-
   mkHomeManagerConfiguration =
     modules:
     inputs.home-manager.lib.homeManagerConfiguration {
@@ -21,11 +19,6 @@ let
     };
 in
 {
-  options.variant.is.home-manager = lib.mkOption {
-    type = lib.types.bool;
-    default = isHomeManager;
-  };
-
   # Here we will lost many config.xxx sections, and only options are here,
   # therefore one more evaluation to final module is neccessary now.
   # TODO: this is quite tricky, right :?
@@ -47,5 +40,5 @@ in
     apply = _: (mkHomeManagerConfiguration [ (lib.mkAliasDefinitions opt) ]).config;
   };
 
-  config.variant.get.build = lib.mkIf isHomeManager cfg.home.activationPackage;
+  config.variant.build = lib.mkIf config.variant.is.home-manager cfg.home.activationPackage;
 }

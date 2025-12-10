@@ -22,30 +22,22 @@ in
           options = rOptions.variant;
         };
         apply =
-          _:
           let
             r = lib.mkAliasDefinitions options.variant;
           in
           assert r._type == "if" && r.condition && r.content._type == "merge";
-          groupBy r.content.contents;
+          _: groupBy r.content.contents;
       };
     }
   );
 
-  options.variant.get = {
-    current = lib.mkOption {
-      type = lib.types.enum [
-        "nixos"
-        "nix-darwin"
-        "home-manager"
-        "shell"
-      ];
-    };
+  # Why not making variant = if isNixDarwin then {...} else if {...} ...?
+  # Because we just want less if... unless there's no other better way :/
+  options.variant.is = lib.genAttrs n9.modules.variants lib.mkEnableOption;
 
-    # TODO: .config?
-    build = lib.mkOption {
-      type = lib.types.package;
-    };
+  # TODO: Expose .config and .options as well?
+  options.variant.build = lib.mkOption {
+    type = lib.types.package;
   };
 
   config.variant =

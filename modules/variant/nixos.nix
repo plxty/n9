@@ -13,8 +13,6 @@ let
   opt = options.variant.nixos;
   cfg = config.variant.nixos;
 
-  isNixOS = config.variant.get.current == "nixos";
-
   mkNixOSConfiguration =
     modules:
     lib.nixosSystem {
@@ -30,11 +28,6 @@ let
     };
 in
 {
-  options.variant.is.nixos = lib.mkOption {
-    type = lib.types.bool;
-    default = isNixOS;
-  };
-
   # FIXME: imports will not work as `variant.nixos.imports`, because you can't
   # import things outside the submodule's "modules".
   # @see https://github.com/NixOS/nixpkgs/issues/70638
@@ -72,5 +65,5 @@ in
       ]).config;
   };
 
-  config.variant.get.build = lib.mkIf isNixOS cfg.system.build.toplevel;
+  config.variant.build = lib.mkIf config.variant.is.nixos cfg.system.build.toplevel;
 }

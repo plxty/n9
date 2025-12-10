@@ -4,16 +4,7 @@ let
   n9 = {
     sources = import ./sources.nix;
 
-    packages = rec {
-      patches =
-        pkg: attrs:
-        pkg.overrideAttrs (prev: {
-          patches =
-            (prev.patches or [ ])
-            ++ (lib.map (v: if (lib.typeOf v) == "string" then ../pkgs/patches/${v}.patch else v) attrs);
-        });
-      patch = pkg: attr: patches pkg [ attr ];
-
+    packages = {
       assureVersion =
         pkg: version: attrsOrFn:
         let
@@ -49,33 +40,37 @@ let
     };
 
     modules = rec {
-      mkWorld =
+      variants = [
+        "nixos"
+        "nix-darwin"
+        "home-manager"
+        "shell"
+      ];
+
+      mkConfig =
         module-list: modules:
         let
-          theWorld =
+          mkOne =
             n:
             n9.mkAttrsOfSubmoduleWithOption { default = { }; } {
-              modules = module-list ++ [
-                { config.variant.get.current = n; }
-              ];
+              modules = module-list ++ [ { config.variant.is.${n} = true; } ];
               shorthandOnlyDefinesConfig = true;
               specialArgs = { inherit nodes n9 inputs; };
             };
-          nodes' = lib.evalModules {
-            modules = [
-              { options.n9 = lib.genAttrs [ "nixos" "nix-darwin" "home-manager" "shell" ] theWorld; }
-            ]
-            ++ modules;
-          };
           # Ignore the system types:
-          nodes = lib.concatMapAttrs (_: lib.id) nodes'.config.n9;
+          nodes =
+            lib.concatMapAttrs (_: lib.id)
+              (lib.evalModules {
+                modules = [ { options.n9 = lib.genAttrs variants mkOne; } ] ++ modules;
+              }).config.n9;
         in
         nodes;
+
       mkHosts =
         module-list: modules:
         let
-          nodes = lib.mapAttrs (_: v: { config = v; }) (mkWorld module-list modules);
-          elem = lib.elem;
+          inherit (lib) elem;
+          nodes = lib.mapAttrs (_: v: { config = v; }) (mkConfig module-list modules);
           metaConfigKeys = [
             "name"
             "description"
@@ -87,16 +82,14 @@ let
         rec {
           __schema = "v0.5";
           inherit nodes;
-          toplevel = lib.mapAttrs (_: v: v.config.variant.get.build) nodes;
+          toplevel = lib.mapAttrs (_: v: v.config.variant.build) nodes;
           deploymentConfig = lib.mapAttrs (_: v: v.config.deployment) nodes;
           deploymentConfigSelected = names: lib.filterAttrs (name: _: elem name names) deploymentConfig;
           evalSelected = names: lib.filterAttrs (name: _: elem name names) toplevel;
           evalSelectedDrvPaths = names: lib.mapAttrs (_: v: v.drvPath) (evalSelected names);
           metaConfig =
             lib.filterAttrs (n: v: elem n metaConfigKeys)
-              (lib.evalModules {
-                modules = [ inputs.colmena.nixosModules.metaOptions ];
-              }).config;
+              (lib.evalModules { modules = [ inputs.colmena.nixosModules.metaOptions ]; }).config;
         };
       mkEnvs =
         module-list: modules:
@@ -111,14 +104,12 @@ let
             let
               withSystem.options.n9.shell = n9.mkAttrsOfSubmoduleOption { } { nixpkgs.hostPlatform = system; };
             in
-            lib.mapAttrs (_: v: v.variant.get.build) (mkWorld module-list ([ withSystem ] ++ modules))
+            lib.mapAttrs (_: v: v.variant.build) (mkConfig module-list ([ withSystem ] ++ modules))
           );
     };
 
     # Shortcuts without "namespace":
     inherit (n9.packages)
-      patches
-      patch
       assureVersion
       ;
     inherit (n9.options)

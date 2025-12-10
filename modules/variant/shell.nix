@@ -7,15 +7,8 @@
 
 let
   cfg = config.variant.shell;
-
-  isShell = config.variant.get.current == "shell";
 in
 {
-  options.variant.is.shell = lib.mkOption {
-    type = lib.types.bool;
-    default = isShell;
-  };
-
   options.variant.shell = {
     # shorthand of depsBuildBuild:
     # https://nixos.org/manual/nixpkgs/stable/#variables-specifying-dependencies
@@ -64,7 +57,7 @@ in
     };
   };
 
-  config.variant.get.build = lib.mkIf isShell (
+  config.variant.build = lib.mkIf config.variant.is.shell (
     config.shell.mkShell {
       inherit name;
       inherit (cfg)

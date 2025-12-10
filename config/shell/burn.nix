@@ -83,7 +83,7 @@
     {
       environment.packages = with pkgs; [
         # Colmena:
-        (n9.patch inputs.colmena.packages.${stdenv.system}.colmena "colmena-taste")
+        colmena
 
         # RDepends:
         getent # upload-keys

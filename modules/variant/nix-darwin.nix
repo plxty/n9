@@ -12,8 +12,6 @@ let
   opt = options.variant.nix-darwin;
   cfg = config.variant.nix-darwin;
 
-  isNixDarwin = config.variant.get.current == "nix-darwin";
-
   mkNixDrwinConfiguration =
     modules:
     inputs.nix-darwin.lib.darwinSystem {
@@ -24,13 +22,6 @@ let
     };
 in
 {
-  # Why not making variant = if isNixDarwin then {...} else if {...} ...?
-  # Because we just want less if... unless there's no other better way :/
-  options.variant.is.nix-darwin = lib.mkOption {
-    type = lib.types.bool;
-    default = isNixDarwin;
-  };
-
   options.variant.nix-darwin = lib.mkOption {
     type = lib.types.submodule {
       options = n9.mkOptionsFromConfig (mkNixDrwinConfiguration [ ]);
@@ -63,5 +54,5 @@ in
       ]).config;
   };
 
-  config.variant.get.build = lib.mkIf isNixDarwin cfg.system.build.toplevel;
+  config.variant.build = lib.mkIf config.variant.is.nix-darwin cfg.system.build.toplevel;
 }

@@ -42,7 +42,6 @@ in
 
     services.pppd = {
       enable = true;
-      package = n9.patch pkgs.ppp "ppp-run-resolv";
       # https://man7.org/linux/man-pages/man8/pppd.8.html
       peers = lib.mapAttrs (n: v: {
         config = ''

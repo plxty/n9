@@ -10,6 +10,15 @@ let
     inherit lib inputs;
   };
 
+  patches =
+    pkg: attrs:
+    pkg.overrideAttrs (prev: {
+      patches =
+        (prev.patches or [ ])
+        ++ (lib.map (v: if (lib.typeOf v) == "string" then ./patches/${v}.patch else v) attrs);
+    });
+  patch = pkg: attr: patches pkg [ attr ];
+
   mkPackage = pkg: final.callPackage pkg { inherit n9 inputs; };
 in
 {
@@ -45,14 +54,20 @@ in
     };
 
   # And mihomo...
-  mihomo =
+  mihomo = patch (
     let
       src = n9.sources.mihomo;
     in
     n9.assureVersion prev.mihomo src.version {
       inherit src;
       vendorHash = "sha256-WwbuNplMkH5wotpHasQbwK85Ymh6Ke4WL1LTLDWvRFk=";
-    };
+    }
+  ) "mihomo-taste";
+
+  ppp = patch prev.ppp "ppp-run-resolv";
+
+  # What burns:
+  colmena = patch inputs.colmena.packages.${prev.stdenv.system}.colmena "colmena-taste";
 
   # The home-manager doesn't have an option to customize openssh, thus we make
   # it global. TODO: submit patches to community?
@@ -62,10 +77,10 @@ in
   };
 
   ibus-engines = prev.ibus-engines // {
-    rime = (n9.patch prev.ibus-engines.rime "ibus-rime-temp-ascii").override {
+    rime = (patch prev.ibus-engines.rime "ibus-rime-temp-ascii").override {
       rimeDataPkgs = [ final.rime-ice ];
     };
   };
 
-  librime = n9.patch prev.librime "librime-temp-ascii";
+  librime = patch prev.librime "librime-temp-ascii";
 }
