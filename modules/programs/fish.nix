@@ -2,7 +2,6 @@
 
 let
   plugin = pkg: { inherit (pkg) name src; };
-  tideToken = "0xff";
 in
 {
   options.users = n9.mkAttrsOfSubmoduleOption { } {
@@ -26,21 +25,13 @@ in
           onVariable = "PWD";
         };
 
-        gitignore = "curl -sL https://www.gitignore.io/api/$argv";
-
         # or: direnv edit
         envrc = ''
           set -f env $argv[1]
-          if test -z "$env"
-            echo "envrc [env]"
-            return
+          if test -n "$env"
+            echo "use flake 'n9#\"$env\"'" | tee .envrc
           end
-
-          read -l -P "will use env \"$env\", y? " confirm
-          if test "$confirm" = "y"
-            echo "use flake 'n9#\"$env\"' --accept-flake-config" | tee .envrc
-            direnv allow
-          end
+          direnv allow
         '';
 
         # https://stackoverflow.com/questions/13713101/rsync-exclude-according-to-gitignore-hgignore-svnignore-like-filter-c
@@ -52,6 +43,7 @@ in
           rsync $excludes $argv
         '';
 
+        # Run tide_reload after changes each time:
         tide_reload = ''
           set -eU (set -U | awk '/tide/ {print $1}')
 
@@ -108,19 +100,14 @@ in
       };
 
       shellInit = ''
-        # FIXME: (no) local:
-        fish_add_path "$HOME/.local/bin"
+        # To keep PATH cleans (by fish_add_path), we want a "pure" shell :)
+        set -eU fish_user_paths
 
         # https://github.com/haslersn/any-nix-shell
         ${pkgs.any-nix-shell}/bin/any-nix-shell fish | source
       '';
 
       interactiveShellInit = ''
-        if test "$tide_configure_token" != "${tideToken}"
-          tide_reload
-          set -U tide_configure_token ${tideToken}
-        end
-
         # https://fishshell.com/docs/current/language.html#syntax-function-autoloading
         __fish_auto_ls
 
