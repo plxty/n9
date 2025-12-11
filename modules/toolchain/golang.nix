@@ -17,6 +17,12 @@ in
       type = lib.types.nullOr lib.types.str;
       default = null;
     };
+
+    # TODO: Warning about setting version + package together?
+    package = lib.mkOption {
+      type = lib.types.package;
+      default = if cfg.version == null then pkgs.go else pkgs."go_${cfg.version}";
+    };
   };
 
   config.environment.variables = lib.mkMerge [
@@ -28,7 +34,7 @@ in
   ];
 
   config.variant.shell.depsBuildBuild = lib.mkIf cfg.enable [
-    (if cfg.version == null then pkgs.go else pkgs."go_${cfg.version}")
+    cfg.package
     pkgs.gopls
   ];
 }
