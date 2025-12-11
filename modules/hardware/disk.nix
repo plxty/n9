@@ -47,11 +47,18 @@ in
   };
 
   # If there's no (bootable) disk, e.g. WSL2, then boot loader is meaningless.
-  # FIXME: Move out:
-  config.variant.nixos.boot.loader = lib.mkIf (cfg != { }) {
-    systemd-boot.enable = true;
-    efi.canTouchEfiVariables = true;
-    efi.efiSysMountPoint = "/efi";
+  # TODO: Move out:
+  config.variant.nixos.boot = lib.mkIf (cfg != { }) {
+    loader = {
+      systemd-boot.enable = true;
+      systemd-boot.edk2-uefi-shell.enable = true; # for debugging...
+      efi.canTouchEfiVariables = true;
+      efi.efiSysMountPoint = "/efi";
+    };
+    initrd.systemd.enable = true;
+
+    # FIXME: Remove from nixos-x1e:
+    initrd.preDeviceCommands = lib.mkForce "";
   };
 
   config.variant.nixos.disko.devices.disk = lib.concatMapAttrs (dev: v: {

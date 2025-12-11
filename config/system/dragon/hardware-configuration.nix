@@ -9,7 +9,11 @@
     ];
 
   boot.initrd.availableKernelModules = [ "nvme" "usbhid" "usb_storage" ];
-  boot.initrd.kernelModules = [ ];
+  boot.initrd.kernelModules = [
+    # For builtin keyboards:
+    "i2c_hid_of"
+    "i2c_qcom_geni"
+  ];
   boot.kernelModules = [ ];
   boot.extraModulePackages = [ ];
 

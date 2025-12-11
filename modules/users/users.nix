@@ -29,9 +29,9 @@ in
 
       config.variant = lib.mkMerge [
         {
-          nixos = {
-            users.groups.${name} = { };
-            users.users.${name} = {
+          nixos.users = {
+            groups.${name} = { };
+            users.${name} = {
               isNormalUser = lib.mkDefault true;
               group = name;
               home = config.home;
@@ -40,6 +40,8 @@ in
                 "dialout"
               ];
             };
+            # Fixed users at boot, purity:
+            mutableUsers = false;
           };
           nix-darwin = {
             users.users.${name} = {

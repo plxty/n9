@@ -1,5 +1,5 @@
 [
-  ./shell/burn.nix
+  ./shell/burn
   ./shell/squirrel.nix
   ./shell/linux.nix
   ./shell/bpf.nix
