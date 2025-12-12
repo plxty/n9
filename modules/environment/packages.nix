@@ -60,6 +60,8 @@ let
       lrzsz
       # python3 # conflict with jupyter
       # jupyter # https://github.com/NixOS/nixpkgs/issues/255923
+      inferno
+      flamelens
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       # basic

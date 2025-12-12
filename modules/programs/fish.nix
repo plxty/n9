@@ -97,6 +97,14 @@ in
             _tide_print_item whoami $tide_whoami_icon' ' "$indicator %"
           end
         '';
+
+        # Faster flamegraph explore:
+        flame = ''
+          set -f data $argv[1]
+          if string match "*perf.data*" "$data"
+            sudo perf script -i "$data" | inferno-collapse-perf
+          end | flamelens $argv[2..]
+        '';
       };
 
       shellInit = ''

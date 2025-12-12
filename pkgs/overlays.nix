@@ -108,4 +108,7 @@ in
         // (skipCheckIf (prev.stdenv.system == "aarch64-darwin") [ "twisted" ]);
     in
     prev.python313.override { inherit packageOverrides; };
+
+  # Speed up perf + compressed debug info:
+  perf = patch prev.perf "perf-taste";
 }
