@@ -32,6 +32,18 @@
         # Try cosmic for fresh:
         services.displayManager.cosmic-greeter.enable = true;
         services.desktopManager.cosmic.enable = true;
+
+        # Fonts, TODO: merge with nix-darwin?
+        fonts.enableDefaultPackages = true;
+        fonts.packages = with pkgs; [
+          noto-fonts
+          noto-fonts-cjk-sans
+          noto-fonts-cjk-serif
+          wqy_microhei
+          wqy_zenhei
+          jetbrains-mono
+          source-code-pro
+        ];
       };
 
       users.byte = {
@@ -41,7 +53,7 @@
         ];
 
         # FIXME: Add modules/graphics/desktop.nix?
-        config.variant.home-manager.services = {
+        variant.home-manager.services = {
           ssh-agent.enable = lib.mkForce false;
           gnome-keyring.enable = true;
         };
