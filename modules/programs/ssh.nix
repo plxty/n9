@@ -23,7 +23,7 @@ in
   };
 
   options.users = n9.mkAttrsOfSubmoduleOption { } (
-    { name, config, ... }:
+    { config, ... }:
     let
       cfg = config.programs.ssh;
     in

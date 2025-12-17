@@ -1,6 +1,6 @@
 {
   n9.nixos.dragon =
-    { pkgs, ... }:
+    { lib, pkgs, ... }:
     {
       hardware.configuration = ./hardware-configuration.nix;
       hardware.disk.nvme0n1 = {
@@ -38,6 +38,12 @@
         environment.packages = with pkgs; [
           brave
         ];
+
+        # FIXME: Add modules/graphics/desktop.nix?
+        config.variant.home-manager.services = {
+          ssh-agent.enable = lib.mkForce false;
+          gnome-keyring.enable = true;
+        };
       };
     };
 }
