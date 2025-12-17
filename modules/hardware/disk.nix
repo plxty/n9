@@ -90,8 +90,8 @@ in
             size = "16G";
             # Note: MUST define the "uuid" to use the partuuid, the NixOS will
             # erase all partlabel at boot, @see swapDevices.*.randomEncryption
-            uuid = lib.mkDefault (
-              lib.throwIf v.encryption "Please define uuid for the encrypted swap!" (_: null)
+            uuid = lib.mkIf v.encryption (
+              lib.mkDefault (lib.throwIf true "Please define uuid for the encrypted swap!" (_: null))
             );
             content = {
               type = "swap";

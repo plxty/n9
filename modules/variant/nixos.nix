@@ -20,9 +20,6 @@ let
         # Manage config.{disko,home-manager} as well:
         inputs.disko.nixosModules.disko
         inputs.home-manager.nixosModules.default
-        # Relies on the modules author to make a global option:
-        inputs.nixos-wsl.nixosModules.default
-        inputs.nixos-x1e.nixosModules.x1e
       ]
       ++ modules;
     };

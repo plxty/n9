@@ -135,7 +135,10 @@
           neovim
         ];
 
-        # security.ssh-key.agents = [ "byte@wyvern" ];
+        security.ssh-key.agents = [
+          "byte@wyvern"
+          "byte@dragon"
+        ];
       };
     };
 }

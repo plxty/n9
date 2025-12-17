@@ -59,11 +59,8 @@ in
           '';
         };
 
+        # darwin: https://github.com/nix-community/home-manager/pull/8137
         home-manager.services.ssh-agent.enable = true;
-        nix-darwin.home-manager.users = {
-          # Not for nix-darwin:
-          ${name}.services.ssh-agent.enable = lib.mkForce false;
-        };
       };
     }
   );

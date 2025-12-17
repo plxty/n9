@@ -69,7 +69,7 @@
     substituters = [
       "https://mirrors.sjtug.sjtu.edu.cn/nix-channels/store/?priority=10"
       "https://mirrors.ustc.edu.cn/nix-channels/store/?priority=11"
-      "https://cache.nixos.org/?priority=40" # default
+      "https://cache.nixos.org/" # default
     ];
   };
 }

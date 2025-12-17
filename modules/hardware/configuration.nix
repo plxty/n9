@@ -1,6 +1,8 @@
 {
   config,
   lib,
+  inputs,
+  pkgs,
   ...
 }:
 
@@ -22,8 +24,7 @@ in
     let
       args = {
         config.hardware.enableRedistributableFirmwware = false;
-        lib.mkDefault = lib.id;
-        pkgs = null;
+        inherit lib inputs pkgs;
         modulesPath = null;
       };
       hostPlatform = (if lib.isPath cfg then import cfg args else { }).nixpkgs.hostPlatform or null;
