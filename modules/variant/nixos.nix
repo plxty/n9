@@ -22,6 +22,9 @@ let
         inputs.home-manager.nixosModules.default
       ]
       ++ modules;
+      specialArgs = {
+        inherit inputs;
+      };
     };
 in
 {
@@ -35,7 +38,6 @@ in
     apply =
       _:
       (mkNixOSConfiguration [
-        # TODO: Move to somewhere default config?
         {
           nixpkgs.pkgs = pkgs;
           hardware.enableRedistributableFirmware = true;
@@ -55,7 +57,6 @@ in
           system.stateVersion = "25.05";
         }
         # The hardware-configuration.nix, an "backdoor" of imports :/
-        # TODO: Define a options of imports? It's weird of course.
         config.hardware.configuration
         # Real definitions :)
         (lib.mkAliasDefinitions opt)

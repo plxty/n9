@@ -37,6 +37,7 @@
       users.byte = {
         environment.packages = with pkgs; [
           brave
+          art # or darktable?
         ];
 
         # FIXME: Add modules/graphics/desktop.nix?

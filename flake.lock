@@ -145,11 +145,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1765895319,
-        "narHash": "sha256-ZrhNvXdNu2wuXDgX1JtV1zH7sxyys/iI9iNRdj2WKy4=",
+        "lastModified": 1765988105,
+        "narHash": "sha256-3E20n/e+qDaiTNAYUA6D2ei7rhQuZpHHsAR4qjhQF/c=",
         "owner": "plxty",
         "repo": "nixos-x1e",
-        "rev": "64030b1c9b83a804b0a23958e74661c6795acce2",
+        "rev": "8f3a3fff195c63a5956bc576754982a3f95a7d9e",
         "type": "github"
       },
       "original": {
