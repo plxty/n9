@@ -38,10 +38,10 @@
         "homepage": "",
         "owner": "Loyalsoldier",
         "repo": "geoip",
-        "rev": "a52c452289b88512d948c6240fb3b6ccac0d53e2",
-        "sha256": "18nc0fwn5dkyhzkjlglvczf53gdy8vpxlbdk6cz02qlj0h9zs3na",
+        "rev": "0cccf6e80f4e654aa76e307497a809dda1c5a826",
+        "sha256": "1pggsykz1bywx7vzdvdmjvyhlzpm99yjw1sxyv750i3rjwj3zizl",
         "type": "tarball",
-        "url": "https://github.com/Loyalsoldier/geoip/archive/a52c452289b88512d948c6240fb3b6ccac0d53e2.tar.gz",
+        "url": "https://github.com/Loyalsoldier/geoip/archive/0cccf6e80f4e654aa76e307497a809dda1c5a826.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "gitcache": {
@@ -78,10 +78,10 @@
         "homepage": "https://dvel.me/posts/rime-ice/",
         "owner": "iDvel",
         "repo": "rime-ice",
-        "rev": "fa290a9c234377084b32ce148ba3056ac1bc1198",
-        "sha256": "095apj9rv91r8bwwqh0my74lpl8v0bmymdgri9rigzm2a3j08075",
+        "rev": "d93e60b190c4dee21979e040195e34e4bb6fc82b",
+        "sha256": "0ncblbsmrc747jd0n8kivhjkl4axkndkmx41cdhxlihi01rgjq9w",
         "type": "tarball",
-        "url": "https://github.com/iDvel/rime-ice/archive/fa290a9c234377084b32ce148ba3056ac1bc1198.tar.gz",
+        "url": "https://github.com/iDvel/rime-ice/archive/d93e60b190c4dee21979e040195e34e4bb6fc82b.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "tree-sitter-kconfig": {

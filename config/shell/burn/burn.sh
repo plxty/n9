@@ -43,30 +43,25 @@ fi
 
 # Das template:
 echo "\"$(realpath "$PWD")\"" > lib/dir.nix
-
-# Trap will be replaced, so we do everything here... TODO: Trap arrays?
 trap 'git restore lib/dir.nix; pkill -P $$' SIGINT SIGTERM EXIT
 
 # For debugging: --show-trace
 B_COLMENA=(colmena "$@")
 if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
+  # Maybe a pre-defined distro, e.g. orbstack
+  if [[ -f /etc/nixos/configuration.nix ]]; then
+    mkdir -p "config/system/$B_THIS/inherit"
+    cp -a /etc/nixos/*.nix "config/system/$B_THIS/inherit/"
+  fi
+
   # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
   which sudo > /dev/null && sudo -v
   {
-    # "Wakeup" the sleeping parent when exit normally or abnormally:
-    trap 'pkill -P $$ sleep' EXIT
-
-    # Maybe a pre-defined distro, e.g. orbstack
-    if [[ -f /etc/nixos/configuration.nix ]]; then
-      mkdir -p "config/system/$B_THIS/inherit"
-      cp -a /etc/nixos/*.nix "config/system/$B_THIS/inherit/"
-    fi
-
     # For hosts that mismatch with local, suggest `sudo hostname xxx`:
+    trap 'pkill -P $$ sleep' EXIT
     "${B_COLMENA[@]}" apply-local --verbose
-
-    # The `sleep` will be killed whether successful or not...
   } &
+  # The ctrl-c are handled here:
   while jobs %%; do sudo -v || true; sleep 180; done
 else
   "${B_COLMENA[@]}" apply --on "$B_THAT" --verbose --keep-result \
