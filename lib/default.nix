@@ -4,7 +4,18 @@ let
   n9 = {
     sources = import ./sources.nix;
 
-    packages = {
+    packages = rec {
+      mkPackage = pkgs: pname: pkgs.callPackage ../pkgs/${pname}.nix { inherit n9 inputs; };
+
+      patches =
+        pkg: attrs:
+        pkg.overrideAttrs (prev: {
+          patches =
+            (prev.patches or [ ])
+            ++ (lib.map (v: if (lib.typeOf v) == "string" then ../pkgs/patches/${v}.patch else v) attrs);
+        });
+      patch = pkg: attr: patches pkg [ attr ];
+
       assureVersion =
         pkg: version: attrsOrFn:
         let
@@ -110,6 +121,9 @@ let
 
     # Shortcuts without "namespace":
     inherit (n9.packages)
+      mkPackage
+      patches
+      patch
       assureVersion
       ;
     inherit (n9.options)

@@ -1,27 +1,21 @@
-commit dd9cb916daa85e887a66616e4b91c23eb896e152
-Author: Zigit Zo <byte@pen.guru>
-Date:   Mon Nov 3 15:30:05 2025 +0800
+From a1967a074708e18bc803840cbe42b37ef1ba1103 Mon Sep 17 00:00:00 2001
+From: Zigit Zo <byte@kei.network>
+Date: Mon, 22 Dec 2025 03:13:14 +0800
+Subject: [PATCH] rime-ice: taste
 
-    taste
+---
+ default.yaml                  |  19 +-
+ double_pinyin_abc.schema.yaml |  33 ++-
+ ibus_rime.yaml                |  29 +++
+ lua/lunar.lua                 |   8 +-
+ lua/number_translator.lua     |   6 +-
+ symbols_u.yaml                | 454 ++++++++++++++++++++++++++++++++++
+ 6 files changed, 509 insertions(+), 40 deletions(-)
+ create mode 100644 ibus_rime.yaml
+ create mode 100644 symbols_u.yaml
 
-diff --git a/custom_phrase_double.txt b/custom_phrase_double.txt
-new file mode 100644
-index 0000000..29bf524
---- /dev/null
-+++ b/custom_phrase_double.txt
-@@ -0,0 +1,10 @@
-+# Rime table
-+# coding: utf-8
-+#@/db_name	custom_phrase_double.txt
-+#@/db_type	tabledb
-+#
-+# Format:
-+# Output<Tab>Input<Tab>Priority
-+
-+——	poae
-+……	vglm
 diff --git a/default.yaml b/default.yaml
-index 58feb8b..e0ea452 100644
+index dba89a4..d5a32bf 100644
 --- a/default.yaml
 +++ b/default.yaml
 @@ -10,20 +10,11 @@ config_version: '2025-02-24'
@@ -46,69 +40,24 @@ index 58feb8b..e0ea452 100644
    # alternative_select_labels: [ ①, ②, ③, ④, ⑤, ⑥, ⑦, ⑧, ⑨, ⑩ ]  # 修改候选项标签
    # alternative_select_keys: ASDFGHJKL  # 如编码字符占用数字键，则需另设选字键（注意在雾凇中，大写字母也作为编码了）
  
-@@ -66,7 +57,7 @@ ascii_composer:
-   switch_key:
-     Caps_Lock: clear      # commit_code | commit_text | clear
-     Shift_L: commit_code  # commit_code | commit_text | inline_ascii | clear | noop
--    Shift_R: noop         # commit_code | commit_text | inline_ascii | clear | noop
-+    Shift_R: commit_code  # commit_code | commit_text | inline_ascii | clear | noop
-     Control_L: noop       # commit_code | commit_text | inline_ascii | clear | noop
-     Control_R: noop       # commit_code | commit_text | inline_ascii | clear | noop
- 
-@@ -131,7 +122,7 @@ punctuator:
-     '?' : '？'
-     ';' : '；'
-     ':' : '：'
--    '''' : { pair: [ '‘', '’' ] }
-+    '''' : ''''
-     '"' : { pair: [ '“', '”' ] }
-     '\' : '、'
-     '|' : '|'
-@@ -141,20 +132,20 @@ punctuator:
-     '@' : '@'
-     '#' : '#'
-     '%' : '%'
--    '$' : '¥'
-+    '$' : '$'
-     '^' : '……'
-     '&' : '&'
-     '*' : '*'
-     '(' : '（'
-     ')' : '）'
-     '-' : '-'
--    '_' : ——
-+    '_' : '_'
-     '+' : '+'
-     '=' : '='
--    '[' : '【'
--    ']' : '】'
--    '{' : '「'
--    '}' : '」'
-+    '[' : '['
-+    ']' : ']'
-+    '{' : '{'
-+    '}' : '}'
- 
- 
- # 处理符合特定规则的输入码，如网址、反查
-@@ -186,13 +177,9 @@ key_binder:
-     - { when: composing, accept: Alt+Left, send: Shift+Left }
-     - { when: composing, accept: Alt+Right, send: Shift+Right }
+@@ -194,13 +185,9 @@ key_binder:
+     # paging 在第一页时按下，会直接上屏并输出此符号。
+     # has_menu 始终不会输出。
  
 -    # 翻页 - =
--    - { when: has_menu, accept: minus, send: Page_Up }  # 上一页设置为 paging 时会导致直接上屏并输出减号
+-    - { when: has_menu, accept: minus, send: Page_Up }
 -    - { when: has_menu, accept: equal, send: Page_Down }
 -
      # 翻页 , .
--    # - { when: paging, accept: comma, send: Page_Up }
+-    # - { when: has_menu, accept: comma, send: Page_Up }
 -    # - { when: has_menu, accept: period, send: Page_Down }
-+    - { when: paging, accept: comma, send: Page_Up }
++    - { when: has_menu, accept: comma, send: Page_Up }
 +    - { when: has_menu, accept: period, send: Page_Down }
  
      # 翻页 [ ]  ⚠️ 开启时请修改上面以词定字的快捷键
-     # - { when: paging, accept: bracketleft, send: Page_Up }
+     # - { when: has_menu, accept: bracketleft, send: Page_Up }
 diff --git a/double_pinyin_abc.schema.yaml b/double_pinyin_abc.schema.yaml
-index 2029cea..7b2d1da 100644
+index 2029cea..cb107dd 100644
 --- a/double_pinyin_abc.schema.yaml
 +++ b/double_pinyin_abc.schema.yaml
 @@ -32,9 +32,13 @@ schema:
@@ -125,7 +74,15 @@ index 2029cea..7b2d1da 100644
    - name: ascii_punct  # 中英标点
      states: [ ¥, $ ]
    - name: traditionalization
-@@ -65,32 +69,25 @@ engine:
+@@ -54,6 +58,7 @@ engine:
+   processors:
+     - lua_processor@*select_character  # 以词定字
+     - ascii_composer
++    - temp_ascii_composer
+     - recognizer
+     - key_binder
+     - speller
+@@ -65,32 +70,24 @@ engine:
      - ascii_segmentor
      - matcher
      - abc_segmentor
@@ -149,7 +106,7 @@ index 2029cea..7b2d1da 100644
      - lua_translator@*force_gc           # 暴力 GC
    filters:
      - lua_filter@*corrector                          # 错音错字提示
-     - reverse_lookup_filter@radical_reverse_lookup   # 部件拆字滤镜
+-    - reverse_lookup_filter@radical_reverse_lookup   # 部件拆字滤镜
 -    - lua_filter@*autocap_filter                     # 英文自动大写
      - lua_filter@*pin_cand_filter                    # 置顶候选项（顺序要求：置顶候选项 > Emoji > 简繁切换）
      - lua_filter@*reduce_english_filter              # 降低部分英语单词在候选项的位置
@@ -735,3 +692,6 @@ index 0000000..84708ab
 +  'uyuan': [圆]
 +  'uyinwei': [∵]
 +  'usuoyi': [∴]
+-- 
+2.51.2
+

@@ -1,10 +1,10 @@
 {
   n9.shell.burn =
-    { pkgs, ... }:
+    { n9, pkgs, ... }:
     {
       environment.packages = with pkgs; [
         # Colmena:
-        colmena
+        (n9.patch inputs.colmena.packages.${stdenv.system}.colmena "colmena-taste")
 
         # RDepends:
         getent # upload-keys

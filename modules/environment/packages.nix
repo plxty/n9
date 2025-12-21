@@ -75,7 +75,7 @@ let
       sysstat
       lm_sensors
       bpftrace
-      perf
+      (n9.patch perf "perf-taste") # Speed up perf + compressed debug info:
     ];
 
   # TODO: Fill it?

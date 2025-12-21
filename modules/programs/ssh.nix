@@ -31,7 +31,7 @@ in
       options.programs.ssh = {
         package = lib.mkOption {
           type = lib.types.package;
-          default = pkgs.openssh;
+          default = pkgs.opensshWithKerberos;
         };
       };
 

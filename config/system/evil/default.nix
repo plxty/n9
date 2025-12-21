@@ -88,6 +88,16 @@
           };
         };
 
+        # Trying the input method:
+        i18n.inputMethod = {
+          type = "fcitx5";
+          enable = true;
+          fcitx5.addons = with pkgs; [
+            fcitx5-gtk
+            (fcitx5-rime.override { rimeDataPkgs = [ rime-ice ]; })
+          ];
+        };
+
         # No networkmanager, we're a "router" handles network ourselves :)
         networking.networkmanager.enable = false;
       };
@@ -105,7 +115,19 @@
           brave
           art # or darktable?
           rpi-imager
-          wechat
+          (wechat.override (prev: {
+            # Fix for wrongly wechat version... FIXME: kind of unstable, use niv?
+            # The appimage is hard to override, therefore hacking the fetchurl...
+            fetchurl =
+              { url, ... }@attrs:
+              prev.fetchurl (
+                attrs
+                // (lib.optionalAttrs (lib.hasSuffix "/WeChatLinux_x86_64.AppImage" url) {
+                  url = "https://dldir1v6.qq.com/weixin/Universal/Linux/WeChatLinux_x86_64.AppImage";
+                  hash = "sha256-+r5Ebu40GVGG2m2lmCFQ/JkiDsN/u7XEtnLrB98602w=";
+                })
+              );
+          }))
           wpsoffice-cn
         ];
 
