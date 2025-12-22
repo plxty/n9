@@ -5,7 +5,11 @@ let
     sources = import ./sources.nix;
 
     packages = rec {
-      mkPackage = pkgs: pname: pkgs.callPackage ../pkgs/${pname}.nix { inherit n9 inputs; };
+      mkPackage =
+        pkgs: v:
+        pkgs.callPackage (if (lib.typeOf v) == "string" then ../pkgs/${v}.nix else v) {
+          inherit n9 inputs;
+        };
 
       patches =
         pkg: attrs:
