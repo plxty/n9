@@ -23,6 +23,12 @@ in
       type = lib.types.package;
       default = if cfg.version == null then pkgs.go else pkgs."go_${cfg.version}";
     };
+
+    # langauge-server-protocol
+    lsp = lib.mkOption {
+      type = lib.types.package;
+      default = pkgs.gopls;
+    };
   };
 
   config.environment.variables = lib.mkMerge [
@@ -33,8 +39,12 @@ in
     { GO111MODULE = "on"; }
   ];
 
-  config.variant.shell.depsBuildBuild = lib.mkIf cfg.enable [
-    cfg.package
-    pkgs.gopls
-  ];
+  config.variant.shell.depsBuildBuild = lib.mkIf cfg.enable (
+    with pkgs;
+    [
+      cfg.package
+      cfg.lsp
+      golint
+    ]
+  );
 }
