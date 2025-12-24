@@ -1,6 +1,11 @@
 {
   n9.shell.burn =
-    { n9, pkgs, ... }:
+    {
+      n9,
+      pkgs,
+      inputs,
+      ...
+    }:
     {
       environment.packages = with pkgs; [
         # Colmena:

@@ -245,7 +245,7 @@ in
             in
             n9.assureVersion pkgs.mihomo src.version {
               inherit src;
-              vendorHash = "sha256-WwbuNplMkH5wotpHasQbwK85Ymh6Ke4WL1LTLDWvRFk=";
+              vendorHash = "sha256-FhOkdOPiv/DaMQVYcM09EgFnOWdHactMOWt8oNcIu80=";
             }
           ) "mihomo-taste";
           configFile = "/etc/mihomo/clash.yaml";

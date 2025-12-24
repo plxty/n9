@@ -38,10 +38,10 @@
         "homepage": "",
         "owner": "Loyalsoldier",
         "repo": "geoip",
-        "rev": "0cccf6e80f4e654aa76e307497a809dda1c5a826",
-        "sha256": "1pggsykz1bywx7vzdvdmjvyhlzpm99yjw1sxyv750i3rjwj3zizl",
+        "rev": "51949ff8e3707d8c0d3509000729e7df44d86466",
+        "sha256": "0qqhy5hwviq38wk5plp4d3xdqy3sxpyx0306ngbb8xj5zfgw836a",
         "type": "tarball",
-        "url": "https://github.com/Loyalsoldier/geoip/archive/0cccf6e80f4e654aa76e307497a809dda1c5a826.tar.gz",
+        "url": "https://github.com/Loyalsoldier/geoip/archive/51949ff8e3707d8c0d3509000729e7df44d86466.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "gitcache": {
@@ -66,11 +66,11 @@
         "version": "0.5.6"
     },
     "mihomo": {
-        "sha256": "0sqmclc3ccrd7dw0kjlrx3nxlzq7gq0qmwr6b0gygwan2iv6wx1n",
+        "sha256": "0bqsl7nxkvzvbbsgdwab4d9pxgbllsq3mmawq5p6gpjxjj32skf1",
         "type": "tarball",
-        "url": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v1.19.17.tar.gz",
+        "url": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v1.19.18.tar.gz",
         "url_template": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v<version>.tar.gz",
-        "version": "1.19.17"
+        "version": "1.19.18"
     },
     "rime-ice": {
         "branch": "main",
@@ -78,10 +78,10 @@
         "homepage": "https://dvel.me/posts/rime-ice/",
         "owner": "iDvel",
         "repo": "rime-ice",
-        "rev": "d93e60b190c4dee21979e040195e34e4bb6fc82b",
-        "sha256": "0ncblbsmrc747jd0n8kivhjkl4axkndkmx41cdhxlihi01rgjq9w",
+        "rev": "cc51682a850e9b89db8856c589b8c13f8b534a7c",
+        "sha256": "03wnijxb9bp1sx1kibxg4n1c2xdap4hlj0f2kyzrjqd8mgvryidc",
         "type": "tarball",
-        "url": "https://github.com/iDvel/rime-ice/archive/d93e60b190c4dee21979e040195e34e4bb6fc82b.tar.gz",
+        "url": "https://github.com/iDvel/rime-ice/archive/cc51682a850e9b89db8856c589b8c13f8b534a7c.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "tree-sitter-kconfig": {

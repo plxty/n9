@@ -100,6 +100,15 @@
 
         # No networkmanager, we're a "router" handles network ourselves :)
         networking.networkmanager.enable = false;
+
+        # Auto mounting the removable disk:
+        # @see https://knazarov.com/posts/automount_usb_drives_in_nixos/
+        services.udev.extraRules = lib.concatStrings [
+          ''ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", ''
+          ''ENV{ID_FS_USAGE}=="filesystem", ENV{ID_SERIAL}=="ASMT_ASM246X_AAAABBBB0105-0:0", ''
+          ''RUN{program}+="${pkgs.systemd}/bin/systemd-mount --owner byte ''
+          ''--no-block --automount=yes --collect $devnode /mnt/portal"''
+        ];
       };
 
       users.byte = {
@@ -110,6 +119,7 @@
           bridge-utils
           minicom
           openocd
+          btrfs-progs
 
           # gui
           brave
@@ -129,9 +139,19 @@
               );
           }))
           wpsoffice-cn
+          wireshark
         ];
 
         programs.code-server.enable = true;
+
+        # Matched reject by default:
+        variant.home-manager.programs.fish.functions.eject = ''
+          if test (count $argv) -eq 0
+            sudo eject -s -v /mnt/portal
+          else
+            sudo eject $argv
+          end
+        '';
 
         security.ssh-key = {
           private = "id_ed25519";
