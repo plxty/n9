@@ -38,10 +38,10 @@
         "homepage": "",
         "owner": "Loyalsoldier",
         "repo": "geoip",
-        "rev": "51949ff8e3707d8c0d3509000729e7df44d86466",
-        "sha256": "0qqhy5hwviq38wk5plp4d3xdqy3sxpyx0306ngbb8xj5zfgw836a",
+        "rev": "9cfc5e9f865cc8b0022a488d2f9275cfa437c048",
+        "sha256": "0kwr8ssgj2aw10r0dqb1nqdj2y5n9jkdpxkswif7nq03m2vksmxk",
         "type": "tarball",
-        "url": "https://github.com/Loyalsoldier/geoip/archive/51949ff8e3707d8c0d3509000729e7df44d86466.tar.gz",
+        "url": "https://github.com/Loyalsoldier/geoip/archive/9cfc5e9f865cc8b0022a488d2f9275cfa437c048.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "gitcache": {

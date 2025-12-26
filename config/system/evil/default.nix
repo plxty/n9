@@ -106,8 +106,7 @@
         services.udev.extraRules = lib.concatStrings [
           ''ACTION=="add", SUBSYSTEMS=="usb", SUBSYSTEM=="block", ''
           ''ENV{ID_FS_USAGE}=="filesystem", ENV{ID_SERIAL}=="ASMT_ASM246X_AAAABBBB0105-0:0", ''
-          ''RUN{program}+="${pkgs.systemd}/bin/systemd-mount --owner byte ''
-          ''--no-block --automount=yes --collect $devnode /mnt/portal"''
+          ''RUN{program}+="${pkgs.systemd}/bin/systemd-mount --no-block --collect $devnode /mnt/portal"''
         ];
       };
 
@@ -140,6 +139,10 @@
           }))
           wpsoffice-cn
           wireshark
+
+          # wine...
+          wineWowPackages.staging
+          winetricks
         ];
 
         programs.code-server.enable = true;
