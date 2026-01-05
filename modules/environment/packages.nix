@@ -62,6 +62,7 @@ let
       # jupyter # https://github.com/NixOS/nixpkgs/issues/255923
       inferno
       flamelens
+      b4
     ]
     ++ lib.optionals pkgs.stdenv.isLinux [
       # basic

@@ -4,14 +4,13 @@ let
   base =
     {
       config,
-      n9,
       pkgs,
       pkgsCross,
       ...
     }:
     {
       # shell.static = true; # should it static?
-      toolchain.rust.enable = true;
+      toolchain.rust.enable = true; # libbpf-rs
       toolchain.clang = {
         enable = true;
         unwrapped = true;
@@ -42,6 +41,7 @@ let
           elfutils
           libbpf # only for indexing
           openssl
+          libpcap
         ])
 
         (lib.mkIf (!config.shell.static) (
