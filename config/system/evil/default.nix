@@ -22,8 +22,10 @@
             };
           };
           wan.enp88s0 = { };
-          clash.enable = true;
         };
+
+        # Magic:
+        clash.enable = true;
       };
 
       variant.nixos = {

@@ -8,6 +8,7 @@
 }:
 
 let
+  # TODO: including security.keys...
   cfg = config.deployment.file;
 
   libHm = import "${inputs.home-manager}/modules/lib/stdlib-extended.nix" lib;

@@ -22,13 +22,14 @@ in
 
     activation.post = lib.mkOption {
       type = lib.types.lines;
-      default = ''
-        # https://github.com/luishfonseca/nixos-config/blob/main/modules/upgrade-diff.nix
-        # https://github.com/nix-darwin/nix-darwin/blob/e04a388232d9a6ba56967ce5b53a8a6f713cdfcf/modules/system/activation-scripts.nix#L114
-        ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff /run/current-system "$systemConfig"
-      '';
     };
   };
+
+  config.system.activation.post = ''
+    # https://github.com/luishfonseca/nixos-config/blob/main/modules/upgrade-diff.nix
+    # https://github.com/nix-darwin/nix-darwin/blob/e04a388232d9a6ba56967ce5b53a8a6f713cdfcf/modules/system/activation-scripts.nix#L114
+    ${pkgs.nvd}/bin/nvd --nix-bin-dir=${pkgs.nix}/bin diff /run/current-system "$systemConfig"
+  '';
 
   config.variant = lib.mkMerge [
     rec {

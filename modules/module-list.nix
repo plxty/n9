@@ -13,6 +13,7 @@
   ./networking/pppoe.nix
   ./networking/bridge.nix
   ./networking/router.nix
+  ./networking/clash.nix
   ./users/users.nix
   ./security/keys.nix
   ./security/ssh-key.nix

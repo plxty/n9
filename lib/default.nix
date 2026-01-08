@@ -36,6 +36,10 @@ let
           lib.trace "package ${pkg.pname} already satisfied version ${version}, may remove the assureVersion" pkg;
     };
 
+    attrs = {
+      firstName = attrs: lib.elemAt (lib.attrNames attrs) 0;
+    };
+
     options = {
       mkAttrsOfSubmoduleOption =
         attrs: modules: lib.mkOption (attrs // { type = lib.types.attrsOf (lib.types.submodule modules); });
@@ -129,6 +133,9 @@ let
       patches
       patch
       assureVersion
+      ;
+    inherit (n9.attrs)
+      firstName
       ;
     inherit (n9.options)
       mkOptionsFromConfig

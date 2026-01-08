@@ -7,15 +7,8 @@ import yaml
 import traceback
 
 PRIVATE = "/var/lib/private/mihomo"
-GEO_IP = PRIVATE + "/GeoIP.dat"
-GEO_SITE = PRIVATE + "/GeoSite.dat"
 SOURCE = "/etc/mihomo/original.yaml"
 TARGET = "/etc/mihomo/clash.yaml"
-
-
-def curl(url: str, target: str):
-    subprocess.check_call(["curl", "-L", "-o", f"{target}.new", url])
-    os.rename(f"{target}.new", target)
 
 
 def main():
@@ -28,15 +21,6 @@ def main():
     os.chmod(SOURCE, 0o600)
     with open(SOURCE, "r") as reader:
         config = yaml.safe_load(reader)
-
-    curl(
-        "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geoip.dat",
-        GEO_IP,
-    )
-    curl(
-        "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/latest/download/geosite.dat",
-        GEO_SITE,
-    )
 
     # override what we want:
     # https://wiki.metacubex.one/en/example/conf/

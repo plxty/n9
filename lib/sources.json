@@ -38,10 +38,10 @@
         "homepage": "",
         "owner": "Loyalsoldier",
         "repo": "geoip",
-        "rev": "9cfc5e9f865cc8b0022a488d2f9275cfa437c048",
-        "sha256": "0kwr8ssgj2aw10r0dqb1nqdj2y5n9jkdpxkswif7nq03m2vksmxk",
+        "rev": "668fd2976509ef51dc21aba7b97bede637b782bf",
+        "sha256": "0ldlpwanh34wvz2ifqw1lfyw9jrixzscj3nvaza1z4xpl6xald3m",
         "type": "tarball",
-        "url": "https://github.com/Loyalsoldier/geoip/archive/9cfc5e9f865cc8b0022a488d2f9275cfa437c048.tar.gz",
+        "url": "https://github.com/Loyalsoldier/geoip/archive/668fd2976509ef51dc21aba7b97bede637b782bf.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "gitcache": {
@@ -78,10 +78,10 @@
         "homepage": "https://dvel.me/posts/rime-ice/",
         "owner": "iDvel",
         "repo": "rime-ice",
-        "rev": "cc51682a850e9b89db8856c589b8c13f8b534a7c",
-        "sha256": "03wnijxb9bp1sx1kibxg4n1c2xdap4hlj0f2kyzrjqd8mgvryidc",
+        "rev": "51003473600d90ff4b46004a5122ee1b98210606",
+        "sha256": "1bnngndw735ddy58bfjl8ysq4grm2fq6dfmn0gjqf2z4wfrnn4p0",
         "type": "tarball",
-        "url": "https://github.com/iDvel/rime-ice/archive/cc51682a850e9b89db8856c589b8c13f8b534a7c.tar.gz",
+        "url": "https://github.com/iDvel/rime-ice/archive/51003473600d90ff4b46004a5122ee1b98210606.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "tree-sitter-kconfig": {
@@ -107,6 +107,20 @@
         "type": "tarball",
         "url": "https://github.com/Markcial/upto/archive/2d1f35453fb55747d50da8c1cb1809840f99a646.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
+    "v2ray-rules-geoip": {
+        "sha256": "19bdpwssqwsf2r2j94crlala0fsz3j51klqiyqddl210llf2isg2",
+        "type": "file",
+        "url": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/202601072215/geoip.dat",
+        "url_template": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/<version>/geoip.dat",
+        "version": "202601072215"
+    },
+    "v2ray-rules-geosite": {
+        "sha256": "1hy9nq9xyqffyhn0r4l0313pk130hcj98ndcd7gv76x26f7bgnjf",
+        "type": "file",
+        "url": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/202601072215/geosite.dat",
+        "url_template": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/<version>/geosite.dat",
+        "version": "202601072215"
     },
     "virtme-ng": {
         "sha256": "0zqyv3s2xr4c934iin6jah6c311snllimi2cnjbp5lc0431pxwp6",
