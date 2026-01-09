@@ -7,4 +7,5 @@
   ./shell/nvidia-gpu.nix
   ./shell/rdma.nix
   ./shell/mihomo.nix
+  ./shell/gcc.nix
 ]
