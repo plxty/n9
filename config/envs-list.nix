@@ -8,4 +8,5 @@
   ./shell/rdma.nix
   ./shell/mihomo.nix
   ./shell/gcc.nix
+  ./shell/llvm.nix
 ]
