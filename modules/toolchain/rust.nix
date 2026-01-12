@@ -59,7 +59,7 @@ in
     ];
 
     # TODO: .source = writeYAML
-    deployment.file.".helix/languages.toml".text = ''
+    deployment.file.".helix/languages.toml".text = lib.mkIf config.shell.cross ''
       [language-server.rust-analyzer]
       config = { cargo = { "target" = "${config.shell.triplet}" } }
     '';

@@ -34,7 +34,7 @@ if $B_UP; then
   git pull --rebase || true
   chmod -R g-rwx,o-rwx .
   cd ..
-  "${B_NIX[@]}" flake update || true
+  "${B_NIX[@]}" flake update --flake '.?submodules=1' || true
   if [[ -f lib/sources.json ]]; then
     niv update
   fi
