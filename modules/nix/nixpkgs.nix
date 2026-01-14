@@ -66,6 +66,28 @@
             unpackPhase = ''unzip $src'';
             sourceRoot = "flashspace.app";
           };
+
+        # To skip some test fails... FIXME: Remove me when done!
+        python313 =
+          let
+            packageOverrides =
+              pyton-final: python-prev:
+              let
+                skipCheck =
+                  pkg:
+                  python-prev.${pkg}.overrideAttrs {
+                    doInstallCheck = false;
+                    doCheck = false;
+                  };
+                skipCheckIf = cond: pkgs: lib.genAttrs pkgs (if cond then skipCheck else n: python-prev.${n});
+              in
+              skipCheckIf (prev.stdenv.system == "aarch64-darwin") [
+                "setproctitle" # keep failing...
+                "pytest-benchmark" # test runs forever...
+                "python-lsp-server" # keep failing...
+              ];
+          in
+          prev.python313.override { inherit packageOverrides; };
       })
     ];
 

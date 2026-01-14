@@ -56,9 +56,6 @@ in
       efi.efiSysMountPoint = "/efi";
     };
     initrd.systemd.enable = true;
-
-    # FIXME: Remove from nixos-x1e:
-    initrd.preDeviceCommands = lib.mkForce "";
   };
 
   config.variant.nixos.disko.devices.disk = lib.concatMapAttrs (dev: v: {
