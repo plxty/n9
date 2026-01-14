@@ -48,12 +48,6 @@ trap 'git restore lib/dir.nix; pkill -P $$' SIGINT SIGTERM EXIT
 # For debugging: --show-trace
 B_COLMENA=(colmena "$@")
 if [[ "$B_THAT" == "" || "$B_THAT" == "$B_THIS" ]]; then
-  # Maybe a pre-defined distro, e.g. orbstack
-  if [[ -f /etc/nixos/configuration.nix ]]; then
-    mkdir -p "config/system/$B_THIS/inherit"
-    cp -a /etc/nixos/*.nix "config/system/$B_THIS/inherit/"
-  fi
-
   # Try to keep sudo until finished (warning! tricky! unsafe!), yay sudoloop:
   which sudo > /dev/null && sudo -v
   {

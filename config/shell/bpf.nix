@@ -61,16 +61,6 @@ let
           ]
         ))
       ];
-
-      environment.make.targets = {
-        build = "cargo build";
-
-        # only for vexas, until https://github.com/orbstack/orbstack/issues/1504
-        push = ''
-          bin="$(tomlq -r '.package.name' Cargo.toml)"
-          macctl push "target/${config.shell.triplet}/debug/$bin" /var/lib/images/share
-        '';
-      };
     };
 in
 {

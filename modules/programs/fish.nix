@@ -80,12 +80,9 @@ in
           _tide_print_item nix_shell $tide_nix_shell_icon' ' "$IN_NIX_SHELL$pkgs"
         '';
 
-        # To indicate we're in orbstack or ssh, replacing tide's context:
         _tide_item_whoami = ''
           set -f indicator
-          if test "$SSH_AUTH_SOCK" = "/opt/orbstack-guest/run/host-ssh-agent.sock"
-            set indicator "orb"
-          else if test -n "$SSH_CONNECTION"
+          if test -n "$SSH_CONNECTION"
             set indicator "ssh $USER@$hostname"
           else if test -n "$WSL_DISTRO_NAME"
             set indicator "wsl"
