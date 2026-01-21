@@ -17,15 +17,6 @@
           type = lib.types.package;
           default = pkgs.git;
         };
-
-        cache = lib.mkEnableOption "gitcache";
-      };
-
-      # TODO: Bash?
-      config.variant.home-manager.programs.fish.shellAliases = lib.mkIf cfg.cache {
-        # Replace with wrapper will slow down the completion of fish, which is
-        # quite annoying, therefore we just alias it for interactive use.
-        git = "${lib.getExe pkgs.gitcache} git";
       };
 
       config.variant.home-manager.programs.git = {

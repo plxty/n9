@@ -44,13 +44,6 @@
         "url": "https://github.com/Loyalsoldier/geoip/archive/b2859762aae12caf45e6d2fd4e0835dbaf5160bd.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "gitcache": {
-        "sha256": "0gz6l6a5bh73rkcmm972kzln5xsiyvmn4q9kg95z71s146w9qkx1",
-        "type": "tarball",
-        "url": "https://github.com/seeraven/gitcache/archive/refs/tags/v1.0.29.tar.gz",
-        "url_template": "https://github.com/seeraven/gitcache/archive/refs/tags/v<version>.tar.gz",
-        "version": "1.0.29"
-    },
     "iterm2": {
         "sha256": "1wxlj2fs55jscgn375pn0gs14pnhv511nrcshw3h857jvn4ksab8",
         "type": "file",

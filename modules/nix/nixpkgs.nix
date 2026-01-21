@@ -27,7 +27,6 @@
         # New toys:
         libkdumpfile = n9.mkPackage prev "libkdumpfile";
         drgn = n9.mkPackage prev "drgn";
-        gitcache = n9.mkPackage prev "gitcache";
         virtme-ng = n9.mkPackage prev "virtme-ng";
         rime-ice = n9.mkPackage prev "rime-ice";
         proot-rs = n9.mkPackage prev "proot-rs";
