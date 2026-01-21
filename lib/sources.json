@@ -78,10 +78,10 @@
         "homepage": "",
         "owner": "plxty",
         "repo": "proot-rs",
-        "rev": "962933d819bab5b87938509fc32fdc715ef453a4",
-        "sha256": "0z9xrhbi4i6bmiw9vg5d5zdv282bwknv19azzn07cpk9a60gqx5x",
+        "rev": "e7fa296bd91463adf9911f6cc6616c8132a145cb",
+        "sha256": "1na08pi3riqra5ygka8b1y0kln36azk5zbz5gbwymjfnv59gwzsr",
         "type": "tarball",
-        "url": "https://github.com/plxty/proot-rs/archive/962933d819bab5b87938509fc32fdc715ef453a4.tar.gz",
+        "url": "https://github.com/plxty/proot-rs/archive/e7fa296bd91463adf9911f6cc6616c8132a145cb.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "rime-ice": {

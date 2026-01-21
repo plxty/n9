@@ -11,7 +11,10 @@ let
   pkgInfo = rec {
     src = n9.sources.proot-rs;
     version = n9.trimRev src;
-    cargoHash = "sha256-NOsKXth+gIhDsNDoP2l3J64BpN8YN22RJx+nzYt69vU=";
+    cargoDeps = rustPlatform.fetchCargoVendor {
+      inherit src;
+      hash = "sha256-NOsKXth+gIhDsNDoP2l3J64BpN8YN22RJx+nzYt69vU=";
+    };
   };
 
   # The shim is always static, using cargo-make will override nix flags, and
