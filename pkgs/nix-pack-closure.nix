@@ -3,6 +3,7 @@
   rsync,
   writers,
   pkgsStatic,
+  jq,
   ...
 }:
 
@@ -12,10 +13,18 @@ in
 writers.writeBashBin "nix-pack-closure" { } ''
   set -uex
 
-  # packelf $(which drgn) drgn-vXXX-x86_64
-  # -> drgn-vXXX-x86_64.tar.gz
+  # packelf $(which drgn)
+  # -> drgn-v0.0.1-x86_64.tar.gz
   src="$(nix-store --query "$1")"
-  dst="$2"
+
+  # parsing version and arch, setting up dst:
+  read -r pname version system < \
+    <(nix derivation show --log-format internal-json --no-pretty "$src" | \
+      ${lib.getExe jq} -r '.[] | .env | "\(.pname) \(.version) \(.system)"')
+  dst="$pname-v$version-$system"
+  if [[ -e "$dst.tar.gz" ]]; then
+    exit 1
+  fi
 
   # preparing working directory:
   tmp="$(mktemp -d)"
@@ -27,7 +36,7 @@ writers.writeBashBin "nix-pack-closure" { } ''
   # rsync all required files:
   nix-store --query --include-outputs --requisites "$src" \
     | xargs -I{} "${lib.getExe rsync}" -a --chmod=Du+w,Fu+w {} lib/
-  cp "${proot-rs}/bin/proot-rs" bin/
+  cp "${lib.getExe proot-rs}" bin/
 
   # making wrappers:
   for bin in "$src/bin/"*; do

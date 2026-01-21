@@ -45,5 +45,8 @@ rustPlatform.buildRustPackage (
 
     # Requires a rootfs:
     doCheck = false;
+
+    # For lib.getExe:
+    meta.mainProgram = "proot-rs";
   }
 )
