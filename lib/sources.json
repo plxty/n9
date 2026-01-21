@@ -72,6 +72,18 @@
         "url_template": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v<version>.tar.gz",
         "version": "1.19.18"
     },
+    "proot-rs": {
+        "branch": "master",
+        "description": "Rust implementation of PRoot, a ptrace-based sandbox",
+        "homepage": "",
+        "owner": "plxty",
+        "repo": "proot-rs",
+        "rev": "962933d819bab5b87938509fc32fdc715ef453a4",
+        "sha256": "0z9xrhbi4i6bmiw9vg5d5zdv282bwknv19azzn07cpk9a60gqx5x",
+        "type": "tarball",
+        "url": "https://github.com/plxty/proot-rs/archive/962933d819bab5b87938509fc32fdc715ef453a4.tar.gz",
+        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
+    },
     "rime-ice": {
         "branch": "main",
         "description": "Rime 配置：雾凇拼音 | 长期维护的简体词库",

@@ -30,6 +30,8 @@
         gitcache = n9.mkPackage prev "gitcache";
         virtme-ng = n9.mkPackage prev "virtme-ng";
         rime-ice = n9.mkPackage prev "rime-ice";
+        proot-rs = n9.mkPackage prev "proot-rs";
+        nix-pack-closure = n9.mkPackage prev "nix-pack-closure";
 
         # Make fcitx5-rime or ibus-engines.rime works.
         # Overridding fcitx5 isn't simple as nixos uses `fcitx5-with-addons`.
@@ -52,7 +54,7 @@
           n9.assureVersion prev.iterm2 version {
             inherit src;
             nativeBuildInputs = [ prev.unzip ];
-            unpackPhase = ''unzip $src'';
+            unpackPhase = "unzip $src";
             sourceRoot = "iTerm.app"; # avoid /Applications/iTerm2.app/iTerm.app appears
           };
 
@@ -63,7 +65,7 @@
           n9.assureVersion prev.flashspace src.version {
             inherit src;
             nativeBuildInputs = [ prev.unzip ];
-            unpackPhase = ''unzip $src'';
+            unpackPhase = "unzip $src";
             sourceRoot = "flashspace.app";
           };
 

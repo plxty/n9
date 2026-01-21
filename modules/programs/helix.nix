@@ -16,7 +16,7 @@
         { stdenv, ... }:
         stdenv.mkDerivation {
           pname = kconfig-ts-src.repo;
-          version = kconfig-ts-src.rev;
+          version = n9.trimRev kconfig-ts-src;
           src = kconfig-ts-src;
           makeFlags = [ "PREFIX=$(out)" ];
         }

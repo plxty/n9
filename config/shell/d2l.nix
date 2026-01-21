@@ -14,7 +14,7 @@
         (buildPythonPackage rec {
           pname = "d2l";
           src = n9.sources.d2l;
-          version = src.rev;
+          version = n9.trimRev src;
         })
       ];
     };

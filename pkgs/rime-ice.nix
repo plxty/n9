@@ -10,15 +10,12 @@
   ...
 }:
 
-let
-  src = n9.sources.rime-ice;
-in
-stdenv.mkDerivation {
+stdenv.mkDerivation rec {
   pname = "rime-ice";
-  version = src.rev;
+  version = n9.trimRev src;
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
-  inherit src;
+  src = n9.sources.rime-ice;
   patches = [ ../pkgs/patches/rime-ice-taste.patch ];
 
   # https://discourse.nixos.org/t/what-does-runhook-do/13861/3

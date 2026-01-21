@@ -34,6 +34,8 @@ let
           pkg.overrideAttrs (final: prev: (attrs final prev) // { inherit version; })
         else
           lib.trace "package ${pkg.pname} already satisfied version ${version}, may remove the assureVersion" pkg;
+
+      trimRev = src: lib.substring 0 7 src.rev;
     };
 
     attrs = {
@@ -133,6 +135,7 @@ let
       patches
       patch
       assureVersion
+      trimRev
       ;
     inherit (n9.attrs)
       firstName
