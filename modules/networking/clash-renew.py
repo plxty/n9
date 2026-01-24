@@ -43,23 +43,22 @@ def main():
     # ]
     config["dns"]["enhanced-mode"] = "fake-ip"
     config["dns"]["fake-ip-range"] = "198.18.0.0/15"  # TODO: 10.64.0.0/10
-    config["dns"]["fake-ip-filter-mode"] = "whitelist"
-    config["dns"]["fake-ip-filter"] = [  # should return the fake ip
-        "+.googleapis.cn",
-        "geosite:geolocation-!cn",
-        "+.huggingface.co",
-    ]
-    config["dns"]["fake-ip-reverse"] = [  # should return the real ip
-        "+.xas.is",
-        "+.alibaba-inc.com",
-        "+.yunos-inc.com",
-        "+.pool.ntp.org",
+    config["dns"]["fake-ip-filter-mode"] = "rule"
+    config["dns"]["fake-ip-filter"] = [
+        # In priority order (rules):
+        "DOMAIN-SUFFIX,xas.is,real-ip",
+        "DOMAIN-SUFFIX,alibaba-inc.com,real-ip",
+        "DOMAIN-SUFFIX,yunos-inc.com,real-ip",
+        "DOMAIN-SUFFIX,pool.ntp.org,real-ip",
         # https://femoon.top/article/f5540f1e-fa0b-4883-9104-21ffee1e2f1b
-        "steamcdn-a.akamaihd.net",
-        "+.cm.steampowered.com",
-        "+.steamserver.net",
+        "DOMAIN,steamcdn-a.akamaihd.net,real-ip",
+        "DOMAIN-SUFFIX,cm.steampowered.com,real-ip",
+        "DOMAIN-SUFFIX,steamserver.net,real-ip",
         # https://github.com/vernesong/OpenClash/discussions/3131#discussioncomment-14898388
-        "+.xn--ngstr-lra8j.com",
+        "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,real-ip",
+        "DOMAIN-SUFFIX,googleapis.cn,fake-ip",
+        # Last guard:
+        "GEOSITE,geolocation-!cn,fake-ip",
     ]
     config["geodata-mode"] = True
     config["proxy-groups"] += [

@@ -1,6 +1,6 @@
-From a1967a074708e18bc803840cbe42b37ef1ba1103 Mon Sep 17 00:00:00 2001
+From 4b6e3eadaa11a325d8704cea10a428ec1076e8a5 Mon Sep 17 00:00:00 2001
 From: Zigit Zo <byte@kei.network>
-Date: Mon, 22 Dec 2025 03:13:14 +0800
+Date: Sat, 24 Jan 2026 19:23:17 +0800
 Subject: [PATCH] rime-ice: taste
 
 ---
@@ -15,7 +15,7 @@ Subject: [PATCH] rime-ice: taste
  create mode 100644 symbols_u.yaml
 
 diff --git a/default.yaml b/default.yaml
-index dba89a4..d5a32bf 100644
+index 575aa53..d5a32bf 100644
 --- a/default.yaml
 +++ b/default.yaml
 @@ -10,20 +10,11 @@ config_version: '2025-02-24'
@@ -23,7 +23,7 @@ index dba89a4..d5a32bf 100644
    # 可以直接删除或注释不需要的方案，对应的 *.schema.yaml 方案文件也可以直接删除
    # 除了 t9，它依赖于 rime_ice，用九宫格别删 rime_ice.schema.yaml
 -  - schema: rime_ice               # 雾凇拼音（全拼）
--  - schema: t9                     # 九宫格（仓输入法）
+-  - schema: t9                     # 中文九键（仓输入法 & 元书输入法）
 -  - schema: double_pinyin          # 自然码双拼
    - schema: double_pinyin_abc      # 智能 ABC 双拼
 -  - schema: double_pinyin_mspy     # 微软双拼

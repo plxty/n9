@@ -29,15 +29,14 @@ in
       # HTTPS proxy, depending on the clash-renew.py):
       services.mihomo = {
         enable = true;
-        package = n9.patch (
+        package =
           let
             src = n9.sources.mihomo;
           in
           n9.assureVersion pkgs.mihomo src.version {
             inherit src;
-            vendorHash = "sha256-FhOkdOPiv/DaMQVYcM09EgFnOWdHactMOWt8oNcIu80=";
-          }
-        ) "mihomo-taste";
+            vendorHash = "sha256-xNga/f8GO+HItwAXX6XewCyTS7xtGpOBFv6RCgxI18Y=";
+          };
         configFile = "/etc/mihomo/clash.yaml";
         webui = pkgs.metacubexd;
         tunMode = true; # tproxy needs it as well
