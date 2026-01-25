@@ -8,6 +8,7 @@
 }:
 
 let
+  # nixpkgs-update: no auto update
   proot-rs = pkgsStatic.proot-rs;
 in
 writers.writeBashBin "nix-pack-closure" { } ''

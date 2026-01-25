@@ -11,13 +11,6 @@
         "url": "https://github.com/d2l-ai/d2l-zh/archive/e6b18ccea71451a55fcd861d7b96fddf2587b09a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "drgn": {
-        "sha256": "09bp6fwyni5ycllaava98zsf334sivk9q74yl5vspwkp5ajpjj5q",
-        "type": "tarball",
-        "url": "https://github.com/osandov/drgn/archive/refs/tags/v0.0.33.tar.gz",
-        "url_template": "https://github.com/osandov/drgn/archive/refs/tags/v<version>.tar.gz",
-        "version": "0.0.33"
-    },
     "external-editor-revived": {
         "sha256": "0hkc9hg58yy5kh4ix348whw0r99091686r5nnwycm56xdysv6jr9",
         "type": "file",
@@ -50,44 +43,6 @@
         "url": "https://iterm2.com/downloads/stable/iTerm2-3_6_6.zip",
         "url_template": "https://iterm2.com/downloads/stable/iTerm2-<version>.zip",
         "version": "3_6_6"
-    },
-    "libkdumpfile": {
-        "sha256": "1dm5917b5942j62z7n0hvbrk8nz53p4xf0n58x1adz3x4dpw14w1",
-        "type": "tarball",
-        "url": "https://codeberg.org/ptesarik/libkdumpfile/releases/download/v0.5.6/libkdumpfile-0.5.6.tar.gz",
-        "url_template": "https://codeberg.org/ptesarik/libkdumpfile/releases/download/v<version>/libkdumpfile-<version>.tar.gz",
-        "version": "0.5.6"
-    },
-    "mihomo": {
-        "sha256": "02xsyppc2dki1irs1w5fb7rgkwrwpwi0s4gp9fzsk8n9aaaxa8x7",
-        "type": "tarball",
-        "url": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v1.19.19.tar.gz",
-        "url_template": "https://github.com/MetaCubeX/mihomo/archive/refs/tags/v<version>.tar.gz",
-        "version": "1.19.19"
-    },
-    "proot-rs": {
-        "branch": "master",
-        "description": "Rust implementation of PRoot, a ptrace-based sandbox",
-        "homepage": "",
-        "owner": "plxty",
-        "repo": "proot-rs",
-        "rev": "e7fa296bd91463adf9911f6cc6616c8132a145cb",
-        "sha256": "1na08pi3riqra5ygka8b1y0kln36azk5zbz5gbwymjfnv59gwzsr",
-        "type": "tarball",
-        "url": "https://github.com/plxty/proot-rs/archive/e7fa296bd91463adf9911f6cc6616c8132a145cb.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "rime-ice": {
-        "branch": "main",
-        "description": "Rime 配置：雾凇拼音 | 长期维护的简体词库",
-        "homepage": "https://dvel.me/posts/rime-ice/",
-        "owner": "iDvel",
-        "repo": "rime-ice",
-        "rev": "86a581952134cf90c5e08986ff8aaaf7e936a1f4",
-        "sha256": "0hqjiqqkx9bxmk2walslyxcsgfvgb34mwqvwnmyipvwwdhr90ic7",
-        "type": "tarball",
-        "url": "https://github.com/iDvel/rime-ice/archive/86a581952134cf90c5e08986ff8aaaf7e936a1f4.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "tree-sitter-kconfig": {
         "branch": "master",
@@ -126,12 +81,5 @@
         "url": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/202601202217/geosite.dat",
         "url_template": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/<version>/geosite.dat",
         "version": "202601202217"
-    },
-    "virtme-ng": {
-        "sha256": "0zqyv3s2xr4c934iin6jah6c311snllimi2cnjbp5lc0431pxwp6",
-        "type": "tarball",
-        "url": "https://github.com/arighi/virtme-ng/archive/refs/tags/v1.40.tar.gz",
-        "url_template": "https://github.com/arighi/virtme-ng/archive/refs/tags/v<version>.tar.gz",
-        "version": "1.40"
     }
 }

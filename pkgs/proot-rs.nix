@@ -1,20 +1,28 @@
 {
   lib,
-  n9,
+  fetchFromGitHub,
   stdenv,
   rustPlatform,
   cargo-make,
+  unstableGitUpdater,
   ...
 }:
 
 let
   pkgInfo = rec {
-    src = n9.sources.proot-rs;
-    version = n9.trimRev src;
+    src = fetchFromGitHub {
+      owner = "plxty";
+      repo = "proot-rs";
+      rev = "e7fa296bd91463adf9911f6cc6616c8132a145cb";
+      sha256 = "AzH1rZFqEH8sovZZfJykvsEmCedEZWigQFHWHl6/PdE=";
+    };
+    version = "0-unstable-2026-01-22";
+    # TODO: Automatically update? Will it?
     cargoDeps = rustPlatform.fetchCargoVendor {
       inherit src;
       hash = "sha256-NOsKXth+gIhDsNDoP2l3J64BpN8YN22RJx+nzYt69vU=";
     };
+    passthru.updateScript = unstableGitUpdater { hardcodeZeroVersion = true; };
   };
 
   # The shim is always static, using cargo-make will override nix flags, and

@@ -33,7 +33,7 @@ in
 
   # Why not making variant = if isNixDarwin then {...} else if {...} ...?
   # Because we just want less if... unless there's no other better way :/
-  options.variant.is = lib.genAttrs n9.modules.variants lib.mkEnableOption;
+  options.variant.is = lib.genAttrs n9.variants lib.mkEnableOption;
 
   # TODO: Expose .config and .options as well?
   options.variant.build = lib.mkOption {

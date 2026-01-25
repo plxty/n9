@@ -7,11 +7,25 @@
     let
       inherit (nixpkgs) lib;
       n9 = import ./lib { inherit lib inputs; };
+
       module-list = import ./modules/module-list.nix;
+      mkPackages =
+        system:
+        import ./. {
+          inherit nixpkgs;
+          pkgs = nixpkgs.legacyPackages.${system};
+        };
     in
     {
+      # Export for colmena:
       colmenaHive = n9.mkHosts module-list (import ./config/hosts-list.nix);
+
+      # Export for "nix develop":
       devShells = n9.mkEnvs module-list (import ./config/envs-list.nix);
+
+      # Export for nixpkgs-update, @see modules/nix/nixpkgs.nix:
+      # TODO: Should get placed to pkgs/{flake,default}.nix? Hmm...
+      packages = lib.genAttrs n9.systems mkPackages;
 
       # Export for sub-flakes:
       inherit (n9) mkHosts mkEnvs;
@@ -28,6 +42,15 @@
         stable.follows = "";
         nix-github-actions.follows = "";
         flake-compat.follows = "";
+      };
+    };
+
+    nixpkgs-update = {
+      url = "github:plxty/nixpkgs-update";
+      inputs = {
+        mmdoc.follows = "";
+        treefmt-nix.follows = "";
+        runtimeDeps.follows = "nixpkgs";
       };
     };
 

@@ -5,12 +5,6 @@ let
     sources = import ./sources.nix;
 
     packages = rec {
-      mkPackage =
-        pkgs: v:
-        pkgs.callPackage (if (lib.typeOf v) == "string" then ../pkgs/${v}.nix else v) {
-          inherit n9 inputs;
-        };
-
       patches =
         pkg: attrs:
         pkg.overrideAttrs (prev: {
@@ -21,17 +15,18 @@ let
       patch = pkg: attr: patches pkg [ attr ];
 
       assureVersion =
-        pkg: version: attrsOrFn:
-        let
-          attrs =
-            final: prev:
-            if lib.isFunction attrsOrFn then
-              if lib.isFunction (attrsOrFn { }) then attrsOrFn prev final else attrsOrFn prev
-            else
-              attrsOrFn;
-        in
+        pkg: version: attrs:
         if lib.versionOlder pkg.version version then
-          pkg.overrideAttrs (final: prev: (attrs final prev) // { inherit version; })
+          pkg.overrideAttrs (
+            final: prev:
+            attrs
+            // {
+              # TODO: Unify the entrance of overrideAttrs, we need the pos be updated.
+              # @see mkDerivationSimple, unsafeGetAttrPos
+              inherit version;
+              pos = lib.unsafeGetAttrPos "src" attrs;
+            }
+          )
         else
           lib.trace "package ${pkg.pname} already satisfied version ${version}, may remove the assureVersion" pkg;
 
@@ -61,6 +56,12 @@ let
     };
 
     modules = rec {
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+        "aarch64-darwin"
+      ];
+
       variants = [
         "nixos"
         "nix-darwin"
@@ -114,24 +115,17 @@ let
         };
       mkEnvs =
         module-list: modules:
-        lib.genAttrs
-          [
-            "x86_64-linux"
-            "aarch64-linux"
-            "aarch64-darwin"
-          ]
-          (
-            system:
-            let
-              withSystem.options.n9.shell = n9.mkAttrsOfSubmoduleOption { } { nixpkgs.hostPlatform = system; };
-            in
-            lib.mapAttrs (_: v: v.variant.build) (mkConfig module-list ([ withSystem ] ++ modules))
-          );
+        lib.genAttrs systems (
+          system:
+          let
+            withSystem.options.n9.shell = n9.mkAttrsOfSubmoduleOption { } { nixpkgs.hostPlatform = system; };
+          in
+          lib.mapAttrs (_: v: v.variant.build) (mkConfig module-list ([ withSystem ] ++ modules))
+        );
     };
 
     # Shortcuts without "namespace":
     inherit (n9.packages)
-      mkPackage
       patches
       patch
       assureVersion
@@ -146,6 +140,8 @@ let
       mkAttrsOfSubmoduleWithOption
       ;
     inherit (n9.modules)
+      systems
+      variants
       mkHosts
       mkEnvs
       ;

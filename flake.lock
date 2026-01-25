@@ -154,6 +154,43 @@
         "type": "github"
       }
     },
+    "nixpkgs-update": {
+      "inputs": {
+        "mmdoc": [],
+        "nixpkgs": "nixpkgs_2",
+        "runtimeDeps": [
+          "nixpkgs"
+        ],
+        "treefmt-nix": []
+      },
+      "locked": {
+        "lastModified": 1769352396,
+        "narHash": "sha256-XsnOk/BWHTWeFM6X4vxfBmD0T9D00XPp3JL6InjMCds=",
+        "owner": "plxty",
+        "repo": "nixpkgs-update",
+        "rev": "d44cba3d36c76f0143f0cb221a5d7a38ab0cb803",
+        "type": "github"
+      },
+      "original": {
+        "owner": "plxty",
+        "repo": "nixpkgs-update",
+        "type": "github"
+      }
+    },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1672428209,
+        "narHash": "sha256-eejhqkDz2cb2vc5VeaWphJz8UXNuoNoM8/Op8eWv2tQ=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "293a28df6d7ff3dec1e61e37cc4ee6e6c0fb0847",
+        "type": "github"
+      },
+      "original": {
+        "id": "nixpkgs",
+        "type": "indirect"
+      }
+    },
     "root": {
       "inputs": {
         "colmena": "colmena",
@@ -162,6 +199,7 @@
         "nix-darwin": "nix-darwin",
         "nixos-wsl": "nixos-wsl",
         "nixpkgs": "nixpkgs",
+        "nixpkgs-update": "nixpkgs-update",
         "rust-overlay": "rust-overlay"
       }
     },

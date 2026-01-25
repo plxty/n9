@@ -23,15 +23,17 @@
     # Therefore, try keep the overlay as minimal as possible, @see packages.nix
     # Here for mainly new apps, or something that downstream host config uses.
     overlays = [
-      (final: prev: {
-        # New toys:
-        libkdumpfile = n9.mkPackage prev "libkdumpfile";
-        drgn = n9.mkPackage prev "drgn";
-        virtme-ng = n9.mkPackage prev "virtme-ng";
-        rime-ice = n9.mkPackage prev "rime-ice";
-        proot-rs = n9.mkPackage prev "proot-rs";
-        nix-pack-closure = n9.mkPackage prev "nix-pack-closure";
+      # New toys:
+      (
+        final: prev:
+        import ../.. {
+          inherit (inputs) nixpkgs;
+          pkgs = prev;
+        }
+      )
 
+      # Hackish:
+      (final: prev: {
         # Make fcitx5-rime or ibus-engines.rime works.
         # Overridding fcitx5 isn't simple as nixos uses `fcitx5-with-addons`.
         librime = n9.patch prev.librime "librime-temp-ascii";

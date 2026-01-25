@@ -47,11 +47,11 @@ in
       };
 
       # Using the flake version of nixpkgs:
-      nix.nixPath = [
-        "nixpkgs=${inputs.nixpkgs}"
-        # "nixpkgs-overlays=${../../pkgs}" # WIP, can't really work without `inputs`
-        "/nix/var/nix/profiles/per-user/root/channels" # neccessary?
-      ];
+      # nix.nixPath = [
+      #   "nixpkgs=${inputs.nixpkgs}"
+      #   # "nixpkgs-overlays=${../../pkgs}" # WIP, can't really work without `inputs`
+      #   "/nix/var/nix/profiles/per-user/root/channels" # neccessary?
+      # ];
 
       # https://nixos.wiki/wiki/Storage_optimization
       nix.gc = {

@@ -1,6 +1,6 @@
 {
-  n9,
   fetchurl,
+  fetchFromGitHub,
   python3Packages,
   automake,
   autoconf,
@@ -14,13 +14,15 @@
   ...
 }:
 
-let
-  src = n9.sources.drgn;
-in
-python3Packages.buildPythonPackage {
+python3Packages.buildPythonPackage rec {
   pname = "drgn";
-  inherit src;
-  inherit (src) version;
+  version = "0.0.33";
+  src = fetchFromGitHub {
+    owner = "osandov";
+    repo = "drgn";
+    tag = "v${version}";
+    sha256 = "09bp6fwyni5ycllaava98zsf334sivk9q74yl5vspwkp5ajpjj5q";
+  };
   pyproject = true;
 
   patches = [

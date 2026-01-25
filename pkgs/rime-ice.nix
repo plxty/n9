@@ -6,16 +6,22 @@
 {
   lib,
   stdenv,
-  n9,
+  fetchFromGitHub,
+  unstableGitUpdater,
   ...
 }:
 
-stdenv.mkDerivation rec {
+stdenv.mkDerivation {
   pname = "rime-ice";
-  version = n9.trimRev src;
+  src = fetchFromGitHub {
+    owner = "iDvel";
+    repo = "rime-ice";
+    rev = "86a581952134cf90c5e08986ff8aaaf7e936a1f4";
+    hash = "sha256-h0WQMmyc7xt9tXxjXslYb7unWfdUU8XFrH2lPjGOEkM=";
+  };
+  version = "0-unstable-2026-01-23";
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
-  src = n9.sources.rime-ice;
   patches = [ ../pkgs/patches/rime-ice-taste.patch ];
 
   # https://discourse.nixos.org/t/what-does-runhook-do/13861/3
@@ -47,6 +53,8 @@ stdenv.mkDerivation rec {
     cp -r . "$out/share/rime-data"
     runHook postInstall
   '';
+
+  passthru.updateScript = unstableGitUpdater { hardcodeZeroVersion = true; };
 
   meta = {
     homepage = "https://dvel.me/posts/rime-ice/";

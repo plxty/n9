@@ -1,6 +1,6 @@
 {
   lib,
-  n9,
+  fetchFromGitHub,
   pkgsStatic,
   python3Packages,
   runCommand,
@@ -15,7 +15,12 @@
 # https://github.com/zyklotomic/virtme-ng-flake.nix/blob/master/flake.nix
 
 let
-  src = n9.sources.virtme-ng;
+  src = fetchFromGitHub {
+    owner = "arighi";
+    repo = "virtme-ng";
+    rev = "1.40";
+    sha256 = "0zqyv3s2xr4c934iin6jah6c311snllimi2cnjbp5lc0431pxwp6";
+  };
 
   busybox-only = runCommand "busybox-only" { } ''
     mkdir -p "$out/bin"
@@ -26,7 +31,7 @@ let
   virtme-ng-init = pkgsStatic.rustPlatform.buildRustPackage rec {
     pname = "virtme-ng-init";
     inherit src;
-    inherit (src) version;
+    version = src.rev;
     sourceRoot = "virtme-ng-src/${lib.replaceStrings [ "-" ] [ "_" ] pname}";
     cargoHash = "sha256-3+MDf6pescqPnsQBOODZJ7ic2tqxh5LPvHIMouUkhjI=";
 
@@ -50,7 +55,7 @@ in
 python3Packages.buildPythonPackage {
   pname = "virtme-ng";
   inherit src;
-  inherit (src) version;
+  version = src.rev;
 
   # @see doc/languages-frameworks/python.section.md
   pyproject = true;
