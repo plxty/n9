@@ -45,15 +45,6 @@
       };
     };
 
-    nixpkgs-update = {
-      url = "github:plxty/nixpkgs-update";
-      inputs = {
-        mmdoc.follows = "";
-        treefmt-nix.follows = "";
-        runtimeDeps.follows = "nixpkgs";
-      };
-    };
-
     disko = {
       url = "github:nix-community/disko";
       inputs.nixpkgs.follows = "nixpkgs";

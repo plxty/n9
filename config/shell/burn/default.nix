@@ -13,7 +13,6 @@
 
         # RDepends:
         getent # upload-keys
-        (inputs.nixpkgs-update.packages.${stdenv.system}.default)
         (pkgs.writers.writeBashBin "niv" ''
           # Specify our own sources, don't want to patch it :/
           exec ${niv}/bin/niv -s lib/sources.json "$@"

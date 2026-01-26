@@ -16,10 +16,10 @@ stdenv.mkDerivation {
   src = fetchFromGitHub {
     owner = "iDvel";
     repo = "rime-ice";
-    rev = "86a581952134cf90c5e08986ff8aaaf7e936a1f4";
-    hash = "sha256-h0WQMmyc7xt9tXxjXslYb7unWfdUU8XFrH2lPjGOEkM=";
+    rev = "9d29a18917309486451a87fc139b571eeef0d26e";
+    hash = "sha256-BCQE1WjHO6ws9LQcmudtG+MfyeagxVBONpSAw5q4Xys=";
   };
-  version = "0-unstable-2026-01-23";
+  version = "0-unstable-2026-01-26";
 
   # Can't have any 'custom' things, they should be in $XDG, uhho.
   patches = [ ../pkgs/patches/rime-ice-taste.patch ];

@@ -7,7 +7,9 @@
   nixpkgs ? (import <nixpkgs> { }),
   pkgs ? nixpkgs.pkgs,
   # Copy of nixpkgs/maintainers/scripts/update.nix:
+  verbose ? false, # --arg verbose true (will print to stdout, so don't pipe it)
   package ? null, # --argstr package x,y,z
+  nu ? false, # --arg nu true (nu stands for nixpkgs-update, produces UPDATE_INFO)
   ...
 }:
 
@@ -19,6 +21,7 @@ let
   finalPackages =
     if package != null then lib.getAttrs (lib.splitString "," package) packages else packages;
 
+  # TODO: Deal with dependency order? Seems not a matter now...
   get-script = pkg: pkg.updateScript or null;
   packageData =
     attrPath: package:
@@ -36,25 +39,66 @@ let
   json = pkgs.writeText "packages.json" (
     builtins.toJSON (lib.mapAttrsToList packageData finalPackages)
   );
-in
-pkgs.stdenv.mkDerivation {
-  name = "nixpkgs-update-script";
-  buildCommand = "exit 1";
-  shellHook = ''
-    set -uex
-    unset shellHook
-    cat "${json}" && echo # for debug
+
+  # May get called by nixpkgs-update:
+  updateScript = ''
     sed -E 's!(nixpkgs_root = ).+!\1"${nixpkgs.path}"!' "${nixpkgs.path}/maintainers/scripts/update.py" | \
       ${pkgs.python3.interpreter} /dev/stdin \
         "${json}" \
         --max-workers=1 \
         --order topological \
         --skip-prompt
+  '';
+
+  # Feeds to nixpkgs-update as param:
+  # nix-shell maintainers/scripts/update.nix --arg nu true | \
+  #   xargs -d '\0' nixpkgs-update update --local
+  nuScript = ''
+    while read -r pname attrPath hasUpdateScript oldVersion; do
+      # TODO: More accurate way to test updateScript?
+      if "$hasUpdateScript"; then
+        echo "$attrPath $oldVersion $oldVersion"
+        continue
+      fi
+
+      if [[ "$oldVersion" == "" ]]; then
+        # Maybe runCommand with no version?
+        continue
+      fi
+
+      # Real hard work here, get from repology:
+      newVersion="$(curl ${
+        if verbose then "-v" else "-s"
+      } -H "User-Agent: https://github.com/plxty/n9" "https://repology.org/api/v1/project/$pname" | \
+        jq -r '.[] | select(.status == "newest") | .version' | sort -Vr | head -1)"
+      echo "$attrPath $oldVersion $newVersion"
+
+      # There's a 1QPS limits on repology...
+      sleep 1
+    done < \
+      <(jq -r '.[] | [.pname,.attrPath,if .updateScript != [""] then "true" else "false" end,.oldVersion] | join(" ")' "${json}")
+  '';
+in
+pkgs.stdenv.mkDerivation {
+  name = "nixpkgs-update-script";
+  buildCommand = "exit 1";
+  shellHook = ''
+    unset shellHook
+
+    set -ue
+    ${lib.optionalString verbose ''
+      set -x
+      cat "${json}" 1>&2
+    ''}
+
+    ${if !nu then updateScript else nuScript}
     exit $?
   '';
   nativeBuildInputs = with pkgs; [
     git
     nix
     cacert
+    curl
+    jq
   ];
 }
