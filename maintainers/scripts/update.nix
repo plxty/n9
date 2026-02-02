@@ -17,7 +17,8 @@ let
 
   # Hacked nixpkgs-update:
   nixpkgs-update =
-    (builtins.getFlake "github:plxty/nixpkgs-update").packages.${pkgs.stdenv.system}.default;
+    lib.getExe
+      (builtins.getFlake "github:plxty/nixpkgs-update").packages.${pkgs.stdenv.system}.default;
 
   # If update set, do only what user want to do:
   packages = import ../.. { inherit nixpkgs pkgs; };
@@ -60,7 +61,7 @@ let
     while read -r pname attrPath hasUpdateScript oldVersion; do
       # TODO: More accurate way to test updateScript?
       if "$hasUpdateScript"; then
-        info+="$attrPath $oldVersion $oldVersion"$'\n'
+        "${nixpkgs-update}" update --local "$attrPath $oldVersion $oldVersion" || true
         continue
       fi
 
@@ -73,16 +74,10 @@ let
       newVersion="$(curl -s -H "User-Agent: https://github.com/plxty/n9" "https://repology.org/api/v1/project/$pname" | \
         jq -r '.[] | select(.status == "newest") | .version' | sort -Vr | head -1)"
       if [[ "$oldVersion" != "$newVersion" ]]; then
-        info+="$attrPath $oldVersion $newVersion"$'\n'
+        "${nixpkgs-update}" update --local "$attrPath $oldVersion $newVersion" || true
       fi
-
-      # There's a 1QPS limits on repology...
-      sleep 1
     done < \
       <(jq -r '.[] | [.pname,.attrPath,if .updateScript != [""] then "true" else "false" end,.oldVersion] | join(" ")' "${json}")
-
-    # Real update:
-    ${lib.getExe nixpkgs-update} update-batch --local "$info"
   '';
 in
 pkgs.stdenv.mkDerivation {
