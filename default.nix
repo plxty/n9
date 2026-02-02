@@ -15,14 +15,13 @@ let
     "virtme-ng"
     "rime-ice"
     "proot-rs"
-    "mihomo"
+    "mihomo-unstable"
     "nix-pack-closure"
   ];
 
   callPackage = final: prev: package: {
-    # In this way you can reference the old packages, to override version.
-    # TODO: Downside? Refers to wrong package in some dependencies?
-    ${package} = final.callPackage ./pkgs/${package}.nix prev;
+    # Just don't infinite recursion...
+    ${package} = prev.callPackage ./pkgs/${package}.nix { };
   };
 in
 # Expose only what we have:
