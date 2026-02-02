@@ -7,7 +7,6 @@
   nixpkgs ? (import <nixpkgs> { }),
   pkgs ? nixpkgs.pkgs,
   # Copy of nixpkgs/maintainers/scripts/update.nix:
-  verbose ? false, # --arg verbose true (will print to stdout, so don't pipe it)
   package ? null, # --argstr package x,y,z
   nu ? false, # --arg nu true (nu stands for nixpkgs-update, produces UPDATE_INFO)
   ...
@@ -15,6 +14,10 @@
 
 let
   inherit (nixpkgs) lib;
+
+  # Hacked nixpkgs-update:
+  nixpkgs-update =
+    (builtins.getFlake "github:plxty/nixpkgs-update").packages.${pkgs.stdenv.system}.default;
 
   # If update set, do only what user want to do:
   packages = import ../.. { inherit nixpkgs pkgs; };
@@ -57,7 +60,7 @@ let
     while read -r pname attrPath hasUpdateScript oldVersion; do
       # TODO: More accurate way to test updateScript?
       if "$hasUpdateScript"; then
-        echo "$attrPath $oldVersion $oldVersion"
+        info+="$attrPath $oldVersion $oldVersion"$'\n'
         continue
       fi
 
@@ -67,16 +70,19 @@ let
       fi
 
       # Real hard work here, get from repology:
-      newVersion="$(curl ${
-        if verbose then "-v" else "-s"
-      } -H "User-Agent: https://github.com/plxty/n9" "https://repology.org/api/v1/project/$pname" | \
+      newVersion="$(curl -s -H "User-Agent: https://github.com/plxty/n9" "https://repology.org/api/v1/project/$pname" | \
         jq -r '.[] | select(.status == "newest") | .version' | sort -Vr | head -1)"
-      echo "$attrPath $oldVersion $newVersion"
+      if [[ "$oldVersion" != "$newVersion" ]]; then
+        info+="$attrPath $oldVersion $newVersion"$'\n'
+      fi
 
       # There's a 1QPS limits on repology...
       sleep 1
     done < \
       <(jq -r '.[] | [.pname,.attrPath,if .updateScript != [""] then "true" else "false" end,.oldVersion] | join(" ")' "${json}")
+
+    # Real update:
+    ${lib.getExe nixpkgs-update} update-batch --local "$info"
   '';
 in
 pkgs.stdenv.mkDerivation {
@@ -84,13 +90,8 @@ pkgs.stdenv.mkDerivation {
   buildCommand = "exit 1";
   shellHook = ''
     unset shellHook
-
-    set -ue
-    ${lib.optionalString verbose ''
-      set -x
-      cat "${json}" 1>&2
-    ''}
-
+    set -uex
+    cat "${json}"
     ${if !nu then updateScript else nuScript}
     exit $?
   '';

@@ -2,43 +2,54 @@
 
 set -uex
 
-if which hostname; then
-  B_THIS="$(hostname)"
-else
-  B_THIS="$HOSTNAME"
-fi
-B_THAT="${1:-}"
-shift 1 || true
-
 if [[ ! -d asterisk ]]; then
   echo "Run me in project root!"
   exit 1
 fi
 
+if which hostname; then
+  B_THIS="$(hostname)"
+else
+  B_THIS="$HOSTNAME"
+fi
+
+B_UP=false
+B_THAT="$B_THIS"
+while true; do
+  case "${1:-}" in
+  "")
+    break ;;
+  "--fuel")
+    B_UP=true ;;
+  *)
+    B_THAT="$1" ;;
+  esac
+  shift 1 || true
+done
+
 B_NIX=(nix --extra-experimental-features "nix-command flakes" --accept-flake-config)
+B_NIX_SHELL=(nix-shell)
 if [[ -f asterisk/.github_token ]]; then
   # shellcheck disable=SC2155
   export NIV_GITHUB_TOKEN="$(< asterisk/.github_token)"
   B_NIX+=(--option access-tokens "github.com=$NIV_GITHUB_TOKEN")
-fi
-
-B_UP=true
-if [[ -f .last ]] && (("$(date +%s)" - "$(stat -c %Y .last)" < 86400)); then
-  B_UP=false
+  B_NIX_SHELL+=(--option access-tokens "github.com=$NIV_GITHUB_TOKEN")
 fi
 
 if $B_UP; then
+  set +e
   # Pull the latest changes if have:
-  git pull --rebase || true
+  git pull --rebase
   cd asterisk
-  git pull --rebase || true
+  git pull --rebase
   chmod -R g-rwx,o-rwx .
   cd ..
-  "${B_NIX[@]}" flake update --flake '.?submodules=1' || true
+  "${B_NIX[@]}" flake update --flake '.?submodules=1'
   if [[ -f lib/sources.json ]]; then
     niv update
   fi
-  touch .last
+  "${B_NIX_SHELL[@]}" maintainers/scripts/update.nix --arg nu true
+  set -e
 fi
 
 # Das template:

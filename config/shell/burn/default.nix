@@ -1,4 +1,5 @@
 {
+  # fuel
   n9.shell.burn =
     {
       n9,
