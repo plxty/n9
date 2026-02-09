@@ -11,16 +11,16 @@ let
     inputs = null;
   };
 
-  version = "1.19.19";
+  version = "1.19.20";
   src = fetchFromGitHub {
     owner = "MetaCubeX";
     repo = "mihomo";
     tag = "v${version}";
-    sha256 = "sha256-pyPVlVLJoqm/S/cRDSK/PPP58lmu8KBzDHE2we71ugs=";
+    sha256 = "sha256-w1W8zClaiHA0EdAm4sf8Va11pxjXFFwmnSUyb7UWd74=";
   };
 in
 # buildGo, @see golangModuleVersion in nixpkgs-update:
 n9.assureVersion mihomo version {
   inherit src;
-  vendorHash = "sha256-xNga/f8GO+HItwAXX6XewCyTS7xtGpOBFv6RCgxI18Y=";
+  vendorHash = "sha256-MrHUkwBxGgmKPsTXFM32q8PyXmHJiFvSwFmxRA1kdZM=";
 }

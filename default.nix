@@ -17,6 +17,7 @@ let
     "proot-rs"
     "mihomo-unstable"
     "nix-pack-closure"
+    "geodat"
   ];
 
   callPackage = final: prev: package: {

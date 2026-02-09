@@ -17,7 +17,7 @@ let
   clashIPs' = [
     "198.18.0.0/15" # Fake-ip
   ]
-  ++ lib.splitString "\n" (lib.readFile "${n9.sources.geoip}/text/google.txt");
+  ++ lib.splitString "\n" (lib.readFile "${pkgs.geodat}/google.txt");
   clashIPs = lib.concatStringsSep "," (lib.filter (lib.hasInfix ".") clashIPs');
 in
 {
@@ -145,7 +145,7 @@ in
     mihomo_data=/var/lib/private/mihomo
     mkdir -p $mihomo_data
     chown nobody:nogroup $mihomo_data
-    ln -Tsf "${n9.sources.v2ray-rules-geoip}" $mihomo_data/GeoIP.dat
-    ln -Tsf "${n9.sources.v2ray-rules-geosite}" $mihomo_data/GeoSite.dat
+    ln -Tsf "${pkgs.geodat}/geoip.dat" $mihomo_data/GeoIP.dat
+    ln -Tsf "${pkgs.geodat}/geosite.dat" $mihomo_data/GeoSite.dat
   '';
 }
