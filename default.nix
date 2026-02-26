@@ -16,6 +16,8 @@ let
     "rime-ice"
     "proot-rs"
     "mihomo-unstable"
+    "flashspace-unstable"
+    "iterm2-unstable"
     "nix-pack-closure"
     "geodat"
   ];

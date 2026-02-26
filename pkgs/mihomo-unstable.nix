@@ -1,16 +1,12 @@
 {
   lib,
+  n9 ? import ../lib { inherit lib; },
   fetchFromGitHub,
   mihomo,
   ...
 }:
 
 let
-  n9 = import ../lib {
-    inherit lib;
-    inputs = null;
-  };
-
   version = "1.19.20";
   src = fetchFromGitHub {
     owner = "MetaCubeX";

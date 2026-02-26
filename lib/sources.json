@@ -18,20 +18,6 @@
         "url_template": "https://github.com/Frederick888/external-editor-revived/releases/download/v<version>/macos-latest-universal-native-messaging-host-v<version>.zip",
         "version": "1.2.0"
     },
-    "flashspace": {
-        "sha256": "1qppdqbvwkdfx7xq625di687wxrvyzqv78i57wd6k468415lrfih",
-        "type": "file",
-        "url": "https://github.com/wojciech-kulik/FlashSpace/releases/download/v4.12.65/FlashSpace.app.zip",
-        "url_template": "https://github.com/wojciech-kulik/FlashSpace/releases/download/v<version>/FlashSpace.app.zip",
-        "version": "4.12.65"
-    },
-    "iterm2": {
-        "sha256": "1wxlj2fs55jscgn375pn0gs14pnhv511nrcshw3h857jvn4ksab8",
-        "type": "file",
-        "url": "https://iterm2.com/downloads/stable/iTerm2-3_6_6.zip",
-        "url_template": "https://iterm2.com/downloads/stable/iTerm2-<version>.zip",
-        "version": "3_6_6"
-    },
     "tree-sitter-kconfig": {
         "branch": "master",
         "description": "Kconfig grammar for tree-sitter",

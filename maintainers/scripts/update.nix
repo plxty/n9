@@ -2,6 +2,13 @@
 # Although we've patched it for a "--local" option, but we still want to
 # maintain some kind of "patchable" for in a little longer future :/
 
+# Strategy:
+# * For packages with passthru.updateScript, it runs the script and in the script,
+#   it then updates itself
+# * For other packages, new version will be fetched from repology.org
+# * For golang/rust/... packages, you should have buildGoModules or else to make sure
+#   update the vendorHash/cargoHash/... accordingly.
+
 {
   # Impure!
   nixpkgs ? (import <nixpkgs> { }),

@@ -16,12 +16,12 @@
 
 python3Packages.buildPythonPackage rec {
   pname = "drgn";
-  version = "0.0.33";
+  version = "0.1.0";
   src = fetchFromGitHub {
     owner = "osandov";
     repo = "drgn";
     tag = "v${version}";
-    sha256 = "09bp6fwyni5ycllaava98zsf334sivk9q74yl5vspwkp5ajpjj5q";
+    sha256 = "sha256-9foYSPwxneTqlckWFpi7Cge9ua4mpafhLkDYJE2ThiU=";
   };
   pyproject = true;
 

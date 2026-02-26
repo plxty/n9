@@ -46,30 +46,6 @@
           ];
         });
 
-        # For private darwin machine (working only):
-        iterm2 =
-          let
-            src = n9.sources.iterm2;
-            version = lib.replaceStrings [ "_" ] [ "." ] src.version;
-          in
-          n9.assureVersion prev.iterm2 version {
-            inherit src;
-            nativeBuildInputs = [ prev.unzip ];
-            unpackPhase = "unzip $src";
-            sourceRoot = "iTerm.app"; # avoid /Applications/iTerm2.app/iTerm.app appears
-          };
-
-        flashspace =
-          let
-            src = n9.sources.flashspace;
-          in
-          n9.assureVersion prev.flashspace src.version {
-            inherit src;
-            nativeBuildInputs = [ prev.unzip ];
-            unpackPhase = "unzip $src";
-            sourceRoot = "flashspace.app";
-          };
-
         # To skip some test fails... FIXME: Remove me when done!
         python313 =
           let

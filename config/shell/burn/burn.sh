@@ -48,7 +48,8 @@ if $B_UP; then
   if [[ -f lib/sources.json ]]; then
     niv update
   fi
-  "${B_NIX_SHELL[@]}" maintainers/scripts/update.nix --arg nu true
+  NIXPKGS_ALLOW_UNSUPPORTED_SYSTEM=1 \
+    "${B_NIX_SHELL[@]}" maintainers/scripts/update.nix --arg nu true
   set -e
 fi
 

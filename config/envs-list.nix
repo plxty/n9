@@ -6,7 +6,7 @@
   ./shell/d2l.nix
   ./shell/nvidia-gpu.nix
   ./shell/rdma.nix
-  ./shell/mihomo.nix
   ./shell/gcc.nix
   ./shell/llvm.nix
+  ./shell/oneapi.nix
 ]

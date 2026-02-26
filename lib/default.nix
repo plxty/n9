@@ -1,4 +1,8 @@
-{ lib, inputs, ... }:
+{
+  lib,
+  inputs ? null,
+  ...
+}:
 
 let
   n9 = {
