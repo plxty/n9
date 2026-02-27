@@ -61,16 +61,13 @@
 
         targets.init = ''
           git reset --hard
-          git submodule update --init --recursive
+          git submodule update --init --recursive --checkout
           git submodule foreach --recursive git reset --hard
 
           git clean -fdx -e .direnv -e .envrc
           git submodule foreach --recursive git clean -fdx
 
           pushd librime
-          git fetch
-          git checkout 1.15.0
-          git submodule update --init --recursive
           bash install-plugins.sh hchunhui/librime-lua lotem/librime-octagram rime/librime-predict
           patch -p1 < "${inputs.self}/pkgs/patches/librime-temp-ascii.patch"
           popd
