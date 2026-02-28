@@ -11,25 +11,6 @@
         "url": "https://github.com/d2l-ai/d2l-zh/archive/e6b18ccea71451a55fcd861d7b96fddf2587b09a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
-    "external-editor-revived": {
-        "sha256": "0hkc9hg58yy5kh4ix348whw0r99091686r5nnwycm56xdysv6jr9",
-        "type": "file",
-        "url": "https://github.com/Frederick888/external-editor-revived/releases/download/v1.2.0/macos-latest-universal-native-messaging-host-v1.2.0.zip",
-        "url_template": "https://github.com/Frederick888/external-editor-revived/releases/download/v<version>/macos-latest-universal-native-messaging-host-v<version>.zip",
-        "version": "1.2.0"
-    },
-    "tree-sitter-kconfig": {
-        "branch": "master",
-        "description": "Kconfig grammar for tree-sitter",
-        "homepage": "",
-        "owner": "tree-sitter-grammars",
-        "repo": "tree-sitter-kconfig",
-        "rev": "9ac99fe4c0c27a35dc6f757cef534c646e944881",
-        "sha256": "1yaslgn41ywm472m9mabzmqfq7dk3x18vaw8813jb0pvc8n5j1pj",
-        "type": "tarball",
-        "url": "https://github.com/tree-sitter-grammars/tree-sitter-kconfig/archive/9ac99fe4c0c27a35dc6f757cef534c646e944881.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "upto": {
         "branch": "master",
         "description": "Change to a parent directory by its name based in @driv's upto",

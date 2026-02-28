@@ -20,6 +20,7 @@ let
     "iterm2-unstable"
     "nix-pack-closure"
     "geodat"
+    "tree-sitter-kconfig"
   ];
 
   callPackage = final: prev: package: {

@@ -10,17 +10,6 @@
     { config, ... }:
     let
       cfg = config.programs.helix;
-
-      kconfig-ts-src = n9.sources.tree-sitter-kconfig;
-      kconfig-ts-pkg = pkgs.callPackage (
-        { stdenv, ... }:
-        stdenv.mkDerivation {
-          pname = kconfig-ts-src.repo;
-          version = n9.trimRev kconfig-ts-src;
-          src = kconfig-ts-src;
-          makeFlags = [ "PREFIX=$(out)" ];
-        }
-      ) { };
     in
     {
       options.programs.helix.enable = lib.mkOption {
@@ -217,10 +206,10 @@
 
       # Most LSP or tree-sitter things:
       config.deployment.file = {
-        ".config/helix/runtime/queries/kconfig".source = "${kconfig-ts-src}/queries";
-
+        # TODO: Make it into helix build directly?
+        ".config/helix/runtime/queries/kconfig".source = "${pkgs.tree-sitter-kconfig}/queries";
         ".config/helix/runtime/grammars/kconfig.so".source =
-          "${kconfig-ts-pkg}/lib/libtree-sitter-kconfig.so";
+          "${pkgs.tree-sitter-kconfig}/lib/libtree-sitter-kconfig.so";
 
         ".config/clangd/config.yaml".source = pkgs.writers.writeYAML "config.yaml" {
           CompileFlags = {
