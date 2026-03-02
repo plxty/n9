@@ -11,22 +11,22 @@
 }:
 
 let
-  version = "202602082220";
+  version = "202603012218";
   pname = "geodat";
-  commit = "d16a350b06d993a3e859926461470339f74780d0";
+  commit = "f26d300e50b09b9f4292988b890bdb69e19a761b";
 
   src = {
     geoip = {
       url = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/${version}/geoip.dat";
-      hash = "sha256-jPPax9meQoo4C9OqEzD1dxinlNRf5PndIAd8AQ3AvNs=";
+      hash = "sha256-X33IirmNViJywrNpbUIhT4JZ9h1Llw25PAB6umBUsEs=";
     };
     geosite = {
       url = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/${version}/geosite.dat";
-      hash = "sha256-THRNI7l4x8Zovp94rmGLzzMaUsdbq+g+qoWQtfEJ8og=";
+      hash = "sha256-ZnVtCndfmJNT2x3JtesRGOErQ9CeHcfe+JptewqWsU0=";
     };
     google = {
       url = "https://github.com/Loyalsoldier/geoip/raw/refs/heads/${commit}/text/google.txt";
-      hash = "sha256-MCVsDCarieF/Bf4EdsM5iIi92lkjvJdrjrcFEV46soM=";
+      hash = "sha256-952noX5ac8Y9fL/o7nX9m89wtzBAtUFTJ5JtyHCaaoE=";
     };
   };
 
