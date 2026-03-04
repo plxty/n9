@@ -11,7 +11,7 @@
 }:
 
 let
-  version = "202603012218";
+  version = "202603032223";
   pname = "geodat";
   commit = "f26d300e50b09b9f4292988b890bdb69e19a761b";
 
@@ -22,7 +22,7 @@ let
     };
     geosite = {
       url = "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/${version}/geosite.dat";
-      hash = "sha256-ZnVtCndfmJNT2x3JtesRGOErQ9CeHcfe+JptewqWsU0=";
+      hash = "sha256-fnOqhhRsKqewW9jy7JeDQ+q3GrLj6ynmQ8a7bM0DMHU=";
     };
     google = {
       url = "https://github.com/Loyalsoldier/geoip/raw/refs/heads/${commit}/text/google.txt";
@@ -46,6 +46,14 @@ let
     tmp="$(mktemp -u)"
     cp geodat.nix "$tmp"
     trap "rm -f $tmp" SIGTERM SIGINT EXIT
+
+    function curl() {
+      args=(-s)
+      if [[ -f "../asterisk/.github_token" ]]; then
+        args+=(--header "Authorization: Bearer $(< "../asterisk/.github_token")")
+      fi
+      command curl "''${args[@]}" "$@"
+    }
 
     function update_rules() {
       tag="$(curl -s https://api.github.com/repos/Loyalsoldier/v2ray-rules-dat/releases/latest | \
