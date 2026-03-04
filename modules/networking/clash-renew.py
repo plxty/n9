@@ -57,8 +57,9 @@ def main():
         # https://github.com/vernesong/OpenClash/discussions/3131#discussioncomment-14898388
         "DOMAIN-SUFFIX,xn--ngstr-lra8j.com,real-ip",
         "DOMAIN-SUFFIX,googleapis.cn,fake-ip",
-        # Last guard:
+        # Last guards:
         "GEOSITE,geolocation-!cn,fake-ip",
+        "MATCH,real-ip",
     ]
     config["geodata-mode"] = True
     config["proxy-groups"] += [
