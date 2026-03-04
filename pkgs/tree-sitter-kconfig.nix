@@ -16,7 +16,7 @@ in
 stdenv.mkDerivation {
   pname = "tree-sitter-kconfig";
   inherit src;
-  version = "0-unstable-2024-12-23";
+  version = "0-unstable-2024-12-22";
 
   # Build it:
   makeFlags = [ "PREFIX=$(out)" ];

@@ -10,11 +10,12 @@
 
 let
   pkgInfo = rec {
+    # To force update, change both "rev", "sha256" and "version", one letter is enough.
     src = fetchFromGitHub {
       owner = "plxty";
       repo = "proot-rs";
       rev = "e7fa296bd91463adf9911f6cc6616c8132a145cb";
-      sha256 = "AzH1rZFqEH8sovZZfJykvsEmCedEZWigQFHWHl6/PdE=";
+      sha256 = "WX/+UtnWyer5euWvX+ZXZlg6gQ8Lqfl8URnHPOJFQNk=";
     };
     version = "0-unstable-2026-01-22";
     # TODO: Automatically update? Will it?

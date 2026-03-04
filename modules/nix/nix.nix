@@ -38,20 +38,20 @@ in
         keep-derivations = true
       '';
 
+      # To avoid deploying frequently:
       nix.registry = {
         # nix develop n9#qemu
         n9.to = {
           type = "path";
-          path = config.deployment.rootAbsolute; # save some debug times
+          path = config.deployment.rootAbsolute;
         };
       };
 
-      # Using the flake version of nixpkgs:
-      # nix.nixPath = [
-      #   "nixpkgs=${inputs.nixpkgs}"
-      #   # "nixpkgs-overlays=${../../pkgs}" # WIP, can't really work without `inputs`
-      #   "/nix/var/nix/profiles/per-user/root/channels" # neccessary?
-      # ];
+      # Defaults will get set in @see nixpkgs-flake.nix, "nixpkgs=flake:nixpkgs".
+      # If you want to `nix-shell`, using `nix-shell -p '(import <n9> args).pname'`
+      nix.nixPath = [
+        "n9=${config.deployment.rootAbsolute}"
+      ];
 
       # https://nixos.wiki/wiki/Storage_optimization
       nix.gc = {

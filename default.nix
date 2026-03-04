@@ -21,6 +21,8 @@ let
     "nix-pack-closure"
     "geodat"
     "tree-sitter-kconfig"
+    "trae-agent"
+    "tmux-mcp"
   ];
 
   callPackage = final: prev: package: {
