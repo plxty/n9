@@ -6,7 +6,7 @@ EAPI=8
 LLVM_COMPAT=( 22 )
 LLVM_OPTIONAL="yes"
 
-inherit edo llvm-r1 multilib prefix rust-toolchain verify-sig multilib-minimal optfeature
+inherit edo llvm-r2 multilib prefix rust-toolchain verify-sig multilib-minimal optfeature
 inherit dirty-deeds
 
 # filter to have only used platforms to reduce download size, @see rust-toolchain.eclass
@@ -37,7 +37,7 @@ elif [[ ${PV} == *beta* ]]; then
 else
 	# curl -Ls static.rust-lang.org/dist/channel-rust-${PV}.toml | grep "xz_url.*rust-src"
 	SRC_URI="$(rust_all_arch_uris "rust-${PV}")
-		rust-src? ( ${RUST_TOOLCHAIN_BASEURL%/}/2026-06-30/rust-src-${PV}.tar.xz )
+		rust-src? ( ${RUST_TOOLCHAIN_BASEURL%/}/2026-07-16/rust-src-${PV}.tar.xz )
 	"
 	KEYWORDS="amd64 ~arm64-macos"
 fi
@@ -49,7 +49,7 @@ HOMEPAGE="https://www.rust-lang.org/"
 
 LICENSE="|| ( MIT Apache-2.0 ) BSD BSD-1 BSD-2 BSD-4"
 SLOT="${PV%%_*}" # Beta releases get to share the same SLOT as the eventual stable
-IUSE="big-endian +clippy cpu_flags_x86_sse2 +doc prefix rust-analyzer rust-src +rustfmt"
+IUSE="big-endian +clippy cpu_flags_x86_sse2 doc prefix rust-analyzer rust-src +rustfmt"
 
 # net-misc/curl is needed for our own bootstrapped rustc, since cross-compiling bundled curl is not supported
 RDEPEND="

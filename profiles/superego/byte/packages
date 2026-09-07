@@ -10,7 +10,7 @@
 *app-shells/zoxide
 *dev-python/xonsh:ridgeni
 *app-editors/helix:ridgeni
-*dev-util/codex
+*dev-util/codex-bin
 *sys-apps/moreutils
 *app-misc/glow
 *net-misc/aria2

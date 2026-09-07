@@ -6,7 +6,7 @@ EAPI=8
 DISTUTILS_EXT=1
 DISTUTILS_USE_PEP517=maturin
 PYPI_VERIFY_REPO=https://github.com/pyca/cryptography
-PYTHON_COMPAT=( python3_{12..15} )
+PYTHON_COMPAT=( python3_{12..15} python3_{14,15}t )
 PYTHON_REQ_USE="threads(+)"
 
 CARGO_OPTIONAL=yes
@@ -14,33 +14,33 @@ RUST_MIN_VER="1.83.0"
 CRATES="
 	asn1@0.24.1
 	asn1_derive@0.24.1
-	base64@0.22.1
-	bitflags@2.13.0
-	cc@1.2.64
+	base64@0.23.0
+	bitflags@2.13.1
+	cc@1.4.0
 	cfg-if@1.0.4
 	find-msvc-tools@0.1.9
 	foreign-types-shared@0.1.1
 	foreign-types@0.3.2
 	heck@0.5.0
 	itoa@1.0.18
-	libc@0.2.186
+	libc@0.2.189
 	once_cell@1.21.4
 	openssl-macros@0.1.1
 	openssl-sys@0.9.117
 	openssl@0.10.81
-	pem@3.0.6
+	pem@4.0.0
 	pkg-config@0.3.33
-	portable-atomic@1.13.1
-	proc-macro2@1.0.106
+	portable-atomic@1.14.0
+	proc-macro2@1.0.107
 	pyo3-build-config@0.29.0
 	pyo3-ffi@0.29.0
 	pyo3-macros-backend@0.29.0
 	pyo3-macros@0.29.0
 	pyo3@0.29.0
-	quote@1.0.45
-	self_cell@1.2.2
+	quote@1.0.47
+	self_cell@1.3.0
 	shlex@2.0.1
-	syn@2.0.117
+	syn@2.0.119
 	target-lexicon@0.13.5
 	unicode-ident@1.0.24
 	vcpkg@0.2.15
@@ -73,9 +73,7 @@ KEYWORDS="~arm64-macos"
 
 RDEPEND="
 	>=dev-libs/openssl-1.0.2o-r6:0=
-	$(python_gen_cond_dep '
-		>=dev-python/cffi-2.0.0:=[${PYTHON_USEDEP}]
-	' 'python*')
+	>=dev-python/cffi-2.0.0:=[${PYTHON_USEDEP}]
 "
 DEPEND="
 	${RDEPEND}
