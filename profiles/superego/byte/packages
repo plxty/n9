@@ -11,6 +11,7 @@
 *dev-python/xonsh:ridgeni
 *app-editors/helix:ridgeni
 *dev-util/codex-bin
+*dev-util/pi-coding-agent-bin
 *sys-apps/moreutils
 *app-misc/glow
 *net-misc/aria2
